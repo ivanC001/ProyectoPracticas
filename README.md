@@ -1,1 +1,1 @@
-<p align="center">notaciones si lo ves necesario</p>
+<p align="center">notaciones</p>
