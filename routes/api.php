@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::get('/conductores', [ConductorController::class, 'index']);
+Route::get('/conductores/eliminados', [ConductorController::class, 'deleted']);
 Route::post('/conductores', [ConductorController::class, 'store']);
 Route::get('/conductores/{id}', [ConductorController::class, 'show']);
 Route::put('/conductores/{id}', [ConductorController::class, 'update']);
