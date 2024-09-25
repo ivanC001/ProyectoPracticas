@@ -71,7 +71,7 @@
             method: "GET",
             success: function(response) {
                 let tbody = $("#conductorTableBody");
-                tbody.empty(); // Clear previous results
+                tbody.empty(); 
                 $.each(response, function(index, conductor) {
                     tbody.append(`
                         <tr>
@@ -79,6 +79,7 @@
                                 <button type="button" class="btn btn-warning btn-sm editar" onclick="editar(${conductor.id})">
                                     <i class="fas fa-edit"></i>
                                 </button>
+                                
                                 <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar(${conductor.id})">
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -115,14 +116,47 @@
     });
 
     // Example function to handle edit
-    function editar(id) {
-        alert('Editar conductor ' + id);
-    }
+    // function editar(id) {
+    //     alert('Editar conductor ' + id);
+    // }
 
-    // Example function to handle delete
+
     function eliminar(id) {
-        alert('Eliminar conductor ' + id);
-    }
+      Swal.fire({
+            title: 'Eliminar registro',
+            text: "¿Esta seguro de querer eliminar el registro?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Si',
+            cancelButtonText: 'No'
+          }).then((result) => {
+              if (result.isConfirmed) {
+                $.ajax({
+                    method: 'DELETE',
+                    url:  `http://127.0.0.1:8000/api/conductores/${id}`,
+                    headers:{
+                      'X-CSRF-TOKEN':$('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(res){
+                      window.location.reload();
+                      Swal.fire({
+                          icon: res.status,
+                          title: res.message,
+                          showConfirmButton: false,
+                          timer: 1500
+                      });
+                    },
+                    error: function (res){
+
+                    }
+                });
+                
+              }
+          })
+        
+      }
 </script>
 @endpush
 

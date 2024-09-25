@@ -1,9 +1,9 @@
-<!-- Modal de Registro -->
+<!-- Modal de Registro/Edición -->
 <div class="modal fade" id="modalRegistroConductor" tabindex="-1" role="dialog" aria-labelledby="modalRegistroConductorLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalRegistroConductorLabel">Registrar Conductor</h5>
+                <h2 class="modal-title" id="modalRegistroConductorLabel">Registrar Conductor</h2>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -11,6 +11,7 @@
             <div class="modal-body">
                 <form id="formRegistroConductor">
                     @csrf
+                    <input type="hidden" id="conductorId" name="id"> <!-- Campo oculto para el ID del conductor -->
                     <div class="form-group">
                         <label for="nombre">Nombre:</label>
                         <input type="text" class="form-control" id="nombre" name="nombre" required>
@@ -62,38 +63,37 @@
                         <label for="ciudad">Ciudad:</label>
                         <input type="text" class="form-control" id="ciudad" name="ciudad">
                     </div>
-                    <div class="form-group form-check">
-                        <input type="checkbox" class="form-check-input" id="activo" name="activo">
-                        <label class="form-check-label" for="activo">Activo</label>
-                    </div>
                     <button type="submit" class="btn btn-primary">Registrar</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
 @push('scripts')
 <script>
+    let editingConductorId = null; // Variable para almacenar el ID del conductor en edición
+
     document.getElementById('formRegistroConductor').addEventListener('submit', function (event) {
         event.preventDefault(); // Evitar el envío por defecto del formulario
 
-        // Crear un objeto FormData para obtener los datos del formulario
         const formData = new FormData(this);
-
-        // Convertir FormData a un objeto JSON
         const data = {};
         formData.forEach((value, key) => {
             data[key] = value;
         });
 
-        // Realizar la solicitud POST a la API
-        fetch('/api/conductores', { // Reemplaza con la URL de tu API
-            method: 'POST',
+        // Verificar si estamos editando o creando un nuevo conductor
+        const url = editingConductorId ? `/api/conductores/${editingConductorId}` : '/api/conductores';
+        const method = editingConductorId ? 'PUT' : 'POST'; // Usar PUT para editar, POST para crear
+
+        fetch(url, {
+            method: method,
             headers: {
-                'Content-Type': 'application/json', // Indicar que el contenido es JSON
-                'X-CSRF-TOKEN': '{{ csrf_token() }}' // Incluir el token CSRF
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
-            body: JSON.stringify(data) // Convertir el objeto a JSON
+            body: JSON.stringify(data)
         })
         .then(response => {
             if (!response.ok) {
@@ -103,16 +103,63 @@
         })
         .then(data => {
             console.log('Éxito:', data);
+            Swal.fire({
+                icon: 'success',
+                title: 'Registro exitoso',
+                text: 'El conductor ha sido registrado correctamente.',
+            });
             // Aquí puedes agregar lógica para manejar una respuesta exitosa
-            // Ejemplo: Cerrar el modal, limpiar el formulario, etc.
             $('#modalRegistroConductor').modal('hide');
             document.getElementById('formRegistroConductor').reset(); // Limpiar el formulario
+            editingConductorId = null; // Resetear el ID de edición
+            fetchConductores(); // Actualizar la tabla
         })
         .catch((error) => {
             console.error('Error:', error);
-            // Aquí puedes agregar lógica para manejar el error
+        });
+    });
+
+    // Función para cargar los datos del conductor en el formulario para editar
+    function editar(id) {
+        editingConductorId = id; // Guardar el ID del conductor que estamos editando
+        $.ajax({
+            url: `/api/conductores/${id}`,
+            method: 'GET',
+            success: function(conductor) {
+                // Rellenar el formulario con los datos del conductor
+                $('#modalRegistroConductorLabel').text('Editar Conductor');
+                $('#nombre').val(conductor.nombre);
+                $('#apellido').val(conductor.apellido);
+                $('#fecha_nacimiento').val(conductor.fecha_nacimiento);
+                $('#genero').val(conductor.genero);
+                $('#licencia').val(conductor.licencia);
+                $('#tipo_licencia').val(conductor.tipo_licencia);
+                $('#telefono').val(conductor.telefono);
+                $('#email').val(conductor.email);
+                $('#direccion').val(conductor.direccion);
+                $('#ciudad').val(conductor.ciudad);
+                $('#modalRegistroConductor').modal('show'); // Mostrar el modal
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudieron cargar los datos del conductor.',
+                });
+            }
+        });
+    }
+
+    $(document).ready(function() {
+        fetchConductores();
+
+        $("#searchButton").click(function() {
+            let searchText = $("#searchText").val();
+            if (searchText.trim() !== "") {
+                // Aquí podrías agregar la lógica de filtrado si es necesario
+                fetchConductores();
+            }
         });
     });
 </script>
-
 @endpush
