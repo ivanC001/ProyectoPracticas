@@ -1,6 +1,6 @@
+
 @extends('admin.main')
-{{-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script> --}}
+
 @section('contenido')
 <div class="content">
     <div class="container-fluid">
@@ -18,12 +18,10 @@
                     <div class="card-body">
                         <div>
                             <form action="" method="get">
-                                {{-- <form action="{{ route('Conductor.index') }}" method="get"> --}}
                                 <div class="input-group">
-                                    <input name="texto" type="text" class="form-control" value="">
-                                    {{-- <input name="texto" type="text" class="form-control" value="--<{{ $texto }}> --{}"> --}}
+                                    <input name="texto" type="text" class="form-control" id="searchText" placeholder="Buscar...">
                                     <div class="input-group-append">
-                                        <button type="submit" class="btn btn-info">
+                                        <button type="button" class="btn btn-info" id="searchButton">
                                             <i class="fas fa-search"></i> Buscar
                                         </button>                      
                                     </div>
@@ -35,36 +33,22 @@
                                 <table class="table table-striped table-bordered table-hover table-sm">
                                     <thead>
                                         <tr>
-                                            <th width="20%">Opciones</th>
+                                            <th width="10%">Opciones</th>
                                             <th width="5%">ID</th>
-                                            <th width="20%">Nombre</th>
-                                            <th width="20%">apellidos</th>
-                                            <th width="20%">Licencia</th>
-                                            <th width="15%">estado</th>
-
+                                            <th width="15%">Nombre</th>
+                                            <th width="15%">Apellidos</th>
+                                            <th width="12%">Tipo de Licencia</th>
+                                            <th width="10%">Licencia</th>
+                                            <th width="10%">Teléfono</th>
+                                            <th width="15%">Email</th>
+                                            <th width="23%">Dirección</th>
                                         </tr>
+                                        
                                     </thead>
-                                    <tbody>
-                                        {{-- @foreach($registros as $reg)
-                                            <tr>
-                                                <td>
-                                                    <button type="button" class="btn btn-warning btn-sm editar" onclick="editar({{ $reg->id }})">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar({{ $reg->id }})">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                                <td>{{ $reg->id }}</td>
-                                                <td>{{ $reg->nombre }}</td>
-                                                <td>{{ $reg->apellido }}</td>
-                                                <td>{{ $reg->licencia }}</td>
-                                                <td>{{ $reg->activo }}</td>
-                                            </tr>
-                                        @endforeach --}}
+                                    <tbody id="conductorTableBody">
+                                        {{-- Aquí se llenará dinámicamente la tabla con JavaScript --}}
                                     </tbody>
                                 </table>
-                                {{-- {{ $registros->appends(['texto' => $texto]) }} --}}
                             </div>
                         </div>
                     </div>
@@ -77,69 +61,69 @@
 @include('vista_conductor.registro')
 
 @endsection
-{{-- 
+
 @push('scripts')
 <script>
-    $(document).ready(function() {
-        $('#formRegistroConductor').on('submit', function(event) {
-            event.preventDefault();
+    // Function to fetch conductores data from API
+    function fetchConductores() {
+        $.ajax({
+            url: "http://127.0.0.1:8000/api/conductores",
+            method: "GET",
+            success: function(response) {
+                let tbody = $("#conductorTableBody");
+                tbody.empty(); // Clear previous results
+                $.each(response, function(index, conductor) {
+                    tbody.append(`
+                        <tr>
+                            <td>
+                                <button type="button" class="btn btn-warning btn-sm editar" onclick="editar(${conductor.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar(${conductor.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                            <td>${conductor.id}</td>
+                            <td>${conductor.nombre}</td>
+                            <td>${conductor.apellido}</td>
+                            <td>${conductor.tipo_licencia}</td>
+                            <td>${conductor.licencia}</td>
+                            <td>${conductor.telefono}</td>
+                            <td>${conductor.email}</td>
+                            <td>${conductor.direccion}</td>
+                    `);
+                });
+            },
+            error: function() {
+                alert("Error fetching conductores data.");
+            }
+        });
+    }
 
-            $.ajax({
-                url: "{{ route('Conductor.store') }}",
-                method: "POST",
-                data: $(this).serialize(),
-                success: function(response) {
-                    if (response.success) {
-                        $('#modalRegistroConductor').modal('hide');
-                        alert('Registro creado satisfactoriamente');
-                        location.reload();
-                    } else {
-                        alert('Error al crear el registro');
-                    }
-                },
-                error: function(response) {
-                    alert('Error al crear el registro');
-                }
-            });
+    // Load conductores data when page loads
+    $(document).ready(function() {
+        fetchConductores();
+
+        // Search functionality (filtering could also be added to the backend)
+        $("#searchButton").click(function() {
+            let searchText = $("#searchText").val();
+            if (searchText.trim() !== "") {
+                // Add filtering logic here if needed, for now it will just refresh the table
+                fetchConductores();
+            }
         });
     });
 
+    // Example function to handle edit
+    function editar(id) {
+        alert('Editar conductor ' + id);
+    }
 
+    // Example function to handle delete
     function eliminar(id) {
-      Swal.fire({
-            title: 'Eliminar registro',
-            text: "¿Esta seguro de querer eliminar el registro?",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Si',
-            cancelButtonText: 'No'
-          }).then((result) => {
-              if (result.isConfirmed) {
-                $.ajax({
-                    method: 'DELETE',
-                    url: `{{url('Conductor')}}/${id}`,
-                    headers:{
-                      'X-CSRF-TOKEN':$('meta[name="csrf-token"]').attr('content')
-                    },
-                    success: function(res){
-                      window.location.reload();
-                      Swal.fire({
-                          icon: res.status,
-                          title: res.message,
-                          showConfirmButton: false,
-                          timer: 1500
-                      });
-                    },
-                    error: function (res){
-
-                    }
-                });
-                
-              }
-          })
-        
-      }
+        alert('Eliminar conductor ' + id);
+    }
 </script>
-@endpush --}}
+@endpush
+
+
