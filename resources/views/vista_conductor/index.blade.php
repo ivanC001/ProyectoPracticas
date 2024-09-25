@@ -17,9 +17,11 @@
                     </div>
                     <div class="card-body">
                         <div>
-                            <form action="{{ route('Conductor.index') }}" method="get">
+                            <form action="" method="get">
+                                {{-- <form action="{{ route('Conductor.index') }}" method="get"> --}}
                                 <div class="input-group">
-                                    <input name="texto" type="text" class="form-control" value="{{ $texto }}">
+                                    <input name="texto" type="text" class="form-control" value="">
+                                    {{-- <input name="texto" type="text" class="form-control" value="--<{{ $texto }}> --{}"> --}}
                                     <div class="input-group-append">
                                         <button type="submit" class="btn btn-info">
                                             <i class="fas fa-search"></i> Buscar
@@ -43,7 +45,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($registros as $reg)
+                                        {{-- @foreach($registros as $reg)
                                             <tr>
                                                 <td>
                                                     <button type="button" class="btn btn-warning btn-sm editar" onclick="editar({{ $reg->id }})">
@@ -59,10 +61,10 @@
                                                 <td>{{ $reg->licencia }}</td>
                                                 <td>{{ $reg->activo }}</td>
                                             </tr>
-                                        @endforeach
+                                        @endforeach --}}
                                     </tbody>
                                 </table>
-                                {{ $registros->appends(['texto' => $texto]) }}
+                                {{-- {{ $registros->appends(['texto' => $texto]) }} --}}
                             </div>
                         </div>
                     </div>
@@ -75,7 +77,7 @@
 @include('vista_conductor.registro')
 
 @endsection
-
+{{-- 
 @push('scripts')
 <script>
     $(document).ready(function() {
@@ -140,4 +142,4 @@
         
       }
 </script>
-@endpush
+@endpush --}}

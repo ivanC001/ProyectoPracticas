@@ -119,7 +119,7 @@
             <!-- Add icons to the links using the .nav-icon class
                 with font-awesome or any other icon font library -->
             <li id="liConductor" class="nav-item">
-              <a id="aConductor" href="/Conductor" class="nav-link">
+              <a id="aConductor" href="/conductor" class="nav-link">
                 <i class="nav-icon fas fa-th"></i>
                 <p>
                   Registro Conductor
