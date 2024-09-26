@@ -7,7 +7,7 @@ Route::get('/', function () {
 Route::get('/conductor', function () {
     return view('vista_conductor.index');
 });
-Route::get('/conductor/create', function () {
-    return view('vista_conductor.create');
+Route::get('/camion', function () {
+    return view('camion.index');
 });
 
