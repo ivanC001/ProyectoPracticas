@@ -28,7 +28,6 @@ class ConductorController extends Controller
         $conductor->save();
     
         return response()->json($conductor, 201);
-        return response()->json($conductor, 201);
     }
 
     public function show($id)
