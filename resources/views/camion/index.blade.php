@@ -1,4 +1,3 @@
-
 @extends('admin.main')
 
 @section('contenido')
@@ -9,8 +8,8 @@
                 <div class="card">
                     <div class="card-header">
                         <h5 class="m-0">
-                            Registro de conductor 
-                            <button class="btn btn-primary" data-toggle="modal" data-target="#modalRegistroConductor">
+                            Registro camiones 
+                            <button class="btn btn-primary" data-toggle="modal" data-target="#modalRegistroCamion">
                                 <i class="fas fa-file"></i> Nuevo
                             </button>
                         </h5>
@@ -35,17 +34,15 @@
                                         <tr>
                                             <th width="10%">Opciones</th>
                                             <th width="5%">ID</th>
-                                            <th width="15%">Nombre</th>
-                                            <th width="15%">Apellidos</th>
-                                            <th width="12%">Tipo de Licencia</th>
-                                            <th width="10%">Licencia</th>
-                                            <th width="10%">Teléfono</th>
-                                            <th width="15%">Email</th>
-                                            <th width="23%">Dirección</th>
+                                            <th width="15%">Fecha ingreso</th>
+                                            <th width="15%">Placa tracto</th>
+                                            <th width="15%">Placa carreto</th>
+                                            <th width="10%">Color</th>
+                                            <th width="10%">MTC</th>
+                                            <th width="10%">Foto camino</th>
                                         </tr>
-                                        
                                     </thead>
-                                    <tbody id="conductorTableBody">
+                                    <tbody id="camionTableBody">
                                         {{-- Aquí se llenará dinámicamente la tabla con JavaScript --}}
                                     </tbody>
                                 </table>
@@ -58,106 +55,96 @@
     </div>
 </div>
 
-@include('vista_conductor.registro')
+@include('camion.registro')
 
 @endsection
 
 @push('scripts')
 <script>
-    // Function to fetch conductores data from API
-    function fetchConductores() {
+    // Function to fetch camiones data from API
+    function fetchCamiones() {
         $.ajax({
-            url: "http://127.0.0.1:8000/api/conductores",
+            url: "http://127.0.0.1:8000/api/camiones",
             method: "GET",
             success: function(response) {
-                let tbody = $("#conductorTableBody");
+                let tbody = $("#camionTableBody");
                 tbody.empty(); 
-                $.each(response, function(index, conductor) {
+                $.each(response, function(index, camion) {
                     tbody.append(`
                         <tr>
                             <td>
-                                <button type="button" class="btn btn-warning btn-sm editar" onclick="editar(${conductor.id})">
+                                <button type="button" class="btn btn-warning btn-sm editar" onclick="editar(${camion.id})">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 
-                                <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar(${conductor.id})">
+                                <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar(${camion.id})">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
-                            <td>${conductor.id}</td>
-                            <td>${conductor.nombre}</td>
-                            <td>${conductor.apellido}</td>
-                            <td>${conductor.tipo_licencia}</td>
-                            <td>${conductor.licencia}</td>
-                            <td>${conductor.telefono}</td>
-                            <td>${conductor.email}</td>
-                            <td>${conductor.direccion}</td>
+                            <td>${camion.id}</td>
+                            <td>${camion.fecha_ingreso}</td>
+                            <td>${camion.placa_tracto}</td>
+                            <td>${camion.placa_carreto}</td>
+                            <td>${camion.color}</td>
+                            <td>${camion.mtc}</td>
+                            <td>${camion.foto_camino}</td>
+                        </tr>
                     `);
                 });
             },
             error: function() {
-                alert("Error fetching conductores data.");
+                alert("Error fetching Camion data.");
             }
         });
     }
 
-    // Load conductores data when page loads
+    // Load camiones data when page loads
     $(document).ready(function() {
-        fetchConductores();
+        fetchCamiones();
 
         // Search functionality (filtering could also be added to the backend)
         $("#searchButton").click(function() {
             let searchText = $("#searchText").val();
             if (searchText.trim() !== "") {
                 // Add filtering logic here if needed, for now it will just refresh the table
-                fetchConductores();
+                fetchCamiones();
             }
         });
     });
 
-    // Example function to handle edit
-    // function editar(id) {
-    //     alert('Editar conductor ' + id);
-    // }
-
-
     function eliminar(id) {
-      Swal.fire({
+        Swal.fire({
             title: 'Eliminar registro',
-            text: "¿Esta seguro de querer eliminar el registro?",
+            text: "¿Está seguro de querer eliminar el registro?",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
-            confirmButtonText: 'Si',
+            confirmButtonText: 'Sí',
             cancelButtonText: 'No'
-          }).then((result) => {
-              if (result.isConfirmed) {
+        }).then((result) => {
+            if (result.isConfirmed) {
                 $.ajax({
                     method: 'DELETE',
-                    url:  `http://127.0.0.1:8000/api/conductores/${id}`,
+                    url: `http://127.0.0.1:8000/api/camiones/${id}`,
                     headers:{
-                      'X-CSRF-TOKEN':$('meta[name="csrf-token"]').attr('content')
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
                     success: function(res){
-                      window.location.reload();
-                      Swal.fire({
-                          icon: res.status,
-                          title: res.message,
-                          showConfirmButton: false,
-                          timer: 1500
-                      });
+                        window.location.reload();
+                        Swal.fire({
+                            icon: res.status,
+                            title: res.message,
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
                     },
-                    error: function (res){
-
+                    error: function(res){
+                        alert("Error al eliminar el camión.");
                     }
                 });
-                
-              }
-          })
-        
-      }
+            }
+        });
+    }
 </script>
 @endpush
-
-
