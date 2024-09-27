@@ -10,4 +10,6 @@ Route::get('/conductor', function () {
 Route::get('/camion', function () {
     return view('camion.index');
 });
-
+Route::get('/rutas', function () {
+    return view('ruta.index');
+});
