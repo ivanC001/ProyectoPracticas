@@ -12,7 +12,7 @@ class RutaController extends Controller
     public function index()
     {
         $rutas = Ruta::with(['conductor', 'camion'])->get();  // Carga las relaciones
-        return response()->json($rutas);
+        return response()->json($rutas); 
     }
 
     // Crear una nueva ruta
