@@ -68,13 +68,13 @@
             url: "http://127.0.0.1:8000/api/rutas",
             method: "GET",
             success: function(response) {
-                console.log(response); // Para revisar la respuesta
+                console.log(response); // <-- Agrega esto para revisar la respuesta
 
                 let tbody = $("#rutaTableBody");
-                tbody.empty();
-
-                // Asegúrate de que 'response.rutas' sea un array con rutas
-                $.each(response.rutas, function(index, rutas) {
+                tbody.empty(); 
+                
+                // Asegúrate de que 'response' sea un array con rutas
+                $.each(response, function(index, rutas) {
                     tbody.append(`
                         <tr>
                             <td>
@@ -112,7 +112,7 @@
         $("#searchButton").click(function() {
             let searchText = $("#searchText").val();
             if (searchText.trim() !== "") {
-                // Aquí puedes agregar lógica de filtrado según sea necesario
+                // Agrega la lógica de filtrado aquí si es necesario, por ahora solo actualizará la tabla
                 fetchRutas();
             }
         });
@@ -132,11 +132,11 @@
             if (result.isConfirmed) {
                 $.ajax({
                     method: 'DELETE',
-                    url: `http://127.0.0.1:8000/api/rutas/${id}`,
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    url:  `http://127.0.0.1:8000/api/rutas/${id}`,
+                    headers:{
+                      'X-CSRF-TOKEN':$('meta[name="csrf-token"]').attr('content')
                     },
-                    success: function(res) {
+                    success: function(res){
                         window.location.reload();
                         Swal.fire({
                             icon: res.status,
@@ -145,7 +145,7 @@
                             timer: 1500
                         });
                     },
-                    error: function(res) {
+                    error: function (res){
                         console.log(res);
                     }
                 });
