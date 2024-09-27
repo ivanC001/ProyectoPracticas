@@ -11,11 +11,20 @@ class RutaController extends Controller
     // Obtener todas las rutas
     public function index()
     {
-        $rutas = Ruta::with(['conductor', 'camion'])->get();  // Carga las relaciones
+        $rutas = Ruta::with([
+            'conductor' => function ($query) {
+                $query->whereNull('deleted_at'); // Solo conductores no eliminados
+            },
+            'camion' => function ($query) {
+                $query->whereNull('deleted_at'); // Solo camiones no eliminados
+            }
+        ])->get();
+    
         return response()->json($rutas);
     }
+    
 
-    // Crear una nueva ruta
+    
     public function store(RutaRequest $request)
     {
         $validatedData = $request->validated();  // Obtener los datos validados
