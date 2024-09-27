@@ -126,11 +126,11 @@
                 </p>
               </a>
             </li>
-            <li id="liAlmacen" class="nav-item">
-              <a id="aAlmacen" href="#" class="nav-link">
+            <li id="liCamion" class="nav-item">
+              <a id="liCamion" href="/camion" class="nav-link">
                 <i class="nav-icon fa fa-table"></i>
                 <p>
-                  Almacén
+                  Registro Trailer
                   <i class="right fas fa-angle-left"></i>
                 </p>
               </a>
