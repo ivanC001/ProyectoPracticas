@@ -118,39 +118,39 @@
           <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
             <!-- Add icons to the links using the .nav-icon class
                 with font-awesome or any other icon font library -->
-            <li id="liConductor" class="nav-item">
-              <a id="aConductor" href="/conductor" class="nav-link">
+            <li id="liConductors" class="nav-item">
+              <a id="aConductors" href="/" class="nav-link">
                 <i class="nav-icon fas fa-th"></i>
                 <p>
-                  Registro Conductor
+                  Control Facturas
                 </p>
               </a>
             </li>
-            <li id="liCamion" class="nav-item">
-              <a id="liCamion" href="/camion" class="nav-link">
+            <li id="liControl" class="nav-item">
+              <a id="liControl" href="" class="nav-link">
                 <i class="nav-icon fa fa-table"></i>
                 <p>
-                  Registro Trailer
+                  Control de Transporte
                   <i class="right fas fa-angle-left"></i>
                 </p>
               </a>
               <ul class="nav nav-treeview">
                 <li class="nav-item">
-                  <a id="liUnidadMedida" href="/unidades" class="nav-link">
+                  <a id="liConductor" href="/conductor" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
-                    <p>Unidades</p>
+                    <p>Conductor</p>
                   </a>
                 </li>
                 <li class="nav-item">
-                  <a id="liCategoria" href="/categoria" class="nav-link">
+                  <a id="liCamion" href="/camion" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
-                    <p>Categorías</p>
+                    <p>Trailer</p>
                   </a>
                 </li>
                 <li class="nav-item">
-                  <a id="liProducto" href="/productos" class="nav-link">
+                  <a id="liRutas" href="/rutas" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
-                    <p>Productos</p>
+                    <p>Ruta</p>
                   </a>
                 </li>
               </ul>
