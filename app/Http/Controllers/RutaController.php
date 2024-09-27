@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ruta;
-use App\Models\Camion;
-use App\Models\Conductor;
 use App\Http\Requests\RutaRequest;  // Importar el request de validación
 use Illuminate\Http\Request;
 
@@ -12,24 +10,12 @@ class RutaController extends Controller
 {
     // Obtener todas las rutas
     public function index()
-{
-    $rutas = Ruta::whereNull('deleted_at')->get(); // Solo rutas no eliminadas
+    {
+        $rutas = Ruta::with(['conductor', 'camion'])->get();  // Carga las relaciones
+        return response()->json($rutas);
+    }
 
-    $conductores = Conductor::whereNull('deleted_at')->get();
-
-    $camiones = Camion::whereNull('deleted_at')->get();
-
-    return response()->json([
-        'rutas' => $rutas,             // Solo rutas activas
-        'conductores' => $conductores, // Conductores no eliminados
-        'camiones' => $camiones        // Camiones no eliminados
-    ]);
-}
-
-
-
-
-
+    // Crear una nueva ruta
     public function store(RutaRequest $request)
     {
         $validatedData = $request->validated();  // Obtener los datos validados
