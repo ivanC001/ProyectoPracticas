@@ -3,6 +3,8 @@
 use App\Http\Controllers\ConductorController;
 use App\Http\Controllers\CamionController;
 use App\Http\Controllers\RutaController;
+use App\Http\Controllers\ViaticoController;
+use App\Http\Controllers\CombustibleController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -32,3 +34,22 @@ Route::post('rutas', [RutaController::class, 'store']);  // Crear una nueva ruta
 Route::get('rutas/{id}', [RutaController::class, 'show']);  // Mostrar una ruta específica
 Route::put('rutas/{id}', [RutaController::class, 'update']);  // Actualizar una ruta específica
 Route::delete('rutas/{id}', [RutaController::class, 'destroy']);  // Eliminar una ruta
+
+//te aqui a habajo falta
+
+// Rutas API para viaticos
+Route::get('viaticos', [ViaticoController::class, 'index']); // Listar todos los viáticos no eliminados
+Route::post('viaticos', [ViaticoController::class, 'store']); // Crear un nuevo viático
+Route::get('viaticos/{id}', [ViaticoController::class, 'show']); // Mostrar un viático específico
+Route::put('viaticos/{id}', [ViaticoController::class, 'update']); // Actualizar un viático
+Route::delete('viaticos/{id}', [ViaticoController::class, 'destroy']); // Eliminar un viático (soft delete)
+
+
+
+// Rutas API para combustible
+Route::get('combustibles', [CombustibleController::class, 'index']); // Listar todos los registros de combustibles no eliminados
+Route::post('combustibles', [CombustibleController::class, 'store']); // Crear un nuevo registro de combustible
+Route::get('combustibles/{id}', [CombustibleController::class, 'show']); // Mostrar un registro específico de combustible
+Route::put('combustibles/{id}', [CombustibleController::class, 'update']); // Actualizar un registro de combustible
+Route::delete('combustibles/{id}', [CombustibleController::class, 'destroy']); // Eliminar un registro de combustible (soft delete)
+

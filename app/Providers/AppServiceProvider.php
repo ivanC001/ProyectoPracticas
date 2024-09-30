@@ -21,7 +21,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Route::middleware('api')
-        ->prefix('api')
-        ->group(base_path('routes/api.php'));
+            ->prefix('api')
+            ->group(base_path('routes/api.php'));
+
+        // app('router')->getMiddleware('api', function ($request, $next) {
+        //     $request->headers->set('Accept', 'application/json');
+        //     return $next($request);
+        // });
     }
 }
