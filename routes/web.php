@@ -13,3 +13,9 @@ Route::get('/camion', function () {
 Route::get('/rutas', function () {
     return view('ruta.index');
 });
+Route::get('/viaticos', function () {
+    return view('viaticos.index');
+});
+Route::get('/combustible', function () {
+    return view('combustible.index');
+});

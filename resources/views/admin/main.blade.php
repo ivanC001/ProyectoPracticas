@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="{{asset('assets/css/jquery.dataTables.min.css')}}">
   <style>
     .sidebar-dark-blue {
-      background: #455279 !important;
+      background: #2b91bd !important;
     }
   </style>
   <!--Estilos -->
