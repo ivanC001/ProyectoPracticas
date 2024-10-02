@@ -50,7 +50,7 @@
                     <!-- Campo para la descripción -->
                     <div class="form-group">
                         <label for="descripcion">Descripción:</label>
-                        <textarea class="form-control" id="descripcion" name="descripcion" required></textarea>
+                        <textarea class="form-control" id="descripcion" name="descripcion"></textarea>
                     </div>
 
                     <button type="submit" class="btn btn-primary">Registrar Viático</button>
@@ -64,6 +64,10 @@
 @push('scripts')
 <script>
     let editingViaticoId = null;
+     // Obtener la fecha actual
+    const today = new Date().toISOString().split('T')[0];
+    // Establecer la fecha de hoy como valor predeterminado
+    document.getElementById('fecha').value = today;
 
     document.getElementById('formRegistroViatico').addEventListener('submit', function (event) {
         event.preventDefault();

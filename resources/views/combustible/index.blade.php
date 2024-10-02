@@ -79,7 +79,7 @@
             $.each(response, function(index, combustible) {
                 // Construir la información de la ruta
                 let combustibleInfo = combustible.ruta 
-                    ? `Ruta: ${combustible.ruta.id} - De ${combustible.ruta.origen} a ${combustible.ruta.destino}` 
+                    ? `${combustible.ruta.id} - De ${combustible.ruta.origen} a ${combustible.ruta.destino}` 
                     : 'Ruta: N/A';
 
                 // Añadir el registro a la tabla
