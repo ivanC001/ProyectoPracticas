@@ -5,6 +5,7 @@ use App\Http\Controllers\CamionController;
 use App\Http\Controllers\RutaController;
 use App\Http\Controllers\ViaticoController;
 use App\Http\Controllers\CombustibleController;
+use App\Domains\Reportes\Controllers\ReporteController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -53,3 +54,8 @@ Route::get('combustibles/{id}', [CombustibleController::class, 'show']); // Most
 Route::put('combustibles/{id}', [CombustibleController::class, 'update']); // Actualizar un registro de combustible
 Route::delete('combustibles/{id}', [CombustibleController::class, 'destroy']); // Eliminar un registro de combustible (soft delete)
 
+// Reportes 
+
+Route::get('/reporte/consumo-camion-ruta', [ReporteController::class, 'consumoPorCamionPorRuta']);
+Route::get('/reporte/media-consumo-distancia', [ReporteController::class, 'mediaConsumoPorDistancia']);
+Route::get('/reporte/consumo-total-mes', [ReporteController::class, 'consumoTotalPorMes']);
