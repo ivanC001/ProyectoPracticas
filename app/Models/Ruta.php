@@ -30,6 +30,19 @@ class Ruta extends Model
     }
 
     public function camion()
-    { return $this->belongsTo(Camion::class); }
-}
+    {
+        return $this->belongsTo(Camion::class);
+    }
 
+    // relacion con viaticos
+    public function viaticos()
+    {
+        return $this->hasMany(Viatico::class, 'ruta_id');
+    }
+
+    // relacion con combustible
+    public function combustibles()
+    {
+        return $this->hasMany(Combustible::class, 'ruta_id');
+    }
+}

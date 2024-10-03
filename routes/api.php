@@ -7,6 +7,7 @@ use App\Http\Controllers\ViaticoController;
 use App\Http\Controllers\CombustibleController;
 use App\Domains\Reportes\Controllers\ReporteController;
 
+
 use Illuminate\Support\Facades\Route;
 
 // Rutas API para conductores
@@ -56,6 +57,8 @@ Route::delete('combustibles/{id}', [CombustibleController::class, 'destroy']); /
 
 // Reportes 
 
-Route::get('/reporte/consumo-camion-ruta', [ReporteController::class, 'consumoPorCamionPorRuta']);
-Route::get('/reporte/media-consumo-distancia', [ReporteController::class, 'mediaConsumoPorDistancia']);
-Route::get('/reporte/consumo-total-mes', [ReporteController::class, 'consumoTotalPorMes']);
+Route::get('reporte/viaticosRuta/{id}', [ReporteController::class, 'viaticosPorRuta']);
+Route::get('reporte/combustibleRuta/{id}', [ReporteController::class, 'combustiblePorRuta']);
+Route::get('reporte/completoRuta/{id}', [ReporteController::class, 'reporteCompletoPorRuta']);
+// Ruta para obtener rutas, viáticos y combustible según los filtros (ID, fechas o todo)
+Route::get('reporte/rutas-consumos', [ReporteController::class, 'rutasConsumos']);

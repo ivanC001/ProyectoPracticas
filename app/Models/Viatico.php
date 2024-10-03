@@ -24,4 +24,5 @@ class Viatico extends Model
     {
         return $this->belongsTo(Ruta::class);
     }
+
 }
