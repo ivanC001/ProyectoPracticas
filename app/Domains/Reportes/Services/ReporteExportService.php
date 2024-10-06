@@ -6,8 +6,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-class ReporteExportService
-{
+class ReporteExportService{
     public function exportarRutas($rutas)
     {
         // Crear un nuevo archivo Excel
@@ -79,7 +78,7 @@ class ReporteExportService
             if ($combustibles && count($combustibles) > 0) {
                 foreach ($combustibles as $combustible) {
                     $newSheet->setCellValue('A' . $row, 'Combustible');
-                    $newSheet->setCellValue('B' . $row, $combustible->fecha);
+                    $newSheet->setCellValue('B' . $row, $combustible->fecha_hora);
                     $newSheet->setCellValue('C' . $row, $combustible->num_factura);
                     $newSheet->setCellValue('D' . $row, $combustible->importe);
                     $row++;
