@@ -56,9 +56,8 @@ Route::put('combustibles/{id}', [CombustibleController::class, 'update']); // Ac
 Route::delete('combustibles/{id}', [CombustibleController::class, 'destroy']); // Eliminar un registro de combustible (soft delete)
 
 // Reportes 
-
+Route::get('reporte/rutas-consumos', [ReporteController::class, 'rutasConsumos']);
 Route::get('reporte/viaticosRuta/{id}', [ReporteController::class, 'viaticosPorRuta']);
 Route::get('reporte/combustibleRuta/{id}', [ReporteController::class, 'combustiblePorRuta']);
 Route::get('reporte/completoRuta/{id}', [ReporteController::class, 'reporteCompletoPorRuta']);
 // Ruta para obtener rutas, viáticos y combustible según los filtros (ID, fechas o todo)
-Route::get('reporte/rutas-consumos', [ReporteController::class, 'rutasConsumos']);

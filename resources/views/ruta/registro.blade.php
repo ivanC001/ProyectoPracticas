@@ -1,98 +1,82 @@
-<!-- Modal de Registro/Edición de Combustible -->
-<div class="modal fade" id="modalRegistroCombustible" tabindex="-1" role="dialog" aria-labelledby="modalRegistroCombustibleLabel" aria-hidden="true">
+<!-- Modal de Registro/Edición de Ruta -->
+<div class="modal fade" id="modalRegistroRuta" tabindex="-1" role="dialog" aria-labelledby="modalRegistroRutaLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title" id="modalRegistroCombustibleLabel">Registrar Combustible</h2>
+                <h2 class="modal-title" id="modalRegistroRutaLabel">Registrar Ruta</h2>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <form id="formRegistroCombustible" enctype="multipart/form-data">
+                <form id="formRegistroRuta" enctype="multipart/form-data">
                     @csrf
-                    <input type="hidden" id="combustibleId" name="id"> <!-- Campo oculto para el ID del combustible -->
+                    <input type="hidden" id="rutaId" name="id"> <!-- Campo oculto para el ID de la ruta -->
                     <input type="hidden" name="_method" id="method_field" value="POST"> <!-- Campo oculto para emular PUT -->
 
-                    <!-- Campo para la ruta de origen/destino -->
+                    <!-- Desplegable para seleccionar el Conductor -->
                     <div class="form-group">
-                        <label for="ruta">Ruta:</label>
-                        <select class="form-control" id="ruta" name="ruta_id" required>
-                            <option value="">Seleccione una ruta</option>
+                        <label for="conductor">Conductor:</label>
+                        <select class="form-control" id="conductor" name="conductor_id" required>
+                            <option value="">Seleccione un conductor</option>
                             <!-- Opciones dinámicas con JavaScript -->
                         </select>
                     </div>
 
-                    <!-- Campo para el número de factura -->
+                    <!-- Desplegable para seleccionar el Camión -->
                     <div class="form-group">
-                        <label for="num_factura">Número de Factura:</label>
-                        <input type="text" class="form-control" id="num_factura" name="num_factura" required>
+                        <label for="camion">Camión:</label>
+                        <select class="form-control" id="camion" name="camion_id" required>
+                            <option value="">Seleccione un camión</option>
+                            <!-- Opciones dinámicas con JavaScript -->
+                        </select>
                     </div>
 
-                    <!-- Campo para el grifo -->
+                    <!-- Campo para la ruta de origen -->
                     <div class="form-group">
-                        <label for="grifo">Grifo:</label>
-                        <input type="text" class="form-control" id="grifo" name="grifo" required>
+                        <label for="origen">Origen:</label>
+                        <input type="text" class="form-control" id="origen" name="origen" required>
                     </div>
 
-                    <!-- Campo para la fecha y hora -->
+                    <!-- Campo para la ruta de destino -->
                     <div class="form-group">
-                        <label for="fecha_hora">Fecha y Hora:</label>
-                        <input type="datetime-local" class="form-control" id="fecha_hora" name="fecha_hora" required>
+                        <label for="destino">Destino:</label>
+                        <input type="text" class="form-control" id="destino" name="destino" required>
                     </div>
 
-                    <!-- Campo para los galones de combustible -->
+                    <!-- Campo para la fecha de salida -->
                     <div class="form-group">
-                        <label for="galonesCombustible">Galones de Combustible:</label>
-                        <input type="number" class="form-control" id="galonesCombustible" name="galonesCombustible" required>
+                        <label for="fecha_inicio">Fecha de Salida:</label>
+                        <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" required>
                     </div>
 
-                    <!-- Campo para el importe -->
+                    <!-- Campo para la fecha de llegada -->
                     <div class="form-group">
-                        <label for="importe">Importe:</label>
-                        <input type="number" step="0.01" class="form-control" id="importe" name="importe" required>
+                        <label for="fecha_fin">Fecha de Llegada:</label>
+                        <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" required>
                     </div>
 
-                    <!-- Campo para el kilometraje inicial -->
-                    <div class="form-group">
-                        <label for="kilometraje_inicial">Kilometraje Inicial:</label>
-                        <input type="number" class="form-control" id="kilometraje_inicial" name="kilometraje_inicial" required>
-                    </div>
-
-                    <!-- Campo para el kilometraje final -->
-                    <div class="form-group">
-                        <label for="kilometraje_final">Kilometraje Final:</label>
-                        <input type="number" class="form-control" id="kilometraje_final" name="kilometraje_final" required>
-                    </div>
-
-                    <!-- Campo para el tipo de combustible -->
-                    <div class="form-group">
-                        <label for="tipo_combustible">Tipo de Combustible:</label>
-                        <input type="text" class="form-control" id="tipo_combustible" name="tipo_combustible" required>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">Registrar Combustible</button>
+                    <button type="submit" class="btn btn-primary">Registrar Ruta</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
 
-
 @push('scripts')
 <script>
-    let editingCombustibleId = null; // Variable para almacenar el ID del combustible en edición
+    let editingRutaId = null; // Variable para almacenar el ID de la ruta en edición
 
-    // Evento para el formulario de registro/edición de combustibles
-    document.getElementById('formRegistroCombustible').addEventListener('submit', function (event) {
+    // Evento para el formulario de registro/edición de rutas
+    document.getElementById('formRegistroRuta').addEventListener('submit', function (event) {
         event.preventDefault(); // Evitar el envío por defecto del formulario
 
         const formData = new FormData(this);
-        const method = editingCombustibleId ? 'PUT' : 'POST'; // Usar PUT si estamos editando
-        const url = editingCombustibleId ? `/api/combustibles/${editingCombustibleId}` : '/api/combustibles';
+        const method = editingRutaId ? 'PUT' : 'POST'; // Usar PUT si estamos editando
+        const url = editingRutaId ? `/api/rutas/${editingRutaId}` : '/api/rutas';
 
         // Añadir el campo _method al formData si estamos usando PUT
-        if (editingCombustibleId) {
+        if (editingRutaId) {
             formData.append('_method', 'PUT');
         }
 
@@ -108,93 +92,112 @@
             Swal.fire({
                 icon: 'success',
                 title: 'Registro exitoso',
-                text: 'El combustible ha sido registrado correctamente.',
+                text: 'La ruta ha sido registrada correctamente.',
             });
-            $('#modalRegistroCombustible').modal('hide');
-            document.getElementById('formRegistroCombustible').reset(); // Limpiar el formulario
-            editingCombustibleId = null; // Resetear el ID de edición
-            fetchCombustibles(); // Actualizar la tabla de combustibles
+            $('#modalRegistroRuta').modal('hide');
+            document.getElementById('formRegistroRuta').reset(); // Limpiar el formulario
+            editingRutaId = null; // Resetear el ID de edición
+            fetchRutas(); // Actualizar la tabla
         })
         .catch((error) => {
             console.error('Error:', error);
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: error.response?.data?.message || 'Hubo un problema al registrar el combustible.',
+                text: 'Hubo un problema al registrar la ruta.',
             });
         });
     });
 
-    // Función para cargar los datos del combustible en el formulario para editar
+    // Función para cargar los datos de la ruta en el formulario para editar
     function editar(id) {
-        editingCombustibleId = id; // Guardar el ID del combustible que estamos editando
+        editingRutaId = id; // Guardar el ID de la ruta que estamos editando
         $.ajax({
-            url: `/api/combustibles/${id}`,
+            url: `/api/rutas/${id}`,
             method: 'GET',
-            success: function(combustible) {
-                // Rellenar el formulario con los datos del combustible
-                $('#modalRegistroCombustibleLabel').text('Editar Combustible');
-                $('#num_factura').val(combustible.num_factura);
-                $('#grifo').val(combustible.grifo);
-                $('#fecha_hora').val(combustible.fecha_hora);
-                $('#galonesCombustible').val(combustible.galonesCombustible);
-                $('#importe').val(combustible.importe);
-                $('#kilometraje_inicial').val(combustible.kilometraje_inicial);
-                $('#kilometraje_final').val(combustible.kilometraje_final);
-                $('#tipo_combustible').val(combustible.tipo_combustible);
-                $('#ruta').val(combustible.ruta_id); // Seleccionar la ruta correspondiente
+            success: function(ruta) {
+                // Rellenar el formulario con los datos de la ruta
+                $('#modalRegistroRutaLabel').text('Editar Ruta');
+                $('#origen').val(ruta.origen);
+                $('#destino').val(ruta.destino);
+                $('#fecha_inicio').val(ruta.fecha_inicio);
+                $('#fecha_fin').val(ruta.fecha_fin);
+                $('#conductor').val(ruta.conductor_id);
+                $('#camion').val(ruta.camion_id);
                 $('#method_field').val('PUT'); // Cambiar el campo _method a PUT
-                $('#modalRegistroCombustible').modal('show'); // Mostrar el modal
+                $('#modalRegistroRuta').modal('show'); // Mostrar el modal
             },
             error: function() {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: 'No se pudieron cargar los datos del combustible.',
+                    text: 'No se pudieron cargar los datos de la ruta.',
                 });
             }
         });
     }
 
     // Resetear el formulario y el ID cuando se cierre el modal
-    $('#modalRegistroCombustible').on('hidden.bs.modal', function () {
-        editingCombustibleId = null;
+    $('#modalRegistroRuta').on('hidden.bs.modal', function () {
+        editingRutaId = null;
         $('#method_field').val('POST'); // Resetear el método a POST
-        document.getElementById('formRegistroCombustible').reset(); // Limpiar el formulario
+        document.getElementById('formRegistroRuta').reset(); // Limpiar el formulario
     });
 
-    // Cargar las rutas y combustibles cuando la página esté lista
+    // Cargar los conductores, camiones y rutas cuando la página esté lista
     $(document).ready(function() {
+        fetchConductores(); // Cargar la lista de conductores
+        fetchCamiones(); // Cargar la lista de camiones
         fetchRutas(); // Cargar la lista de rutas
-        fetchCombustibles(); // Cargar la lista de combustibles
     });
 
-    // Función para obtener las rutas y llenar el desplegable
-    function fetchRutas() {
+    // Función para obtener los camiones y llenar el desplegable
+    function fetchCamiones() {
         $.ajax({
-            url: "/api/rutas",
+            url: "/api/camiones",
             method: "GET",
-            success: function(rutas) {
-                let rutaSelect = $('#ruta');
-                rutaSelect.empty().append('<option value="">Seleccione una ruta</option>');
-                $.each(rutas, function(index, ruta) {
-                    rutaSelect.append(`<option value="${ruta.id}">Ruta ${ruta.id} - De ${ruta.origen} a ${ruta.destino}</option>`); // Se usa el ID de la ruta
+            success: function(camiones) {
+                let camionSelect = $('#camion');
+                camionSelect.empty().append('<option value="">Seleccione un camión</option>');
+                $.each(camiones, function(index, camion) {
+                    camionSelect.append(`<option value="${camion.id}">${camion.placa_tracto} - ${camion.placa_carreto}</option>`);
                 });
             },
             error: function() {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: 'No se pudieron cargar las rutas.',
+                    text: 'No se pudieron cargar los camiones.',
                 });
             }
         });
     }
 
-    // Función para obtener los combustibles y mostrarlos en la tabla
-    function fetchCombustibles() {
-        // Implementación para cargar combustibles en la tabla de combustibles
+    // Función para obtener los conductores y llenar el desplegable
+    function fetchConductores() {
+        $.ajax({
+            url: "/api/conductores",
+            method: "GET",
+            success: function(conductores) {
+                let conductorSelect = $('#conductor');
+                conductorSelect.empty().append('<option value="">Seleccione un conductor</option>');
+                $.each(conductores, function(index, conductor) {
+                    conductorSelect.append(`<option value="${conductor.id}">${conductor.nombre} ${conductor.apellido}</option>`);
+                });
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudieron cargar los conductores.',
+                });
+            }
+        });
     }
 
+    // Función para obtener las rutas y mostrarlas en la tabla (puedes adaptarla para tu vista de rutas)
+    function fetchRutas() {
+        // Implementación para cargar rutas en la tabla de rutas
+    }
 </script>
 @endpush
