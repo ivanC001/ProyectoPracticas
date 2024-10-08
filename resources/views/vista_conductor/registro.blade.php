@@ -63,7 +63,9 @@
                         <label for="ciudad">Ciudad:</label>
                         <input type="text" class="form-control" id="ciudad" name="ciudad">
                     </div>
-                    <button type="submit" class="btn btn-primary">Registrar</button>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
                 </form>
             </div>
         </div>

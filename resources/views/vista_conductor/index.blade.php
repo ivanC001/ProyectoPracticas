@@ -32,8 +32,8 @@
                                 </form>
                             </div>
                             <div class="mt-2">
-                                <div class="table-responsive">
-                                    <table class="table table-striped table-bordered table-hover table-sm">
+                                <div class="table-responsive" >
+                                    <table class="table table-striped table-bordered table-hover table-sm" >
                                         <thead>
                                             <tr>
                                                 <th width="10%">Opciones</th>
@@ -135,14 +135,17 @@
                         tbody.append(`
                         <tr>
                             <td>
-                                <button type="button" class="btn btn-warning btn-sm editar" onclick="editar(${conductor.id})">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                
-                                <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar(${conductor.id})">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                <div class="d-flex align-items-center">
+                                    <button type="button" class="btn btn-warning btn-sm editar me-2" onclick="editar(${conductor.id})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+
+                                    <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar(${conductor.id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
                             </td>
+
                             <td>${conductor.id}</td>
                             <td>${conductor.nombre}</td>
                             <td>${conductor.apellido}</td>
@@ -161,18 +164,18 @@
         }
 
         // Load conductores data when page loads
-        $(document).ready(function() {
-            fetchConductores();
+        // $(document).ready(function() {
+        //     fetchConductores();
 
-            // Search functionality (filtering could also be added to the backend)
-            $("#searchButton").click(function() {
-                let searchText = $("#searchText").val();
-                if (searchText.trim() !== "") {
-                    // Add filtering logic here if needed, for now it will just refresh the table
-                    fetchConductores();
-                }
-            });
-        });
+        //     // Search functionality (filtering could also be added to the backend)
+        //     $("#searchButton").click(function() {
+        //         let searchText = $("#searchText").val();
+        //         if (searchText.trim() !== "") {
+        //             // Add filtering logic here if needed, for now it will just refresh the table
+        //             fetchConductores();
+        //         }
+        //     });
+        // });
 
         // Example function to handle edit
         // function editar(id) {

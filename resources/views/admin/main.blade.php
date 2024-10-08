@@ -126,11 +126,50 @@
                 </p>
               </a>
             </li>
-            <li id="liControl" class="nav-item">
-              <a id="liControl" href="" class="nav-link">
+            {{-- Control de transporte --}}
+            <li id="reControl" class="nav-item">
+              <a id="reControl" href="" class="nav-link">
                 <i class="nav-icon fa fa-table"></i>
                 <p>
-                  Control de Transporte
+                  Control de rutas
+                  <i class="right fas fa-angle-left"></i>
+                </p>
+              </a>
+              <ul class="nav nav-treeview">
+                <li class="nav-item">
+                  <a id="liReporte" href="/reporte-ruta" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>reporte</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a id="liViaticos" href="/viaticos" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Viaticos</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a id="liCombustible" href="/combustible" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Combustible</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a id="liRutas" href="/rutas" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Ruta</p>
+                  </a>
+                </li>
+              </ul>
+            </li>
+
+            {{-- Registro de transporte --}}
+            <label for="" class="nav-icon">REGISTRO TRANSPORTE</label>
+            <li id="reControl" class="nav-item">
+              <a id="reControl" href="" class="nav-link">
+                <i class="nav-icon fa fa-table"></i>
+                <p>
+                  Registro de Datos
                   <i class="right fas fa-angle-left"></i>
                 </p>
               </a>
@@ -145,12 +184,6 @@
                   <a id="liCamion" href="/camion" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
                     <p>Trailer</p>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a id="liRutas" href="/rutas" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Ruta</p>
                   </a>
                 </li>
               </ul>

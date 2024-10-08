@@ -18,12 +18,8 @@
                         <div>
                             <form action="" method="get">
                                 <div class="input-group">
-                                    <input name="texto" type="text" class="form-control" id="searchText" placeholder="Buscar...">
-                                    <div class="input-group-append">
-                                        <button type="button" class="btn btn-info" id="searchButton">
-                                            <i class="fas fa-search"></i> Buscar
-                                        </button>                      
-                                    </div>
+                                    <input class="form-control me-2" type="search" placeholder="Buscar Trailer por Placa"
+                                    aria-label="Search" id="buscador">
                                 </div>
                             </form>
                         </div>
@@ -73,14 +69,17 @@
                     tbody.append(`
                         <tr>
                             <td>
-                                <button type="button" class="btn btn-warning btn-sm editar" onclick="editar(${camion.id})">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                
-                                <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar(${camion.id})">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                <div class="d-flex align-items-center">
+                                    <button type="button" class="btn btn-warning btn-sm editar me-2" onclick="editar(${camion.id})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+
+                                    <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar(${camion.id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
                             </td>
+
                             <td>${camion.id}</td>
                             <td>${camion.fecha_ingreso}</td>
                             <td>${camion.placa_tracto}</td>
@@ -146,5 +145,40 @@
             }
         });
     }
+    $(document).ready(function() {
+    $("#buscador").on("keyup", function() {
+        var value = $(this).val().toLowerCase();
+        let hasVisibleRow = false;
+
+        if (value === "") {
+            fetchCamiones(); 
+        } else {
+            $("#camionTableBody tr").filter(function() {
+                // Obtener los textos de las columnas 3 y 4 y combinarlos
+                const nombreCol3 = $(this).find('td:eq(3)').text().toLowerCase();
+                const nombreCol4 = $(this).find('td:eq(4)').text().toLowerCase();
+                
+                // Verificar si el valor de búsqueda coincide con alguna de las columnas
+                const isVisible = nombreCol3.indexOf(value) > -1 || nombreCol4.indexOf(value) > -1;
+                
+                // Mostrar u ocultar la fila
+                $(this).toggle(isVisible);
+                
+                if (isVisible) {
+                    hasVisibleRow = true;
+                }
+            });
+
+            // Si no hay resultados visibles, mostrar un mensaje
+            if (!hasVisibleRow) {
+                $("#camionTableBody").html(
+                    '<tr><td colspan="9" class="text-center">No se encontraron resultados</td></tr>'
+                );
+            }
+        }
+    });
+});
+
+
 </script>
 @endpush
