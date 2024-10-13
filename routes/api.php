@@ -75,3 +75,13 @@ Route::get('reporte/rutas-consumos?id=1', [ReporteController::class, 'rutasConsu
 Route::get('reporte/rutas-consumos?fecha_inicio=2024-09-26', [ReporteController::class, 'rutasConsumos']); //todos los de una fecha
 Route::get('reporte/rutas-consumos?fecha_inicio=2024-09-26&fecha_fin=2024-09-27', [ReporteController::class, 'rutasConsumos']); // en rango de fechas
 Route::get('reporte/rutas-consumos?exportar=1', [ReporteController::class, 'rutasConsumos']); // en cualquier de las anteriores si es necesario con agreagr el exportar exporta en excel
+
+
+
+
+//facturacion ::
+
+
+use App\Domains\Comprobantes\Controllers\ComprobanteController;
+
+Route::post('/comprobantes/create', [ComprobanteController::class, 'create']);
