@@ -1,0 +1,32 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('control_productos', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('producto_id')->constrained('productos')->onDelete('cascade'); // Relación con productos
+            $table->enum('tipo_accion', ['entrada', 'salida']); 
+            $table->integer('cantidad'); // Cantidad de producto
+            $table->text('descripcion')->nullable(); // Descripción opcional del movimiento
+            $table->timestamps(); // created_at, updated_at
+            $table->softDeletes(); // deleted_at (soft delete)
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('control_productos');
+    }
+};

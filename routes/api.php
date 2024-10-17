@@ -6,7 +6,7 @@ use App\Http\Controllers\RutaController;
 use App\Http\Controllers\ViaticoController;
 use App\Http\Controllers\CombustibleController;
 use App\Domains\Reportes\Controllers\ReporteController;
-
+use App\Domains\Inventarios\Controllers\ProductoController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -77,6 +77,14 @@ Route::get('reporte/rutas-consumos?fecha_inicio=2024-09-26&fecha_fin=2024-09-27'
 Route::get('reporte/rutas-consumos?exportar=1', [ReporteController::class, 'rutasConsumos']); // en cualquier de las anteriores si es necesario con agreagr el exportar exporta en excel
 
 
+
+Route::prefix('productos')->group(function () {
+    Route::get('/', [ProductoController::class, 'index']);   // Obtener todos los productos
+    Route::post('/', [ProductoController::class, 'store']);  // Crear un nuevo producto
+    Route::get('/{id}', [ProductoController::class, 'show']); // Mostrar un producto específico
+    Route::put('/{id}', [ProductoController::class, 'update']); // Actualizar un producto
+    Route::delete('/{id}', [ProductoController::class, 'destroy']); // Eliminar un producto
+});
 
 
 //facturacion ::
