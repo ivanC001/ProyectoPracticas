@@ -91,5 +91,8 @@ Route::prefix('productos')->group(function () {
 
 
 use App\Domains\Comprobantes\Controllers\ComprobanteController;
+use App\Domains\Comprobantes\Controllers\FacturaController;
 
 Route::post('/comprobantes/create', [ComprobanteController::class, 'create']);
+
+Route::get('/comprobantes/new', [FacturaController::class, 'emitirFactura']);
