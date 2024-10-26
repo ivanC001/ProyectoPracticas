@@ -1,9 +1,9 @@
 <p align="center">comandos que se necesitan  </p>
 
->![IMPORTANT]
+>❗ **IMPORTANT**
 >composer require maatwebsite/excel
 
->:::tip
+>💡 **TIP**
 >git config --global core.autocrlf true
-:::
+
 
