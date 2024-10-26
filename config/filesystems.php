@@ -37,6 +37,12 @@ return [
             'throw' => false,
         ],
 
+        // 'comprobantes_private' => [
+        //     'driver' => 'local',
+        //     'root' => storage_path('app/private/comprobantes'),
+        //     'throw' => false,
+        // ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

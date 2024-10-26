@@ -26,12 +26,11 @@ class EmitirFacturaRequest extends FormRequest
             'detalle.*.descripcion' => 'required|string', 
             'detalle.*.valor_unitario' => 'required|numeric|min:0',  
 
-            'factura.serie' => 'required|string',   
-            'factura.correlativo' => 'required|string',  
             'factura.moneda' => 'required|string|in:PEN,USD'
         ];
 
-        if ($this->input('tipo_comprobante') === '01') {
+        // Ajustar reglas en función del tipo de comprobante
+        if ($this->input('tipo_comprobante') === '01') {  // Factura
             $rules['cliente.num_doc'] = 'required|string';
             $rules['cliente.razon_social'] = 'required|string';
         } elseif ($this->input('tipo_comprobante') === '03') {
@@ -54,8 +53,6 @@ class EmitirFacturaRequest extends FormRequest
             'detalle.*.cantidad.required' => 'La cantidad de cada producto es requerida.',
             'detalle.*.cantidad.numeric' => 'La cantidad debe ser un número.',
             'detalle.*.valor_unitario.required' => 'El valor unitario es requerido para cada producto.',
-            'factura.serie.required' => 'La serie de la factura es requerida.',
-            'factura.correlativo.required' => 'El correlativo de la factura es requerido.',
             'factura.moneda.required' => 'La moneda es requerida y debe ser "PEN" o "USD".',
             'factura.moneda.in' => 'La moneda debe ser "PEN" para soles o "USD" para dólares.',
         ];
