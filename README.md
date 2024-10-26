@@ -3,5 +3,7 @@
 >![IMPORTANT]
 >composer require maatwebsite/excel
 
->![TIP]
+>:::tip
 >git config --global core.autocrlf true
+:::
+
