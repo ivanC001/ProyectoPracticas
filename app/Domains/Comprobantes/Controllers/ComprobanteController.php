@@ -3,8 +3,9 @@
 namespace App\Domains\Comprobantes\Controllers;
 
 use App\Domains\Comprobantes\Services\ComprobanteService;
-use Illuminate\Http\Request;
+use App\Domains\Comprobantes\Requests\EmitirFacturaRequest;  // Form Request para validación
 use App\Http\Controllers\Controller;
+use Exception;
 
 class ComprobanteController extends Controller
 {
@@ -15,12 +16,22 @@ class ComprobanteController extends Controller
         $this->comprobanteService = $comprobanteService;
     }
 
-    public function create(Request $request)
+    public function emitirFactura(EmitirFacturaRequest $request)
     {
-        $data = $request->all();
+        try {
+            
+            $result = $this->comprobanteService->emitir($request->validated());
 
-        $response = $this->comprobanteService->createAndSendInvoice($data);
-
-        return response()->json($response, $response['success'] ? 200 : 500);
+            if ($result['success']) {
+                return response()->json($result, 200);
+            } else {
+                return response()->json($result, 400);
+            }
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al emitir la factura: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
