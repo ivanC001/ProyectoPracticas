@@ -2,8 +2,8 @@
 <div class="modal fade" id="modalRegistroCombustible" tabindex="-1" role="dialog" aria-labelledby="modalRegistroCombustibleLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title" id="modalRegistroCombustibleLabel">Registrar Combustible</h2>
+            <div class="modal-header" style="font-weight: bold; background-color: #d3d3d3; font-size: 1.5rem; ">
+                <h2 class="modal-title" id="modalRegistroCombustibleLabel" aria-label="Close">Registrar Combustible</h2>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -85,6 +85,19 @@
 <script>
     let editingCombustibleId = null; // Variable para almacenar el ID del combustible en edición
 
+    // Función para establecer la fecha y hora actuales por defecto en el campo de fecha y hora
+    function setDefaultDateTime() {
+        let now = new Date();
+        let year = now.getFullYear();
+        let month = ('0' + (now.getMonth() + 1)).slice(-2); // Añadir un 0 al mes si es necesario
+        let day = ('0' + now.getDate()).slice(-2); // Añadir un 0 al día si es necesario
+        let hours = ('0' + now.getHours()).slice(-2); // Añadir un 0 a las horas si es necesario
+        let minutes = ('0' + now.getMinutes()).slice(-2); // Añadir un 0 a los minutos si es necesario
+
+        let formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+        document.getElementById('fecha_hora').value = formattedDateTime; // Asignar el valor al campo
+    }
+
     // Evento para el formulario de registro/edición de combustible
     document.getElementById('formRegistroCombustible').addEventListener('submit', function (event) {
         event.preventDefault(); // Evitar el envío por defecto del formulario
@@ -116,6 +129,7 @@
             document.getElementById('formRegistroCombustible').reset(); // Limpiar el formulario
             editingCombustibleId = null; // Resetear el ID de edición
             fetchCombustibles(); // Actualizar la tabla
+            setDefaultDateTime(); // Restablecer la fecha y hora por defecto
         })
         .catch((error) => {
             console.error('Error:', error);
@@ -163,12 +177,14 @@
         editingCombustibleId = null;
         $('#method_field').val('POST'); // Resetear el método a POST
         document.getElementById('formRegistroCombustible').reset(); // Limpiar el formulario
+        setDefaultDateTime(); // Establecer la fecha y hora por defecto al abrir el modal
     });
 
     // Cargar las rutas y combustibles cuando la página esté lista
     $(document).ready(function() {
         fetchRutas(); // Cargar la lista de rutas para seleccionar
         fetchCombustibles(); // Cargar la lista de registros de combustible
+        setDefaultDateTime(); // Establecer la fecha y hora por defecto al cargar la página
     });
 
     // Función para obtener las rutas y llenar el desplegable
@@ -179,6 +195,8 @@
             success: function(rutas) {
                 let rutaSelect = $('#ruta');
                 rutaSelect.empty().append('<option value="">Seleccione una ruta</option>');
+                // Invertir el array de rutas para mostrar las más recientes al inicio
+                rutas.reverse();
                 $.each(rutas, function(index, ruta) {
                     rutaSelect.append(`<option value="${ruta.id}">${ruta.id} - ${ruta.origen} a ${ruta.destino}</option>`);
                 });
@@ -194,8 +212,6 @@
     }
 
     // Función para obtener los registros de combustibles (para mostrar en la tabla)
-    function fetchCombustibles() {
-        // Implementación para cargar registros de combustibles
-    }
+
 </script>
 @endpush

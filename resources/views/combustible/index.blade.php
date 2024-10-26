@@ -17,14 +17,9 @@
                     <div class="card-body">
                         <div>
                             <form action="" method="get">
-                                <div class="input-group">
-                                    <input name="texto" type="text" class="form-control" id="searchText" placeholder="Buscar registro...">
-                                    <div class="input-group-append">
-                                        <button type="button" class="btn btn-info" id="searchButton">
-                                            <i class="fas fa-search"></i> Buscar
-                                        </button>                      
-                                    </div>
-                                </div>
+                                <input class="form-control me-2" type="search" placeholder="Buscar conductor"
+                                    aria-label="Search" id="buscador">
+
                             </form>
                         </div>
                         <div class="mt-2">
@@ -86,15 +81,16 @@
                 tbody.append(`
                     <tr>
                         <td>
-                            <button type="button" class="btn btn-warning btn-sm editar" onclick="editar(${combustible.id})">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            
-                            <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar(${combustible.id})">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                          
+                            <div class="d-flex align-items-center">
+                                <button type="button" class="btn btn-warning btn-sm editar me-2" onclick="editar(${combustible.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                
+                                <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar(${combustible.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>                     
                         <td>${combustible.id}</td>    
                         <td>${combustibleInfo}</td>  <!-- Recuadro con la información de la ruta -->           
                         <td>${combustible.num_factura}</td>
@@ -117,18 +113,50 @@
 }
 
 
-    // Cargar datos de combustible al cargar la página
-    $(document).ready(function() {
-        fetchCombustibles();
+    // BARRA DE BUSQUEDA
+$(document).ready(function() {
+        $("#buscador").on("keyup", function() {
+            var value = $(this).val().toLowerCase();
+            let hasVisibleRow = false;
 
-        // Funcionalidad de búsqueda
-        $("#searchButton").click(function() {
-            let searchText = $("#searchText").val();
-            if (searchText.trim() !== "") {
-                fetchCombustibles(); // Aquí podrías implementar un filtrado si fuera necesario
+            // Si el buscador está vacío, recargar los conductores completos
+            if (value === "") {
+                fetchCombustibles(); // Llamar a la función que carga los conductores
+            } else {
+                // Filtrar por nombre (columna 3) y por la cuarta columna
+                $("#combustibleTableBody tr").filter(function() {
+                    const nombre = $(this).find('td:eq(3)').text().toLowerCase();
+                    const otraColumna = $(this).find('td:eq(4)').text().toLowerCase(); // Agregar la quinta columna
+                    const isVisible = nombre.indexOf(value) > -1 || otraColumna.indexOf(value) > -1; // Buscar en ambas columnas
+                    $(this).toggle(isVisible);
+                    if (isVisible) {
+                        hasVisibleRow = true;
+                    }
+                });
+
+                // Si no hay resultados visibles, mostrar un mensaje
+                if (!hasVisibleRow) {
+                    $("#combustibleTableBody").html(
+                        '<tr><td colspan="9" class="text-center">No se encontraron resultados</td></tr>'
+                    );
+                }
             }
         });
     });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     function eliminar(id) {
         Swal.fire({

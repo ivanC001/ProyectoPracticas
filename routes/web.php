@@ -39,3 +39,6 @@ Route::get('/reporte/ruta-combustible/{id}', function ($id) {
 Route::get('/reporte/ruta-completo', function () {
     return view('reporte.rutaCompleto');
 });
+Route::get('/producto', function () {
+    return view('gestionProductos.producto.index');
+});

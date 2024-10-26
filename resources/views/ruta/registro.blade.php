@@ -67,6 +67,18 @@
 <script>
     let editingRutaId = null; // Variable para almacenar el ID de la ruta en edición
 
+    // Función para establecer las fechas por defecto: hoy y una semana después
+    function setDefaultDates() {
+        let today = new Date().toISOString().split('T')[0]; // Fecha de hoy en formato YYYY-MM-DD
+        let nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7); // Sumar 7 días a la fecha de hoy
+        let nextWeekFormatted = nextWeek.toISOString().split('T')[0];
+
+        // Asignar valores a los campos de fecha
+        document.getElementById('fecha_inicio').value = today;
+        document.getElementById('fecha_fin').value = nextWeekFormatted;
+    }
+
     // Evento para el formulario de registro/edición de rutas
     document.getElementById('formRegistroRuta').addEventListener('submit', function (event) {
         event.preventDefault(); // Evitar el envío por defecto del formulario
@@ -142,6 +154,7 @@
         editingRutaId = null;
         $('#method_field').val('POST'); // Resetear el método a POST
         document.getElementById('formRegistroRuta').reset(); // Limpiar el formulario
+        setDefaultDates(); // Establecer las fechas por defecto
     });
 
     // Cargar los conductores, camiones y rutas cuando la página esté lista
@@ -149,6 +162,7 @@
         fetchConductores(); // Cargar la lista de conductores
         fetchCamiones(); // Cargar la lista de camiones
         fetchRutas(); // Cargar la lista de rutas
+        setDefaultDates(); // Establecer las fechas por defecto
     });
 
     // Función para obtener los camiones y llenar el desplegable
@@ -195,9 +209,5 @@
         });
     }
 
-    // Función para obtener las rutas y mostrarlas en la tabla (puedes adaptarla para tu vista de rutas)
-    function fetchRutas() {
-        // Implementación para cargar rutas en la tabla de rutas
-    }
 </script>
 @endpush

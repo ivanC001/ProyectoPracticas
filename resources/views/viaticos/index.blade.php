@@ -17,14 +17,8 @@
                     <div class="card-body">
                         <div>
                             <form action="" method="get">
-                                <div class="input-group">
-                                    <input name="texto" type="text" class="form-control" id="searchText" placeholder="Buscar viático...">
-                                    <div class="input-group-append">
-                                        <button type="button" class="btn btn-info" id="searchButton">
-                                            <i class="fas fa-search"></i> Buscar
-                                        </button>                      
-                                    </div>
-                                </div>
+                                <input class="form-control me-2" type="search" placeholder="Buscar conductor"
+                                    aria-label="Search" id="buscador">
                             </form>
                         </div>
                         <div class="mt-2">
@@ -80,13 +74,16 @@
                     tbody.append(`
                         <tr>
                             <td>
-                                <button type="button" class="btn btn-warning btn-sm editar" onclick="editarViatico(${viatico.id})">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                
-                                <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar(${viatico.id})">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+
+                                <div class="d-flex align-items-center">
+                                    <button type="button" class="btn btn-warning btn-sm editar me-2" onclick="editarViatico(${viatico.id})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+
+                                    <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar(${viatico.id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
                             </td>
                             <td>${viatico.id}</td>
                             <td>${viatico.nombre_servicio}</td>

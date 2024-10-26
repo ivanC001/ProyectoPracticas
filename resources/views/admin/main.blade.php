@@ -126,6 +126,25 @@
                 </p>
               </a>
             </li>
+            <label for="" class="nav-icon">CONTROL DE PRODUCTOS</label>
+            <li id="reControl" class="nav-item">
+              <a id="reControl" href="" class="nav-link">
+                <i class="nav-icon fa fa-table"></i>
+                <p>
+                  Gestion de productos
+                  <i class="right fas fa-angle-left"></i>
+                </p>
+              </a>
+              <ul class="nav nav-treeview">
+                <li class="nav-item">
+                  <a id="liConductor" href="/producto" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>productos</p>
+                  </a>
+                </li>
+
+              </ul>
+            </li>
             {{-- Control de transporte --}}
             <li id="reControl" class="nav-item">
               <a id="reControl" href="" class="nav-link">

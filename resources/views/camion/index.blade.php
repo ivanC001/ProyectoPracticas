@@ -30,11 +30,11 @@
                                         <tr>
                                             <th width="10%">Opciones</th>
                                             <th width="5%">ID</th>
-                                            <th width="15%">Fecha ingreso</th>
                                             <th width="15%">Placa tracto</th>
                                             <th width="15%">Placa carreto</th>
                                             <th width="10%">Color</th>
                                             <th width="10%">MTC</th>
+                                            <th width="15%">Fecha ingreso</th>
                                             <th width="10%">Foto camino</th>
                                         </tr>
                                     </thead>
@@ -81,11 +81,11 @@
                             </td>
 
                             <td>${camion.id}</td>
-                            <td>${camion.fecha_ingreso}</td>
                             <td>${camion.placa_tracto}</td>
                             <td>${camion.placa_carreto}</td>
                             <td>${camion.color}</td>
                             <td>${camion.mtc}</td>
+                            <td>${camion.fecha_ingreso}</td>
                             <td>${camion.foto_camino}</td>
                         </tr>
                     `);

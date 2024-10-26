@@ -91,34 +91,36 @@
 
         // busca solo por nombre
 
-        $(document).ready(function() {
-            $("#buscador").on("keyup", function() {
-                var value = $(this).val().toLowerCase();
-                let hasVisibleRow = false;
+         $(document).ready(function() {
+        $("#buscador").on("keyup", function() {
+            var value = $(this).val().toLowerCase();
+            let hasVisibleRow = false;
 
-                // Si el buscador está vacío, recargar los conductores completos
-                if (value === "") {
-                    fetchConductores(); // Llamar a la función que carga los conductores
-                } else {
-                    // Filtrar solo por nombre (columna 3)
-                    $("#conductorTableBody tr").filter(function() {
-                        const nombre = $(this).find('td:eq(2)').text().toLowerCase();
-                        const isVisible = nombre.indexOf(value) > -1;
-                        $(this).toggle(isVisible);
-                        if (isVisible) {
-                            hasVisibleRow = true;
-                        }
-                    });
-
-                    // Si no hay resultados visibles, mostrar un mensaje
-                    if (!hasVisibleRow) {
-                        $("#conductorTableBody").html(
-                            '<tr><td colspan="9" class="text-center">No se encontraron resultados</td></tr>'
-                            );
+            // Si el buscador está vacío, recargar los conductores completos
+            if (value === "") {
+                fetchConductores(); // Llamar a la función que carga los conductores
+            } else {
+                // Filtrar por nombre (columna 3) y por la cuarta columna
+                $("#conductorTableBody tr").filter(function() {
+                    const nombre = $(this).find('td:eq(2)').text().toLowerCase();
+                    const otraColumna = $(this).find('td:eq(3)').text().toLowerCase(); // Agregar la cuarta columna
+                    const isVisible = nombre.indexOf(value) > -1 || otraColumna.indexOf(value) > -1; // Buscar en ambas columnas
+                    $(this).toggle(isVisible);
+                    if (isVisible) {
+                        hasVisibleRow = true;
                     }
+                });
+
+                // Si no hay resultados visibles, mostrar un mensaje
+                if (!hasVisibleRow) {
+                    $("#conductorTableBody").html(
+                        '<tr><td colspan="9" class="text-center">No se encontraron resultados</td></tr>'
+                    );
                 }
-            });
+            }
         });
+    });
+
 
 
 
