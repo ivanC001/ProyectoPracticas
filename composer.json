@@ -6,6 +6,8 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "dompdf/dompdf": "^3.0",
+        "endroid/qr-code": "^5.0",
         "greenter/core": "^5.1",
         "greenter/greenter": "^5.1",
         "greenter/report": "^5.1",

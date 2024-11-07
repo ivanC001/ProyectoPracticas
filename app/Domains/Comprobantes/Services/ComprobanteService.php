@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Domains\Comprobantes\Services;
-
+use App\Domains\Comprobantes\Services\GenerarPDF;
 use App\Domains\Comprobantes\Config\CertificadoConfig;
 use Greenter\Model\Sale\Invoice;
 use Greenter\Model\Client\Client;
@@ -14,10 +14,12 @@ use Exception;
 class ComprobanteService
 {
     protected $certificadoConfig;
+    protected $generarPDF;
 
-    public function __construct(CertificadoConfig $certificadoConfig)
+    public function __construct(CertificadoConfig $certificadoConfig ,GenerarPDF $generarPDF)
     {
         $this->certificadoConfig = $certificadoConfig;
+        $this->generarPDF = $generarPDF;
     }
 
     public function emitir(array $data)
@@ -134,13 +136,18 @@ class ComprobanteService
                     $cdrZipContent = $result->getCdrZip();
                     $cdrZipFileName = "{$serie}-{$correlativo}.zip";
                     Storage::put("comprobantes/cdr/{$cdrZipFileName}", $cdrZipContent); // Guardar en una ruta privada
-
+                   
+                    $pdfFileName = $this->generarPDF->generarPDFConQR($venta, $data['detalle']);
+                    $venta->update(['archivo_pdf' => $pdfFileName]);
+                    
                     // Actualizar el estado de la venta y guardar la respuesta de SUNAT
                     $venta->update([
                         'estado_envio' => 'aceptado',
                         'archivo_xml' => "comprobantes/xml/{$xmlFileName}",
                         'archivo_pdf' => "comprobantes/cdr/{$cdrZipFileName}"
                     ]);
+
+                    $venta->update(['archivo_pdf' => $pdfFileName]);
 
                     \App\Domains\Comprobantes\Models\RespuestaSunat::create([
                         'venta_id' => $venta->id,
