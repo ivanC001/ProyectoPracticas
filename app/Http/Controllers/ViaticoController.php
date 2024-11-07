@@ -14,7 +14,7 @@ class ViaticoController extends Controller
                     ->withoutTrashed()
                     ->get();
 
-        return response()->json($viaticos, 200); // 200 OK
+        return response()->json($viaticos, 200);
     }
 
     public function store(ViaticoRequest $request)
@@ -32,7 +32,6 @@ class ViaticoController extends Controller
         if (!$viatico) {
             return response()->json(['message' => 'Viático no encontrado'], 404);
         }
-
         return response()->json($viatico, 200);
     }
 

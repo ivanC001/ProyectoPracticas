@@ -1,4 +1,4 @@
-<p align="center">comandos que se necesitan  </p>
+<p align="center">comandos que se necesitan </p>
 
 | 💡 **TIP** |  
 |------------|  

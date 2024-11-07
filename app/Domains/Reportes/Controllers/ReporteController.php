@@ -64,7 +64,7 @@ class ReporteController extends Controller
         return response()->json($data);
     }
 
-    /// por rango y paginacion
+    
     public function rutasConsumos(ReporteRequest $request)
     {
         $id = $request->input('id');

@@ -32,7 +32,6 @@ class ViaticoRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                // Aquí usamos ignore() para ignorar la regla única en el viático que estamos editando
                 Rule::unique('viaticos')->ignore($viaticoId)->whereNull('deleted_at'),
             ],
             'importe' => 'required|numeric',

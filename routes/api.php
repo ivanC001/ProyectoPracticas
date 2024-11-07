@@ -7,6 +7,7 @@ use App\Http\Controllers\ViaticoController;
 use App\Http\Controllers\CombustibleController;
 use App\Domains\Reportes\Controllers\ReporteController;
 use App\Domains\Inventarios\Controllers\ProductoController;
+use App\Domains\Comprobantes\Controllers\ComprobanteController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -90,10 +91,4 @@ Route::prefix('productos')->group(function () {
 //facturacion ::
 
 
-use App\Domains\Comprobantes\Controllers\ComprobanteController;
-use App\Domains\Comprobantes\Controllers\FacturaController;
-
 Route::post('/comprobantes/create', [ComprobanteController::class, 'emitirFactura']);
-
-
-Route::get('/comprobantes/new', [FacturaController::class, 'emitirFactura']);
