@@ -125,7 +125,15 @@
                   Control Facturas
                 </p>
               </a>
-            </li>
+              <ul class="nav nav-treeview">
+                <li class="nav-item">
+                  <a id="liVenta" href="/venta" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>ventas</p>
+                  </a>
+                </li>
+                </li>
+              </ul>
             <label for="" class="nav-icon">CONTROL DE PRODUCTOS</label>
             <li id="reControl" class="nav-item">
               <a id="reControl" href="" class="nav-link">
@@ -282,7 +290,10 @@
   <script src="{{asset('assets/js/adminlte.min.js')}}"></script>
   <script src="{{asset('assets/js/jquery.dataTables.min.js')}}"></script>
   <script src="{{asset('assets/js/sweetalert2@11.js')}}"></script>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>}
+  <!-- Agregar estilos y scripts de Select2 -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
   
   @stack('scripts')
   <!-- scripts de cada plantilla -->

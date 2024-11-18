@@ -42,3 +42,9 @@ Route::get('/reporte/ruta-completo', function () {
 Route::get('/producto', function () {
     return view('gestionProductos.producto.index');
 });
+Route::get('/venta', function () {
+    return view('factura.index');
+});
+Route::get('/nueva-venta', function () {
+    return view('factura.registro');
+})->name('nueva-venta');
