@@ -1,7 +1,6 @@
 @extends('admin.main')
 
 @section('contenido')
-
 <div class="content">
     <div class="container-fluid">
         <div class="row">
@@ -13,13 +12,11 @@
                     <div class="card-body">
                         <form id="formRegistroFactura">
                             @csrf
-                            <input type="hidden" name="_method" value="POST">
-
-                            <!-- Selección del Tipo de Documento del Cliente y Número de Documento en la misma línea -->
+                            <!-- Selección del Tipo de Documento y Número -->
                             <div class="form-row">
                                 <div class="form-group col-md-3">
-                                    <label for="cliente_tipo_doc">Tipo de Documento del Cliente</label>
-                                    <select class="form-control" id="cliente_tipo_doc" name="cliente_tipo_doc">
+                                    <label for="cliente_tipo_doc">Tipo de Documento</label>
+                                    <select class="form-control" id="cliente_tipo_doc" name="cliente_tipo_doc" required>
                                         <option value="0">Sin Datos</option>
                                         <option value="1">DNI</option>
                                         <option value="4">Carnet de extranjería</option>
@@ -29,19 +26,18 @@
                                 </div>
                                 <div class="form-group col-md-4">
                                     <label for="cliente_num_doc">Número de Documento</label>
-                                    <input type="text" class="form-control" id="cliente_num_doc" name="cliente_num_doc" required>
+                                    <input type="text" class="form-control" id="cliente_num_doc" name="cliente_num_doc" placeholder="Ingrese número">
                                 </div>
-                                <!-- Razón Social del Cliente -->
                                 <div class="form-group col-md-4">
                                     <label for="cliente_razon_social">Razón Social</label>
-                                    <input type="text" class="form-control" id="cliente_razon_social" name="cliente_razon_social" required>
+                                    <input type="text" class="form-control" id="cliente_razon_social" name="cliente_razon_social" placeholder="Ingrese razón social">
                                 </div>
                             </div>
 
                             <!-- Selección de Moneda -->
                             <div class="form-group">
                                 <label for="moneda">Moneda</label>
-                                <select class="form-control" id="moneda" name="moneda">
+                                <select class="form-control" id="moneda" name="moneda" required>
                                     <option value="PEN">PEN - Soles</option>
                                     <option value="USD">USD - Dólares</option>
                                 </select>
@@ -73,10 +69,10 @@
                                 <ul class="list-group" id="listaProductosSeleccionados"></ul>
                             </div>
 
-                            <!-- Div para mostrar el total general -->
+                            <!-- Total General -->
                             <div class="form-group mt-4 d-flex justify-content-end">
                                 <h4>Total General: <span id="totalGeneral" class="text-primary">S/ 0.00</span></h4>
-                            </div>                            
+                            </div>
 
                             <button type="submit" class="btn btn-primary">Registrar Factura</button>
                         </form>
