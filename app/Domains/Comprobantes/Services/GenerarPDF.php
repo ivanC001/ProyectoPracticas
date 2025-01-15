@@ -105,7 +105,7 @@ class GenerarPDF {
         $dompdf->render();
 
         // Definir la ruta donde se guardará el PDF
-        $pdfFileName = "public/comprobantes/pdf/{$venta->serie}-{$venta->correlativo}.pdf";
+        $pdfFileName = "comprobantes/pdf/{$venta->serie}-{$venta->correlativo}.pdf";
         Storage::put($pdfFileName, $dompdf->output());
 
         // Retornar la ruta del archivo PDF

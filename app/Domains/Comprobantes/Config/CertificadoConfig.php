@@ -11,7 +11,7 @@ class CertificadoConfig
     public static function getSee()
     {
         $see = new See();
-        $certPath = storage_path(config('empresa.sunat_cert_path'));
+        $certPath = config('empresa.sunat_cert_path');
         $certPass = config('empresa.sunat_cert_pass');
 
         if (!file_exists($certPath)) {

@@ -10,7 +10,7 @@ return [
     'sunat_ruc' => env('SUNAT_RUC', '20123456789'),
     'sunat_username' => env('SUNAT_USERNAME', 'MODDATOS'),
     'sunat_password' => env('SUNAT_PASSWORD', 'MODDATOS'),
-    'sunat_cert_path' => env('SUNAT_CERT_PATH', storage_path('certificates/ejemplo.pfx')),
-    'sunat_cert_pass' => env('SUNAT_CERT_PASS', null),
+    'sunat_cert_path' => env('SUNAT_CERT_PATH', storage_path('certificates/ejemplo123456789.pfx')),
+    'sunat_cert_pass' => env('SUNAT_CERT_PASS', '123456789'),
     'sunat_env' => env('SUNAT_ENV', 'beta') // Usar beta o producción
 ]; 
