@@ -19,6 +19,7 @@ class Ruta extends Model
         'destino',
         'conductor_id',
         'camion_id',
+        'combustible_id',
     ];
 
     protected $dates = ['deleted_at'];
@@ -44,5 +45,11 @@ class Ruta extends Model
     public function combustibles()
     {
         return $this->hasMany(Combustible::class, 'ruta_id');
+        
     }
+    public function peajes()
+    {
+        return $this->hasMany(Peaje::class);
+    }
+
 }

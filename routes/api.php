@@ -5,9 +5,13 @@ use App\Http\Controllers\CamionController;
 use App\Http\Controllers\RutaController;
 use App\Http\Controllers\ViaticoController;
 use App\Http\Controllers\CombustibleController;
+use App\Http\Controllers\RutaCombustibleController;
+use App\Http\Controllers\RutaPeajeController;
 use App\Domains\Reportes\Controllers\ReporteController;
 use App\Domains\Inventarios\Controllers\ProductoController;
 use App\Domains\Comprobantes\Controllers\ComprobanteController;
+use App\Http\Controllers\RutaViaticosController;
+
 
 use Illuminate\Support\Facades\Route;
 
@@ -59,6 +63,22 @@ Route::prefix('combustibles')->group(function () {
     Route::put('/{id}', [CombustibleController::class, 'update']);
     Route::delete('/{id}', [CombustibleController::class, 'destroy']);
 });
+// Rutas anidadas bajo ruta_id ->para conectar rutas y combustible
+Route::get('/rutas/{ruta_id}/combustibles', [RutaCombustibleController::class, 'index']);
+Route::post('/rutas/{ruta_id}/combustibles', [RutaCombustibleController::class, 'store']);
+Route::get('/rutas/{ruta_id}/combustibles/{id}', [RutaCombustibleController::class, 'show']);
+Route::put('/rutas/{ruta_id}/combustibles/{id}', [RutaCombustibleController::class, 'update']);
+Route::delete('/rutas/{ruta_id}/combustibles/{id}', [RutaCombustibleController::class, 'destroy']);
+
+//control de rutas por peajes
+Route::prefix('rutas/{ruta}')->group(function () {
+    Route::get('/peajes', [RutaPeajeController::class, 'index']);
+    Route::post('/peajes', [RutaPeajeController::class, 'store']);
+    Route::get('/peajes/{id}', [RutaPeajeController::class, 'show']);
+    Route::put('/peajes/{id}', [RutaPeajeController::class, 'update']);
+    Route::delete('/peajes/{id}', [RutaPeajeController::class, 'destroy']);
+});
+
 
 // Reportes 
 
@@ -92,3 +112,14 @@ Route::prefix('productos')->group(function () {
 
 
 Route::post('/comprobantes/create', [ComprobanteController::class, 'emitirFactura']);
+
+
+//////////rutas con viaticos y combustibles devuelve////
+
+
+
+Route::get('/rutasViaticos', [RutaViaticosController::class, 'index']);
+ Route::post('/rutasViaticos', [RutaViaticosController::class, 'store']); 
+ Route::get('/rutasViaticos/{id}', [RutaViaticosController::class, 'show']); 
+ Route::put('/rutasViaticos/{id}', [RutaViaticosController::class, 'update']); 
+Route::delete('/rutasViaticos/{id}', [RutaViaticosController::class, 'destroy']);

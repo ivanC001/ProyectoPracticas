@@ -16,12 +16,12 @@ class CombustibleRequest extends FormRequest
     {
         return [
             'ruta_id' => 'required|exists:rutas,id',
-            'num_factura' => [
-                'required', 
-                'string', 
-                'max:255', 
-                Rule::unique('combustibles')->whereNull('deleted_at')
-            ],
+            // 'num_factura' => [
+            //     'required', 
+            //     'string', 
+            //     'max:255', 
+            //     Rule::unique('combustibles')->whereNull('deleted_at')
+            // ],
             'grifo' => 'required|string|max:255',
             'fecha_hora' => 'required|date',
             'galonesCombustible' => 'required|numeric',

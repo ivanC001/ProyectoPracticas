@@ -7,7 +7,7 @@
             <div class="col-lg-12">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="m-0">
+                        <h5 class="m-0 text-center">
                             Registro de rutas 
                             <button class="btn btn-primary" data-toggle="modal" data-target="#modalRegistroRuta">
                                 <i class="fas fa-file"></i> Nueva Ruta
@@ -15,33 +15,32 @@
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div>
+                        <!-- Buscador -->
+                        <div class="mb-3">
                             <form action="" method="get">
-                                <input class="form-control me-2" type="search" placeholder="Buscar Ruta por origen o destino..."
+                                <input class="form-control me-2 text-center" type="search" placeholder="Buscar Ruta por origen o destino..."
                                     aria-label="Search" id="buscador">
                             </form>
                         </div>
-                        <div class="mt-2">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-bordered table-hover table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th width="10%">Opciones</th>
-                                            <th width="5%">ID</th>
-                                            <th width="10%">Fecha Salida</th>
-                                            <th width="10%">Fecha Llegada</th>
-                                            <th width="10%">Origen</th>
-                                            <th width="10%">Destino</th>
-                                            <th width="10%">Conductor</th>
-                                            <th width="10%">Placa Tracto</th>
-                                            <th width="10%">Placa Carreto</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="rutaTableBody">
-                                        {{-- Aquí se llenará dinámicamente la tabla con JavaScript --}}
-                                    </tbody>
-                                </table>
-                            </div>
+
+                        <!-- Tabla -->
+                        <div class="table-responsive">
+                            <table class="table table-striped table-bordered table-hover table-sm align-middle text-center">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th width="12%">Opciones</th>
+                                        <th width="5%">ID</th>
+                                        <th width="15%">Fechas del viaje</th>
+                                        <th width="20%">Ruta y Conductor</th>
+                                        <th width="20%">Datos del vehículo</th>
+                                        <th width="20%">Acciones</th>
+                                        <th width="8%">Reporte</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rutaTableBody">
+                                    {{-- Llenado dinámico con JS --}}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -50,47 +49,85 @@
     </div>
 </div>
 
-@include('ruta.registro') {{-- Modal para registrar nueva ruta --}}
-
+@include('ruta.registro')
 @endsection
 
 @push('scripts')
 <script>
-    // Función para obtener datos de rutas desde la API
     function fetchRutas() {
         $.ajax({
             url: "http://127.0.0.1:8000/api/rutas",
             method: "GET",
             success: function(response) {
                 let tbody = $("#rutaTableBody");
-                tbody.empty(); 
+                tbody.empty();
 
-                // Invertir el orden de las rutas para mostrar del último ID al primero
-                let rutasInvertidas = response.reverse(); 
+                let rutasInvertidas = response.reverse();
 
-                // Asegúrate de que 'response' sea un array con rutas
                 $.each(rutasInvertidas, function(index, rutas) {
                     tbody.append(`
                         <tr id="ruta_${rutas.id}">
+                            <!-- Opciones básicas -->
                             <td>
-                                <div class="d-flex align-items-center">
-                                    <button type="button" class="btn btn-warning btn-sm editar me-2" onclick="editar(${rutas.id})">
+                                <div class="d-flex justify-content-center gap-2">
+                                    <button type="button" class="btn btn-warning btn-sm editar" onclick="editar(${rutas.id})" title="Editar">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    
-                                    <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar(${rutas.id})">
+                                    <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar(${rutas.id})" title="Eliminar">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
                             </td>
-                            <td>${rutas.id}</td>
-                            <td>${rutas.fecha_inicio}</td>
-                            <td>${rutas.fecha_fin}</td>
-                            <td>${rutas.origen}</td>
-                            <td>${rutas.destino}</td>
-                            <td>${rutas.conductor ? rutas.conductor.nombre : 'N/A'}</td>
-                            <td>${rutas.camion ? rutas.camion.placa_tracto : 'N/A'}</td>
-                            <td>${rutas.camion ? rutas.camion.placa_carreto : 'N/A'}</td>
+
+                            <!-- ID -->
+                            <td><strong>${rutas.id}</strong></td>
+
+                            <!-- Fechas -->
+                            <td>
+                                <div class="border rounded p-2 bg-light">
+                                    <i class="fas fa-calendar-day text-primary"></i> <strong>Salida:</strong><br> ${rutas.fecha_inicio ?? 'N/A'}<br>
+                                    <i class="fas fa-calendar-check text-success"></i> <strong>Llegada:</strong><br> ${rutas.fecha_fin ?? 'N/A'}
+                                </div>
+                            </td>
+
+                            <!-- Ruta y Conductor -->
+                            <td>
+                                <div class="border rounded p-2 bg-light">
+                                    <i class="fas fa-map-marker-alt text-danger"></i> <strong>Origen:</strong><br> ${rutas.origen ?? 'N/A'}<br>
+                                    <i class="fas fa-flag-checkered text-info"></i> <strong>Destino:</strong><br> ${rutas.destino ?? 'N/A'}<br>
+                                    <i class="fas fa-user text-warning"></i> <strong>Conductor:</strong><br> ${rutas.conductor ? rutas.conductor.nombre : 'N/A'}
+                                </div>
+                            </td>
+
+                            <!-- Datos del vehículo -->
+                            <td>
+                                <div class="border rounded p-2 bg-light">
+                                    <i class="fas fa-truck text-secondary"></i> <strong>Tracto:</strong><br> ${rutas.camion ? rutas.camion.placa_tracto : 'N/A'}<br>
+                                    <i class="fas fa-trailer text-primary"></i> <strong>Carreto:</strong><br> ${rutas.camion ? rutas.camion.placa_carreto : 'N/A'}
+                                </div>
+                            </td>
+
+                            <!-- Botones de acciones -->
+                            <td>
+                                <div class="d-flex flex-column gap-1">
+                                    <button class="btn btn-info btn-sm mb-1" onclick="registrarViaticos(${rutas.id})">
+                                        <i class="fas fa-wallet"></i> Viáticos
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm mb-1" onclick="registrarPeajes(${rutas.id})">
+                                        <i class="fas fa-road"></i> Peajes
+                                    </button>
+                                    <button class="btn btn-success btn-sm" onclick="registrarCombustible(${rutas.id})">
+                                        <i class="fas fa-gas-pump"></i> Combustible
+                                    </button>
+                                </div>
+                            </td>
+
+                            <!-- Botón de reporte -->
+                            <td>
+                                <button class="btn btn-primary btn-sm" onclick="verReporte(${rutas.id})">
+                                    <i class="fas fa-file-alt"></i> Reporte
+                                </button>
+                            </td>
                         </tr>
                     `);
                 });
@@ -102,40 +139,32 @@
     }
 
     $(document).ready(function() {
-        fetchRutas(); // Cargar las rutas al cargar la página
+        fetchRutas();
 
-        // Implementación del buscador para buscar por Origen o Destino
         $("#buscador").on("keyup", function() {
             var value = $(this).val().toLowerCase();
             let hasVisibleRow = false;
 
-            // Si el buscador está vacío, recargar las rutas completas
             if (value === "") {
-                fetchRutas(); 
+                fetchRutas();
             } else {
-                // Filtrar por origen y destino
                 $("#rutaTableBody tr").filter(function() {
-                    const origen = $(this).find('td:eq(4)').text().toLowerCase();
-                    const destino = $(this).find('td:eq(5)').text().toLowerCase();
-                    const isVisible = origen.indexOf(value) > -1 || destino.indexOf(value) > -1;
+                    const rutaData = $(this).find('td:eq(3)').text().toLowerCase();
+                    const isVisible = rutaData.indexOf(value) > -1;
 
                     $(this).toggle(isVisible);
-                    if (isVisible) {
-                        hasVisibleRow = true;
-                    }
+                    if (isVisible) hasVisibleRow = true;
                 });
 
-                // Si no hay resultados visibles, mostrar un mensaje
                 if (!hasVisibleRow) {
                     $("#rutaTableBody").html(
-                        '<tr><td colspan="9" class="text-center">No se encontraron resultados</td></tr>'
+                        '<tr><td colspan="7" class="text-center">No se encontraron resultados</td></tr>'
                     );
                 }
             }
         });
     });
 
-    // Función para eliminar una ruta sin recargar la página
     function eliminar(id) {
         Swal.fire({
             title: 'Eliminar registro',
@@ -154,8 +183,7 @@
                     headers:{
                         'X-CSRF-TOKEN':$('meta[name="csrf-token"]').attr('content')
                     },
-                    success: function(res){
-                        // Eliminar la fila sin recargar la página
+                    success: function(){
                         $(`#ruta_${id}`).remove();
                         Swal.fire({
                             icon: 'success',
@@ -164,8 +192,7 @@
                             timer: 1500
                         });
                     },
-                    error: function (res){
-                        console.log(res);
+                    error: function (){
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
@@ -175,6 +202,23 @@
                 });
             }
         });
+    }
+
+    // Redirección al detalle de viáticos
+    function registrarViaticos(id) {
+        window.location.href = `/ruta/${id}/rutaviatico`;
+    }
+
+    function registrarPeajes(id) {
+        window.location.href = `/ruta/${id}/rutapeaje`;
+    }
+
+    function registrarCombustible(id) {
+        window.location.href = `/ruta/${id}/rutacombustible`;
+    }
+
+    function verReporte(id) {
+        window.open(`/rutas/${id}/reporte`, '_blank');
     }
 </script>
 @endpush

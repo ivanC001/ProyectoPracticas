@@ -48,3 +48,16 @@ Route::get('/venta', function () {
 Route::get('/nueva-venta', function () {
     return view('factura.registro');
 })->name('nueva-venta');
+
+//////////rutas con viaticos y combustibles devuelve////
+
+
+Route::get('/ruta/{id}/rutaviatico', function ($id) {
+    return view('ruta.rutaviatico');
+});
+Route::get('/ruta/{id}/rutacombustible', function ($id) {
+    return view('ruta.rutacombustible');
+});
+Route::get('/ruta/{id}/rutapeaje', function ($id) {
+    return view('ruta.rutapeaje');
+});
