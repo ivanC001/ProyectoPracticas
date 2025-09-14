@@ -13,13 +13,20 @@ class Ruta extends Model
 
     protected $table = 'rutas';
     protected $fillable = [
+        //datos del viaje
         'fecha_inicio',
         'fecha_fin',
         'origen',
         'destino',
+        //repossable del viaje
         'conductor_id',
         'camion_id',
-        'combustible_id',
+        // gastos del viaje
+        'caja_chica',
+        'estado',
+        'pago_viaje',
+        'ganancia_viaje',
+        'observaciones',
     ];
 
     protected $dates = ['deleted_at'];
