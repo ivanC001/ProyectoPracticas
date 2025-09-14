@@ -10,7 +10,9 @@ use App\Http\Controllers\RutaPeajeController;
 use App\Domains\Reportes\Controllers\ReporteController;
 use App\Domains\Inventarios\Controllers\ProductoController;
 use App\Domains\Comprobantes\Controllers\ComprobanteController;
+use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\RutaViaticosController;
+use App\Http\Controllers\Auth\RegisterController;
 
 
 use Illuminate\Support\Facades\Route;
@@ -123,3 +125,19 @@ Route::get('/rutasViaticos', [RutaViaticosController::class, 'index']);
  Route::get('/rutasViaticos/{id}', [RutaViaticosController::class, 'show']); 
  Route::put('/rutasViaticos/{id}', [RutaViaticosController::class, 'update']); 
 Route::delete('/rutasViaticos/{id}', [RutaViaticosController::class, 'destroy']);
+
+
+
+
+//////////////////////////////logeo 
+
+
+Route::post('login', [AuthController::class,'login']);
+Route::post('logout',[AuthController::class,'logout']);
+Route::post('refresh', [AuthController::class,'refresh']);
+Route::post('me', [AuthController::class,'me']);
+
+//////////////////////////////REGISTRO DE USUARIOS//////////////////////
+
+Route::post('register', [RegisterController::class, 'Store']);
+//////////////////////////////////////////////////////////////////////// 
