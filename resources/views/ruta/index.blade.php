@@ -6,13 +6,16 @@
         <div class="row">
             <div class="col-lg-12">
                 <div class="card">
+                    
                     <div class="card-header">
-                        <h5 class="m-0 text-center">
-                            Registro de rutas 
-                            <button class="btn btn-primary" data-toggle="modal" data-target="#modalRegistroRuta">
-                                <i class="fas fa-file"></i> Nueva Ruta
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3 class="text-primary font-weight-bold m-0">
+                                <i class="fas fa-route"></i> Registro de Rutas
+                            </h3>
+                            <button class="btn btn-success shadow-sm" data-toggle="modal" data-target="#modalRegistroRuta">
+                                <i class="fas fa-plus-circle"></i> Nueva Ruta
                             </button>
-                        </h5>
+                        </div>
                     </div>
                     <div class="card-body">
                         <!-- Buscador -->
@@ -24,16 +27,19 @@
                         </div>
 
                         <!-- Tabla -->
+                       
                         <div class="table-responsive">
                             <table class="table table-striped table-bordered table-hover table-sm align-middle text-center">
                                 <thead class="bg-light">
                                     <tr>
-                                        <th width="12%">Opciones</th>
+                                        <th width="5%">Opciones</th>
                                         <th width="5%">ID</th>
                                         <th width="15%">Fechas del viaje</th>
                                         <th width="20%">Ruta y Conductor</th>
                                         <th width="20%">Datos del vehículo</th>
-                                        <th width="20%">Acciones</th>
+                                        <th width="13%">Gastos de viaje</th> <!-- Nueva columna -->
+                                        <th width="8%">Estado</th> <!-- Nueva columna -->
+                                        <th width="20%">Costo de Viaje</th>
                                         <th width="8%">Reporte</th>
                                     </tr>
                                 </thead>
@@ -42,6 +48,7 @@
                                 </tbody>
                             </table>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -56,7 +63,7 @@
 <script>
     function fetchRutas() {
         $.ajax({
-            url: "http://127.0.0.1:8000/api/rutas",
+            url: "/api/rutas",
             method: "GET",
             success: function(response) {
                 let tbody = $("#rutaTableBody");
@@ -106,7 +113,7 @@
                                     <i class="fas fa-trailer text-primary"></i> <strong>Carreto:</strong><br> ${rutas.camion ? rutas.camion.placa_carreto : 'N/A'}
                                 </div>
                             </td>
-
+                            
                             <!-- Botones de acciones -->
                             <td>
                                 <div class="d-flex flex-column gap-1">
@@ -122,12 +129,45 @@
                                 </div>
                             </td>
 
+                           <!-- ESTADO -->
+                            <td>
+                                ${
+                                    (() => {
+                                        let estado = (rutas.estado ?? '').toLowerCase().trim();
+                                        switch (estado) {
+                                            case 'pendiente':
+                                                return '<span class="badge bg-success rounded-pill"><i class="fas fa-clock"></i> Pendiente</span>';
+                                            case 'cancelado':
+                                                return '<span class="badge bg-danger rounded-pill"><i class="fas fa-times-circle"></i> Cancelado</span>';
+                                            case 'finalizado':
+                                                return '<span class="badge bg-primary rounded-pill"><i class="fas fa-check-circle"></i> Finalizado</span>';
+                                            case 'en curso':
+                                                return '<span class="badge bg-warning text-dark rounded-pill"><i class="fas fa-spinner fa-spin"></i> En curso</span>';
+                                            default:
+                                                return '<span class="badge bg-secondary rounded-pill"><i class="fas fa-question-circle"></i> Desconocido</span>';
+                                        }
+                                    })()
+                                }
+                            </td>
+
+
+                            <!-- Costo de viaje -->
+                            <td>
+                                <div class="border rounded p-2 bg-light">
+                                <i class="text-info"></i> <strong>Pago viaje:</strong><br> S/ ${rutas.pago_viaje ?? '0.00'}<br>
+                                <i class="text-info"></i> <strong>Caja Chica:</strong><br> S/ ${rutas.caja_chica ?? '0.00'}<br>
+                                </div>
+                            
+                            
+                            </td>
+
                             <!-- Botón de reporte -->
                             <td>
-                                <button class="btn btn-primary btn-sm" onclick="verReporte(${rutas.id})">
+                                <a class="btn btn-primary btn-sm" href="/api/reporte/ruta/${rutas.id}">
                                     <i class="fas fa-file-alt"></i> Reporte
-                                </button>
+                                </a>
                             </td>
+
                         </tr>
                     `);
                 });
@@ -164,7 +204,7 @@
             }
         });
     });
-
+    
     function eliminar(id) {
         Swal.fire({
             title: 'Eliminar registro',
@@ -179,9 +219,9 @@
             if (result.isConfirmed) {
                 $.ajax({
                     method: 'DELETE',
-                    url:  `http://127.0.0.1:8000/api/rutas/${id}`,
+                    url:  `/api/rutas/${id}`,
                     headers:{
-                        'X-CSRF-TOKEN':$('meta[name="csrf-token"]').attr('content')
+                         "Authorization": "Bearer " + localStorage.getItem("token")
                     },
                     success: function(){
                         $(`#ruta_${id}`).remove();

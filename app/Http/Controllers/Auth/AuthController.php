@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
 {
@@ -30,7 +31,7 @@ class AuthController extends Controller
         $credentials = $request->only('email', 'password');
 
         if (! $token = JWTAuth::attempt($credentials)) {
-            return response()->json(['error' => 'Credenciales inválidas'], 401);
+            return response()->json(['error' => 'Datos incorrectos...'], 401);
         }
 
         return $this->respondWithToken($token);
@@ -53,9 +54,26 @@ class AuthController extends Controller
      */
     public function logout()
     {
-        JWTAuth::logout();
+            
+        try {
+            // Obtener el token enviado en el header Authorization
+            $token = JWTAuth::getToken();
+            if (!$token) {
+                return response()->json(['error' => 'Token no proporcionado'], 400);
+            }
 
-        return response()->json(['message' => 'Sesión cerrada correctamente']);
+            // Invalida el token (logout)
+            JWTAuth::invalidate($token);
+
+            return response()->json([
+                'message' => 'Sesión cerrada correctamente desde el servidor.'
+            ]);
+
+        } catch (JWTException $e) {
+            return response()->json([
+                'error' => 'No se pudo cerrar sesión'
+            ], 500);
+        }
     }
 
     /**
@@ -78,6 +96,7 @@ class AuthController extends Controller
     {
         return response()->json([
             'access_token' => $token,
+            'email' => JWTAuth::user()->email,
             'token_type'   => 'bearer',
             'expires_in'   => JWTAuth::factory()->getTTL() * 60
         ]);

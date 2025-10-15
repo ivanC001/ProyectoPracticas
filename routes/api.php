@@ -10,9 +10,11 @@ use App\Http\Controllers\RutaPeajeController;
 use App\Domains\Reportes\Controllers\ReporteController;
 use App\Domains\Inventarios\Controllers\ProductoController;
 use App\Domains\Comprobantes\Controllers\ComprobanteController;
+use App\Domains\Reportes\Controllers\ReporteRutaController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\RutaViaticosController;
 use App\Http\Controllers\Auth\RegisterController;
+
 
 
 use Illuminate\Support\Facades\Route;
@@ -132,12 +134,33 @@ Route::delete('/rutasViaticos/{id}', [RutaViaticosController::class, 'destroy'])
 //////////////////////////////logeo 
 
 
-Route::post('login', [AuthController::class,'login']);
+// Route::post('login', [AuthController::class,'login']);
 Route::post('logout',[AuthController::class,'logout']);
 Route::post('refresh', [AuthController::class,'refresh']);
 Route::post('me', [AuthController::class,'me']);
 
 //////////////////////////////REGISTRO DE USUARIOS//////////////////////
 
-Route::post('register', [RegisterController::class, 'Store']);
+Route::post('register', [RegisterController::class, 'store'])->name('register');
+Route::post('login', [AuthController::class, 'login'])->name('login');
+
 //////////////////////////////////////////////////////////////////////// 
+////////////////////////ACCESO RESTRINGIDO//////////////////////////////////////////////// 
+Route::middleware(['auth:api'])->group(function () {
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::post('refresh', [AuthController::class, 'refresh']);
+    Route::post('me', [AuthController::class, 'me']);
+
+    // Tus otros endpoints protegidos
+    // Rutas API para rutas
+
+});
+    Route::prefix('rutas')->group(function () {
+        Route::get('/', [RutaController::class, 'index']);
+        Route::post('/', [RutaController::class, 'store']);
+        Route::get('/{id}', [RutaController::class, 'show']);
+        Route::put('/{id}', [RutaController::class, 'update']);
+        Route::delete('/{id}', [RutaController::class, 'destroy']);
+    });
+
+Route::get('/reporte/ruta/{id}',[ReporteRutaController::class,'exportRutaDetalle']);

@@ -1,9 +1,20 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+// Route::get('/', function () {
+//     return view('admin.main');
+// })->name('');
+
 Route::get('/', function () {
+    return view('welcome');
+})->name('');
+
+
+
+
+Route::get('/dashboard', function () {
     return view('dashboard');
-});
+})->name('dashboard');
 Route::get('/conductor', function () {
     return view('vista_conductor.index');
 });
@@ -61,3 +72,9 @@ Route::get('/ruta/{id}/rutacombustible', function ($id) {
 Route::get('/ruta/{id}/rutapeaje', function ($id) {
     return view('ruta.rutapeaje');
 });
+Route::get('/login', function () {
+    return view('auth.login');
+});
+Route::get('/layouts', function () {
+    return view('layouts.app');
+})->name('app');

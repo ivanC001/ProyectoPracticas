@@ -22,7 +22,15 @@ class RutaController extends Controller
         $ruta = Ruta::create($validatedData);
 
 
-        return response()->json($ruta, 201);
+         return response()->json([
+        'message' => 'Ruta registrada exitosamente',
+        'ruta' => [
+            'origen' => $ruta->origen,
+            'destino' => $ruta->destino,
+            'estado' => $ruta->estado,
+            'observaciones' => $ruta->observaciones,
+        ]
+        ], 201);
     }
 
     // Mostrar una ruta específica

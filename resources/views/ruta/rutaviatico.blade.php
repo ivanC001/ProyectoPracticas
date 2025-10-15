@@ -88,7 +88,7 @@
 @push('scripts')
 <script>
     const rutaId = window.location.pathname.split('/')[2];
-    const apiUrl = 'http://127.0.0.1:8000/api';
+    const apiUrl = '/api';
     let currentRuta = null;
 
     // Cargar datos iniciales

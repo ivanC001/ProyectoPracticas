@@ -22,18 +22,32 @@ class RutaRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // 'fecha_inicio' => 'required|date',
+            // 'fecha_fin' => 'required|date',
+            // 'origen' => 'required|string|max:255',
+            // 'destino' => 'required|string|max:255',
+            // 'conductor_id' => [
+            //     'required',
+            //     'exists:conductores,id,deleted_at,NULL',
+            // ],
+            // 'camion_id' => [
+            //     'required',
+            //     'exists:camiones,id,deleted_at,NULL',
+            // ],
             'fecha_inicio' => 'required|date',
-            'fecha_fin' => 'required|date',
-            'origen' => 'required|string|max:255',
-            'destino' => 'required|string|max:255',
-            'conductor_id' => [
-                'required',
-                'exists:conductores,id,deleted_at,NULL',
-            ],
-            'camion_id' => [
-                'required',
-                'exists:camiones,id,deleted_at,NULL',
-            ],
+        'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
+        'origen' => 'required|string|max:255',
+        'destino' => 'nullable|string|max:255',
+
+        'conductor_id' => 'required|exists:conductores,id',
+        'camion_id' => 'required|exists:camiones,id',
+
+        'caja_chica' => 'nullable|numeric|min:0',
+        'pago_viaje' => 'nullable|numeric|min:0',
+        'ganancia_viaje' => 'nullable|numeric|min:0',
+
+        'estado' => 'required|string|in:pendiente,en curso,finalizado,cancelado',
+        'observaciones' => 'nullable|string|max:500',
         ];
     }
 

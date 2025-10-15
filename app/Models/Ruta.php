@@ -8,17 +8,17 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Ruta extends Model
 {
-
     use HasFactory, SoftDeletes;
 
     protected $table = 'rutas';
+
     protected $fillable = [
-        //datos del viaje
+        // datos del viaje
         'fecha_inicio',
         'fecha_fin',
         'origen',
         'destino',
-        //repossable del viaje
+        // responsable del viaje
         'conductor_id',
         'camion_id',
         // gastos del viaje
@@ -31,7 +31,6 @@ class Ruta extends Model
 
     protected $dates = ['deleted_at'];
 
-
     public function conductor()
     {
         return $this->belongsTo(Conductor::class);
@@ -42,21 +41,21 @@ class Ruta extends Model
         return $this->belongsTo(Camion::class);
     }
 
-    // relacion con viaticos
+    // relación con viáticos
     public function viaticos()
     {
         return $this->hasMany(Viatico::class, 'ruta_id');
     }
 
-    // relacion con combustible
+    // relación con combustibles
     public function combustibles()
     {
         return $this->hasMany(Combustible::class, 'ruta_id');
-        
-    }
-    public function peajes()
-    {
-        return $this->hasMany(Peaje::class);
     }
 
+    // relación con peajes
+    public function peajes()
+    {
+        return $this->hasMany(Peaje::class, 'ruta_id');
+    }
 }
