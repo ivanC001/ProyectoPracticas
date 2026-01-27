@@ -14,6 +14,8 @@ use App\Domains\Reportes\Controllers\ReporteRutaController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\RutaViaticosController;
 use App\Http\Controllers\Auth\RegisterController;
+USE App\Http\Controllers\Factura\Controllers\FacturaController;
+
 
 
 
@@ -116,7 +118,8 @@ Route::prefix('productos')->group(function () {
 
 
 Route::post('/comprobantes/create', [ComprobanteController::class, 'emitirFactura']);
-
+///contruccion mia
+route::post('/factura/nuevaventa', [FacturaController::class, 'newventa']);
 
 //////////rutas con viaticos y combustibles devuelve////
 
