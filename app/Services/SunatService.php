@@ -17,7 +17,7 @@ class SunatService
 {
     public function getSee(){
 
-           
+        
         $certPath = config('empresa.sunat_cert_path');
         $certPass = config('empresa.sunat_cert_pass');
         $certificate = file_get_contents($certPath);
@@ -32,80 +32,92 @@ class SunatService
             config('empresa.sunat_password')
         );
         return $see;
+        
  
     }
-    public function getInvoice(){
+    public function getInvoice($data){
+         $details = $this->getDetails($data['items']);
+
+        $totales = $this->calcularTotales($data['items']);
             // Venta
         $invoice = (new Invoice())
             ->setUblVersion('2.1')
             ->setTipoOperacion('0101') // Venta - Catalog. 51
             ->setTipoDoc('01') // Factura - Catalog. 01 
-            ->setSerie('F001')
-            ->setCorrelativo('1')
-            ->setFechaEmision(new DateTime()) // Zona horaria: Lima
+            ->setSerie($data['serie'])
+            ->setCorrelativo($data['correlativo'])
+            ->setFechaEmision(new DateTime($data['fecha_emision']))
             ->setFormaPago(new FormaPagoContado()) // FormaPago: Contado
-            ->setTipoMoneda('PEN') // Sol - Catalog. 02
+            ->setTipoMoneda($data['moneda']) // Sol - Catalog. 02
             ->setCompany($this->getCompany())
-            ->setClient($this->getClient())
-            ->setMtoOperGravadas(100.00)
-            ->setMtoIGV(18.00)
-            ->setTotalImpuestos(18.00)
-            ->setValorVenta(100.00)
-            ->setSubTotal(118.00)
-            ->setMtoImpVenta(118.00)
-            ->setDetails($this->getDetails())
-            ->setLegends($this->getLegend());
+            ->setClient($this->getClient($data['cliente']))
+            ->setMtoOperGravadas($totales['gravadas'])
+            ->setMtoIGV($totales['igv'])
+            ->setTotalImpuestos($totales['igv'])
+            ->setValorVenta($totales['gravadas'])
+            ->setSubTotal($totales['total'])
+            ->setMtoImpVenta($totales['total'])
+            ->setDetails($details)
+            ->setLegends($this->getLegend($totales['total']));
             ;
         return $invoice;
     }
 
     public function getCompany(){
         $company = (new Company())
-            ->setRuc('20123456789')
-            ->setRazonSocial('GREEN SAC')
-            ->setNombreComercial('GREEN')
+            ->setRuc(config('empresa.ruc'))
+            ->setRazonSocial(config('empresa.razon_social'))
+            ->setNombreComercial(config('empresa.nombre_comercial'))
             ->setAddress($this->getAddress());
         return $company;
 
     }
-    public function getClient(){         
+    public function getClient($cliente){         
     // Cliente
         $client = (new Client())
-            ->setTipoDoc('6')
-            ->setNumDoc('20000000001')
-            ->setRznSocial('EMPRESA X');
+            ->setTipoDoc($cliente['tipo_doc'])
+            ->setNumDoc($cliente['num_doc'])
+            ->setRznSocial($cliente['razon_social']);
         return $client;
     }
     public function getAddress(){
           // Emisor
         $address = (new Address())
-            ->setUbigueo('150101')
-            ->setDepartamento('LIMA')
-            ->setProvincia('LIMA')
-            ->setDistrito('LIMA')
-            ->setUrbanizacion('-')
-            ->setDireccion('Av. Villa Nueva 221')
-            ->setCodLocal('0000'); // Codigo de establecimiento asignado por SUNAT, 0000 por defecto.
+            ->setUbigueo(config('empresa.ubigeo'))
+            ->setDepartamento(config('empresa.departamento'))
+            ->setProvincia(config('empresa.provincia'))
+            ->setDistrito(config('empresa.distrito'))
+            ->setUrbanizacion(config('empresa.urbanizacion'))
+            ->setDireccion(config('empresa.direccion'))
+            ->setCodLocal(config('empresa.cod_local')); // Codigo de establecimiento asignado por SUNAT, 0000 por defecto.
         return $address;
         
     }
-    public function getDetails(){
-            $item = (new SaleDetail())
-                ->setCodProducto('P001')
-                ->setUnidad('NIU') // Unidad - Catalog. 03
-                ->setCantidad(2)
-                ->setMtoValorUnitario(50.00)
-                ->setDescripcion('PRODUCTO 1')
-                ->setMtoBaseIgv(100)
-                ->setPorcentajeIgv(18.00) // 18%
-                ->setIgv(18.00)
-                ->setTipAfeIgv('10') // Gravado Op. Onerosa - Catalog. 07
-                ->setTotalImpuestos(18.00) // Suma de impuestos en el detalle
-                ->setMtoValorVenta(100.00)
-                ->setMtoPrecioUnitario(59.00)
-                ;
+    public function getDetails($items){
 
-            return [$item];
+        $details=[];
+        foreach ($items as $item) {
+            $valorVenta = $item['cantidad'] * $item['valor_unitario'];
+            $igv = $valorVenta * 0.18;
+            $precioUnitario = ($valorVenta + $igv) / $item['cantidad'];
+            $detail = (new SaleDetail())
+                ->setCodProducto($item['codigo'])
+                ->setUnidad('NIU') // Unidad - Catalog. 03
+                ->setCantidad($item['cantidad'])
+                ->setMtoValorUnitario($item['valor_unitario'])
+                ->setDescripcion($item['descripcion'])
+                ->setMtoBaseIgv($valorVenta)
+                ->setPorcentajeIgv(18.00) // 18%
+                ->setIgv($igv)
+                ->setTipAfeIgv('10') // Gravado Op. Onerosa - Catalog. 07
+                ->setTotalImpuestos($igv) // Suma de impuestos en el detalle
+                ->setMtoValorVenta($valorVenta)
+                ->setMtoPrecioUnitario($precioUnitario);
+            $details[] = $detail;
+
+        }
+
+            return  $details;
     }
     public function getLegend(){
           $legend = (new Legend())
@@ -113,5 +125,53 @@ class SunatService
             ->setValue('SON DOSCIENTOS TREINTA Y SEIS CON 00/100 SOLES');
         return [$legend];
 
+    }
+    public function sunatResponse($result){
+        
+        $respuesta['success']=$result->isSuccess();
+
+    // // Guardar XML firmado digitalmente.
+    // file_put_contents($invoice->getName().'.xml',
+    //                 $see->getFactory()->getLastXml());
+
+        // Verificamos que la conexión con SUNAT fue exitosa.
+        if (!$respuesta['success']) {
+            // Mostrar error al conectarse a SUNAT.
+            $respuesta['Error']=[
+                'code' => $result->getError()->getCode(),
+                'message' => $result->getError()->getMessage()
+            ];
+            return $respuesta;
+        }
+
+        // // Guardamos el CDR
+        // file_put_contents('R-'.$invoice->getName().'.zip', $result->getCdrZip());
+        $respuesta['cdrZip']= base64_encode($result->getCdrZip());
+
+        $cdr = $result->getCdrResponse();
+        $respuesta['cdrRespuesta']=[
+            'code' => (int)$cdr->getCode(),
+            'description' => $cdr->getDescription(),
+            'notes' => $cdr->getNotes()
+        ];
+        return $respuesta;
+
+    }
+    public function calcularTotales($items)
+    {
+        $gravadas = 0;
+
+        foreach ($items as $item) {
+            $gravadas += $item['cantidad'] * $item['valor_unitario'];
+        }
+
+        $igv = $gravadas * 0.18;
+        $total = $gravadas + $igv;
+
+        return [
+            'gravadas' => round($gravadas, 2),
+            'igv' => round($igv, 2),
+            'total' => round($total, 2)
+        ];
     }
 }

@@ -2,9 +2,19 @@
 
 return [
     'ruc' => env('EMPRESA_RUC', '20123456789'),
-    'razon_social' => env('EMPRESA_RAZON_SOCIAL', 'Mi Empresa S.A.C.'),
+    'razon_social' => env('HECAB SERVICIOS ENERGETICOS', 'hECAB S.A.C.'),
     'nombre_comercial' => env('EMPRESA_NOMBRE_COMERCIAL', 'Mi Empresa'),
-    'direccion' => env('EMPRESA_DIRECCION', 'Av. Ejemplo 123'), 
+
+    //direccion empresa emite comprobante
+    'direccion' => env('EMPRESA_DIRECCION', 'Av. Ejemplo 123'),
+    'urbanizacion' => env('EMPRESA_URBANIZACION', '-'),
+    'ubigeo' => env('EMPRESA_UBIGEO', '150101'),
+    'departamento' => env('EMPRESA_DEPARTAMENTO', 'LIMA'),
+    'provincia' => env('EMPRESA_PROVINCIA', 'LIMA'),
+    'distrito' => env('EMPRESA_DISTRITO', 'LIMA'),
+    'cod_local' => env('EMPRESA_COD_LOCAL', '0000'),
+    
+
 
     // Certificados y credenciales SUNAT
     'sunat_ruc' => env('SUNAT_RUC', '20123456789'),
