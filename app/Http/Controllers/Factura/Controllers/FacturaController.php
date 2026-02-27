@@ -23,14 +23,12 @@ class FacturaController extends Controller{
     $envioSunat=new SunatService();
     $see=$envioSunat->getSee();
     $invoice=$envioSunat->getInvoice($data);
-    return response()->json($invoice, 200);
+    
 
     $result = $see->send($invoice);
     $response['xml']=$see->getFactory()->getLastXml();
     $response['hash']=(new XmlUtils())->getHashSign($response['xml']);
     $response['sunatResponse']=$envioSunat->sunatResponse($result);
-
-
-    // return response()->json($response, 200);
+    return response()->json($response, 200);
     }
 }

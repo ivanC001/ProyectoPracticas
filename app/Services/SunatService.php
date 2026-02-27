@@ -119,10 +119,10 @@ class SunatService
 
             return  $details;
     }
-    public function getLegend(){
+    public function getLegend($total){
           $legend = (new Legend())
             ->setCode('1000') // Monto en letras - Catalog. 52
-            ->setValue('SON DOSCIENTOS TREINTA Y SEIS CON 00/100 SOLES');
+            ->setValue('SON '.$total.' SOLES');
         return [$legend];
 
     }
