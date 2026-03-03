@@ -23,7 +23,7 @@ class FacturaController extends Controller{
     $envioSunat=new SunatService();
     $see=$envioSunat->getSee();
     $invoice=$envioSunat->getInvoice($data);
-    
+    // dd($invoice);
 
     $result = $see->send($invoice);
     $response['xml']=$see->getFactory()->getLastXml();

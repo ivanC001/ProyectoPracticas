@@ -165,7 +165,7 @@ class SunatService
             $gravadas += $item['cantidad'] * $item['valor_unitario'];
         }
 
-        $igv = $gravadas * 0.18;
+        $igv = $gravadas * 0.18;  //
         $total = $gravadas + $igv;
 
         return [
