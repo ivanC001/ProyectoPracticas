@@ -154,7 +154,7 @@ document.getElementById('formRegistroFactura').addEventListener('submit', functi
         detalle: productosSeleccionados,
     };
 
-    fetch('/api/comprobantes/create', {
+    fetch('/api/factura/nuevaventa', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

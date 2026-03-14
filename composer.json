@@ -16,6 +16,7 @@
         "greenter/xml": "^5.1",
         "laravel/framework": "^11.9",
         "laravel/tinker": "^2.9",
+        "luecano/numero-a-letras": "^4.0",
         "phpoffice/phpspreadsheet": "^3.5",
         "tymon/jwt-auth": "^2.2"
     },

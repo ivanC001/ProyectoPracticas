@@ -114,12 +114,7 @@ Route::prefix('productos')->group(function () {
 });
 
 
-//facturacion ::
 
-
-Route::post('/comprobantes/create', [ComprobanteController::class, 'emitirFactura']);
-///contruccion mia
-route::post('/factura/nuevaventa', [FacturaController::class, 'newventa']);
 
 //////////rutas con viaticos y combustibles devuelve////
 
@@ -167,3 +162,13 @@ Route::middleware(['auth:api'])->group(function () {
     });
 
 Route::get('/reporte/ruta/{id}',[ReporteRutaController::class,'exportRutaDetalle']);
+
+//facturacion ::
+
+
+Route::post('/comprobantes/create', [ComprobanteController::class, 'emitirFactura']);
+///contruccion mia
+route::post('/factura/nuevaventa', [FacturaController::class, 'newventa']);
+
+
+route::post('/factura/pdf', [FacturaController::class, 'pdf']);

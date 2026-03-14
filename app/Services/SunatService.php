@@ -12,6 +12,9 @@ use Greenter\Model\Company\Address;
 use Greenter\Model\Company\Company;
 use Greenter\Model\Sale\SaleDetail;
 use App\Http\Controllers\Controller;
+use Greenter\Report\HtmlReport;
+use Greenter\Report\Resolver\DefaultTemplateResolver;
+use Luecano\NumeroALetras\NumeroALetras;
 
 class SunatService
 {
@@ -35,34 +38,65 @@ class SunatService
         
  
     }
-    public function getInvoice($data){
-         $details = $this->getDetails($data['items']);
+    // public function getInvoice($data){
+    //      $details = $this->getDetails($data['items']);
+
+    //     $totales = $this->calcularTotales($data['items']);
+    //         // Venta
+    //     $invoice = (new Invoice())
+    //         ->setUblVersion($data['ublVersion'] ?? '2.1')
+    //         ->setTipoOperacion($data['0101'] ?? null) // Venta - Catalog. 51
+    //         ->setTipoDoc($data['01'] ?? null) // Factura - Catalog. 01 
+    //         ->setSerie($data['serie'] ?? null)
+    //         ->setCorrelativo($data['correlativo'] ?? null)
+    //         ->setFechaEmision(new DateTime($data['fecha_emision']) ?? null)
+    //         ->setFormaPago(new FormaPagoContado()) // FormaPago: Contado
+    //         ->setTipoMoneda($data['moneda'] ?? null) // Sol - Catalog. 02
+    //         ->setCompany($this->getCompany())
+    //         ->setClient($this->getClient($data['cliente']))
+
+    //         //monto operaciones grabadass
+    //         ->setMtoOperGravadas($totales['gravadas'])
+    //         ->setMtoIGV($totales['igv'])
+    //         ->setTotalImpuestos($totales['igv'])
+    //         ->setValorVenta($totales['gravadas'])
+    //         ->setSubTotal($totales['total'])
+    //         ->setMtoImpVenta($totales['total'])
+    //         ->setDetails($details)
+    //         ->setLegends($this->getLegend($totales['total']));
+    //         ;
+    //     return $invoice;
+    // }
+    public function getInvoice($data)
+    {
+        $details = $this->getDetails($data['items']);
 
         $totales = $this->calcularTotales($data['items']);
-            // Venta
+
         $invoice = (new Invoice())
             ->setUblVersion('2.1')
-            ->setTipoOperacion('0101') // Venta - Catalog. 51
-            ->setTipoDoc('01') // Factura - Catalog. 01 
+            ->setTipoOperacion('0101')
+            ->setTipoDoc('01')
             ->setSerie($data['serie'])
             ->setCorrelativo($data['correlativo'])
             ->setFechaEmision(new DateTime($data['fecha_emision']))
-            ->setFormaPago(new FormaPagoContado()) // FormaPago: Contado
-            ->setTipoMoneda($data['moneda']) // Sol - Catalog. 02
+            ->setFormaPago(new FormaPagoContado())
+            ->setTipoMoneda($data['moneda'])
             ->setCompany($this->getCompany())
             ->setClient($this->getClient($data['cliente']))
+
             ->setMtoOperGravadas($totales['gravadas'])
             ->setMtoIGV($totales['igv'])
             ->setTotalImpuestos($totales['igv'])
             ->setValorVenta($totales['gravadas'])
             ->setSubTotal($totales['total'])
             ->setMtoImpVenta($totales['total'])
+
             ->setDetails($details)
             ->setLegends($this->getLegend($totales['total']));
-            ;
+
         return $invoice;
     }
-
     public function getCompany(){
         $company = (new Company())
             ->setRuc(config('empresa.ruc'))
@@ -75,9 +109,9 @@ class SunatService
     public function getClient($cliente){         
     // Cliente
         $client = (new Client())
-            ->setTipoDoc($cliente['tipo_doc'])
-            ->setNumDoc($cliente['num_doc'])
-            ->setRznSocial($cliente['razon_social']);
+            ->setTipoDoc($cliente['tipo_doc']?? null)
+            ->setNumDoc($cliente['num_doc']?? null)
+            ->setRznSocial($cliente['razon_social']?? null);
         return $client;
     }
     public function getAddress(){
@@ -97,19 +131,19 @@ class SunatService
 
         $details=[];
         foreach ($items as $item) {
-            $valorVenta = $item['cantidad'] * $item['valor_unitario'];
-            $igv = $valorVenta * 0.18;
-            $precioUnitario = ($valorVenta + $igv) / $item['cantidad'];
+            $valorVenta = round($item['cantidad'] * $item['valor_unitario'], 2);
+            $igv = round($valorVenta * 0.18, 2);
+            $precioUnitario = round(($valorVenta + $igv) / $item['cantidad'], 2);
             $detail = (new SaleDetail())
-                ->setCodProducto($item['codigo'])
-                ->setUnidad('NIU') // Unidad - Catalog. 03
-                ->setCantidad($item['cantidad'])
-                ->setMtoValorUnitario($item['valor_unitario'])
-                ->setDescripcion($item['descripcion'])
+                ->setCodProducto($item['codigo']?? null)
+                ->setUnidad($item['unidad'] ?? 'NIU') // Unidad - Catalog. 03
+                ->setCantidad($item['cantidad']?? null)
+                ->setMtoValorUnitario($item['valor_unitario']?? null)
+                ->setDescripcion($item['descripcion']?? null)
                 ->setMtoBaseIgv($valorVenta)
                 ->setPorcentajeIgv(18.00) // 18%
                 ->setIgv($igv)
-                ->setTipAfeIgv('10') // Gravado Op. Onerosa - Catalog. 07
+                ->setTipAfeIgv('10') // Gravado Op. Onerosa - Catalog. 07 (puede ser dinamico)
                 ->setTotalImpuestos($igv) // Suma de impuestos en el detalle
                 ->setMtoValorVenta($valorVenta)
                 ->setMtoPrecioUnitario($precioUnitario);
@@ -120,10 +154,13 @@ class SunatService
             return  $details;
     }
     public function getLegend($total){
-          $legend = (new Legend())
-            ->setCode('1000') // Monto en letras - Catalog. 52
-            ->setValue('SON '.$total.' SOLES');
-        return [$legend];
+            $formatee=new NumeroALetras();
+        
+            $legend = (new Legend())
+                ->setCode('1000') // Monto en letras - Catalog. 52
+                ->setValue('SON '.$formatee->toInvoice($total,2,' SOLES'));
+                // ->setValue('SON '.$total.' SOLES');
+            return [$legend];
 
     }
     public function sunatResponse($result){
@@ -160,18 +197,66 @@ class SunatService
     public function calcularTotales($items)
     {
         $gravadas = 0;
+        $exoneradas = 0;
+        $inafectas = 0;
+        $igv = 0;
 
         foreach ($items as $item) {
-            $gravadas += $item['cantidad'] * $item['valor_unitario'];
+
+            $monto = $item['cantidad'] * $item['valor_unitario'];
+            $tipAfeIgv = $item['tipAfeIgv'] ?? '10';
+
+            if ($tipAfeIgv == '10') { // Gravado
+                $gravadas += $monto;
+                $igv += $monto * 0.18;
+            }
+
+            if ($tipAfeIgv == '20') { // Exonerado
+                $exoneradas += $monto;
+            }
+
+            if ($tipAfeIgv == '30') { // Inafecto
+                $inafectas += $monto;
+            }
         }
 
-        $igv = $gravadas * 0.18;  //
-        $total = $gravadas + $igv;
+        $total = round($gravadas + $exoneradas + $inafectas + $igv, 2);
 
         return [
             'gravadas' => round($gravadas, 2),
+            'exoneradas' => round($exoneradas, 2),
+            'inafectas' => round($inafectas, 2),
             'igv' => round($igv, 2),
             'total' => round($total, 2)
         ];
     }
+    //respuesta sunat y reporte
+    public function getHtmlreport($invoice){
+        $report=new HtmlReport();
+        $resolver=new DefaultTemplateResolver();
+        $report->setTemplate($resolver->getTemplate($invoice));
+        $params = [
+            'system' => [
+                'logo' => file_get_contents(public_path('assets/dist/img/AdminLTELogo.png')),
+                'hash' => 'qqnr2dN4p/HmaEA/CJuVGo7dv5g=', // Valor Resumen 
+            ],
+            'user' => [
+                'header'     => 'Telf: <b>(01) 123375</b>', // Texto que se ubica debajo de la dirección de empresa
+                'extras'     => [
+                    // Leyendas adicionales
+                    ['name' => 'CONDICION DE PAGO', 'value' => 'Efectivo'     ],
+                    ['name' => 'VENDEDOR'         , 'value' => 'GITHUB SELLER'],
+                ],
+                'footer' => '<p>Nro Resolucion: <b>3232323</b></p>'
+            ]
+        ];
+
+       return $report->render($invoice, $params);
+
+    }
+
+
+
+
+
 }
