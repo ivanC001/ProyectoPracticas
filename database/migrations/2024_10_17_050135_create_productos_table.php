@@ -12,13 +12,31 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('productos', function (Blueprint $table) {
+
             $table->id();
-            $table->string('nombre');
-            $table->text('descripcion')->nullable(); // Descripción opcional del producto
-            $table->decimal('precio', 10, 2);
-            $table->integer('cantidad_stock')->default(0); // Control de stock actual
-            $table->timestamps(); // created_at, updated_at
-            $table->softDeletes(); // deleted_at 
+
+            // identificación
+            $table->string('codigo')->unique();
+            $table->string('descripcion');
+
+            // clasificación
+            $table->string('categoria')->nullable();
+
+            // unidad SUNAT
+            $table->string('unidad',10)->default('NIU');
+
+            // precios
+            $table->decimal('precio',10,2);
+
+            // inventario
+            $table->integer('stock')->default(0);
+
+            // estado
+            $table->boolean('activo')->default(true);
+
+            $table->timestamps();
+            $table->softDeletes();
+
         });
     }
 

@@ -2,7 +2,7 @@
 
 return [
     'ruc' => env('EMPRESA_RUC', '20123456789'),
-    'razon_social' => env('HECAB SERVICIOS ENERGETICOS', 'hECAB S.A.C.'),
+    'razon_social' => env('HECAB SERVICIOS ENERGETICOS', 'HECAB Servicios Energeticos S.A.C.'),
     'nombre_comercial' => env('EMPRESA_NOMBRE_COMERCIAL', 'Mi Empresa'),
 
     //direccion empresa emite comprobante

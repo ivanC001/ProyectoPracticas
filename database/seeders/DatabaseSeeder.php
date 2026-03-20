@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             RutasViaticosSeeder::class,      // después viáticos (depende de rutas)
             RutasPeajesSeeder::class,        // después peajes (depende de rutas)
             RutasCombustiblesSeeder::class,  // después combustibles (depende de rutas)
+            TipoDocumentoSeeder::class,
         ]);
 
 

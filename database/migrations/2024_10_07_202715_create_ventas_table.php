@@ -12,32 +12,59 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ventas', function (Blueprint $table) {
-            $table->id(); // Clave primaria
-            $table->string('tipo_documento'); // Ejemplo: Factura, Boleta
-            $table->string('serie')->default('F001'); // Serie del documento
-            $table->string('correlativo'); // Correlativo del documento
-            $table->date('fecha_emision'); // Fecha en que se emitió la venta
-            $table->string('moneda')->default('PEN'); // Código de la moneda (PEN, USD, etc.)
-        
-            // Datos del cliente
-            $table->string('tipo_documento_cliente'); // Tipo de documento del cliente (DNI, RUC, etc.)
-            $table->string('numero_documento_cliente'); // Número de documento del cliente
-            $table->string('nombre_cliente'); // Nombre o razón social del cliente
-        
+
+            $table->id();
+
+            // Documento
+            $table->string('tipo_documento', 2); // 01 factura | 03 boleta
+            $table->string('tipo_operacion', 4)->default('0101');
+
+            $table->string('serie', 4); // F001 | B001
+            $table->integer('correlativo');
+
+            $table->string('numero_comprobante')->nullable(); // F001-000001
+
+            $table->dateTime('fecha_emision');
+
+            $table->string('moneda', 3)->default('PEN');
+
+
+            // Cliente
+            $table->string('tipo_documento_cliente', 2)->nullable();
+            $table->string('numero_documento_cliente', 20)->nullable();
+            $table->string('nombre_cliente');
+
+
             // Totales
-            $table->decimal('total_venta', 10, 2); // Total de la venta, incluyendo impuestos
-            $table->decimal('total_impuestos', 10, 2); // Total de impuestos (IGV)
-        
-            // Campos adicionales
-            $table->string('hash_cpe')->nullable(); // Hash generado por SUNAT
-            $table->string('archivo_xml')->nullable(); // Ruta del archivo XML, si deseas guardarlo
-            $table->string('archivo_pdf')->nullable(); // Ruta del archivo PDF generado, si lo necesitas
-            $table->string('estado_envio')->default('pendiente'); // Estado del envío: pendiente, aceptado, rechazado
-            
-            $table->timestamps(); // Campos para created_at y updated_at
-            $table->softDeletes(); // deleted_at
+            $table->decimal('total_venta', 12, 2);
+            $table->decimal('total_impuestos', 12, 2);
+
+
+            // Respuesta SUNAT
+            $table->string('codigo_respuesta_sunat')->nullable();
+            $table->text('descripcion_respuesta_sunat')->nullable();
+
+
+            // Archivos
+            $table->string('hash_cpe')->nullable();
+            $table->string('archivo_xml')->nullable();
+            $table->string('archivo_pdf')->nullable();
+            $table->text('cdr_zip')->nullable();
+
+
+            // Estado
+            $table->string('estado_envio')->default('pendiente');
+
+
+            $table->timestamps();
+            $table->softDeletes();
+
+
+            // Índices importantes
+            $table->unique(['serie','correlativo']);
+            $table->index('numero_documento_cliente');
+
         });
-        
     }
 
     /**

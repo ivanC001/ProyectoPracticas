@@ -15,6 +15,7 @@ use App\Http\Controllers\Controller;
 use Greenter\Report\HtmlReport;
 use Greenter\Report\Resolver\DefaultTemplateResolver;
 use Luecano\NumeroALetras\NumeroALetras;
+use App\Models\VentasModel\SerieCorrelativo;
 
 class SunatService
 {
@@ -67,33 +68,58 @@ class SunatService
     //         ;
     //     return $invoice;
     // }
+   
     public function getInvoice($data)
     {
+        // obtener serie y correlativo desde BD
+        $serieData = $this->obtenerSerieCorrelativo($data['tipo_documento']);
+
+        $serie = $serieData['serie'];
+        $correlativo = $serieData['correlativo'];
+
+        // generar detalles
         $details = $this->getDetails($data['items']);
 
+        // calcular totales
         $totales = $this->calcularTotales($data['items']);
 
         $invoice = (new Invoice())
+
             ->setUblVersion('2.1')
+
             ->setTipoOperacion('0101')
-            ->setTipoDoc('01')
-            ->setSerie($data['serie'])
-            ->setCorrelativo($data['correlativo'])
+
+            ->setTipoDoc($data['tipo_documento']) // 01 factura | 03 boleta
+
+            ->setSerie($serie)
+
+            ->setCorrelativo($correlativo)
+
             ->setFechaEmision(new DateTime($data['fecha_emision']))
+
             ->setFormaPago(new FormaPagoContado())
+
             ->setTipoMoneda($data['moneda'])
+
             ->setCompany($this->getCompany())
+
             ->setClient($this->getClient($data['cliente']))
 
             ->setMtoOperGravadas($totales['gravadas'])
+
             ->setMtoIGV($totales['igv'])
+
             ->setTotalImpuestos($totales['igv'])
+
             ->setValorVenta($totales['gravadas'])
+
             ->setSubTotal($totales['total'])
+
             ->setMtoImpVenta($totales['total'])
 
             ->setDetails($details)
-            ->setLegends($this->getLegend($totales['total']));
+
+            ->setLegends($this->getLegend($totales['total'], $data['moneda']));
 
         return $invoice;
     }
@@ -153,46 +179,80 @@ class SunatService
 
             return  $details;
     }
-    public function getLegend($total){
-            $formatee=new NumeroALetras();
-        
+    public function getLegend($total, $moneda){
+            $formatee = new NumeroALetras();
+
+            $monedaTexto = 'SOLES';
+
+            if ($moneda === 'USD') {
+                $monedaTexto = 'DOLARES AMERICANOS';
+            }
+
             $legend = (new Legend())
-                ->setCode('1000') // Monto en letras - Catalog. 52
-                ->setValue('SON '.$formatee->toInvoice($total,2,' SOLES'));
-                // ->setValue('SON '.$total.' SOLES');
+                ->setCode('1000')
+                ->setValue('SON ' . $formatee->toInvoice($total, 2, $monedaTexto));
+
             return [$legend];
 
     }
-    public function sunatResponse($result){
+    // public function sunatResponse($result){
         
-        $respuesta['success']=$result->isSuccess();
+    //     $respuesta['success']=$result->isSuccess();
 
-    // // Guardar XML firmado digitalmente.
-    // file_put_contents($invoice->getName().'.xml',
-    //                 $see->getFactory()->getLastXml());
+    // // // Guardar XML firmado digitalmente.
+    // // file_put_contents($invoice->getName().'.xml',
+    // //                 $see->getFactory()->getLastXml());
 
-        // Verificamos que la conexión con SUNAT fue exitosa.
+    //     // Verificamos que la conexión con SUNAT fue exitosa.
+    //     if (!$respuesta['success']) {
+    //         // Mostrar error al conectarse a SUNAT.
+    //         $respuesta['Error']=[
+    //             'code' => $result->getError()->getCode(),
+    //             'message' => $result->getError()->getMessage()
+    //         ];
+    //         return $respuesta;
+    //     }
+
+    //     // // Guardamos el CDR
+    //     // file_put_contents('R-'.$invoice->getName().'.zip', $result->getCdrZip());
+    //     $respuesta['cdrZip']= base64_encode($result->getCdrZip());
+
+    //     $cdr = $result->getCdrResponse();
+    //     $respuesta['cdrRespuesta']=[
+    //         'code' => (int)$cdr->getCode(),
+    //         'description' => $cdr->getDescription(),
+    //         'notes' => $cdr->getNotes()
+    //     ];
+    //     return $respuesta;
+
+    // }
+    public function sunatResponse($result)
+    {
+        $respuesta = [];
+
+        $respuesta['success'] = $result->isSuccess();
+
+        // Si hubo error de conexión con SUNAT
         if (!$respuesta['success']) {
-            // Mostrar error al conectarse a SUNAT.
-            $respuesta['Error']=[
+
+            $respuesta['error'] = [
                 'code' => $result->getError()->getCode(),
                 'message' => $result->getError()->getMessage()
             ];
+
             return $respuesta;
         }
 
-        // // Guardamos el CDR
-        // file_put_contents('R-'.$invoice->getName().'.zip', $result->getCdrZip());
-        $respuesta['cdrZip']= base64_encode($result->getCdrZip());
-
+        // Obtener respuesta del CDR
         $cdr = $result->getCdrResponse();
-        $respuesta['cdrRespuesta']=[
-            'code' => (int)$cdr->getCode(),
+
+        $respuesta['cdrRespuesta'] = [
+            'code' => (int) $cdr->getCode(),
             'description' => $cdr->getDescription(),
             'notes' => $cdr->getNotes()
         ];
-        return $respuesta;
 
+        return $respuesta;
     }
     public function calcularTotales($items)
     {
@@ -253,6 +313,15 @@ class SunatService
 
        return $report->render($invoice, $params);
 
+    }
+    public function obtenerSerieCorrelativo($tipoDocumento)
+    {
+        $serieData = SerieCorrelativo::obtenerSiguienteCorrelativo($tipoDocumento);
+
+        return [
+            'serie' => $serieData['serie'],
+            'correlativo' => $serieData['correlativo']
+        ];
     }
 
 

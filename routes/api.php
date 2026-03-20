@@ -8,18 +8,16 @@ use App\Http\Controllers\CombustibleController;
 use App\Http\Controllers\RutaCombustibleController;
 use App\Http\Controllers\RutaPeajeController;
 use App\Domains\Reportes\Controllers\ReporteController;
-use App\Domains\Inventarios\Controllers\ProductoController;
-use App\Domains\Comprobantes\Controllers\ComprobanteController;
-use App\Domains\Reportes\Controllers\ReporteRutaController;
+// use App\Domains\Comprobantes\Controllers\ComprobanteController;
+// use App\Domains\Reportes\Controllers\ReporteRutaController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\RutaViaticosController;
 use App\Http\Controllers\Auth\RegisterController;
-USE App\Http\Controllers\Factura\Controllers\FacturaController;
-
-
-
-
+use App\Http\Controllers\Factura\Controllers\FacturaController;
+use App\Http\Controllers\ProductosController\ProductoController;
+use App\Http\Controllers\VentasController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ControladorClientes\ClienteController;
 
 // Rutas API para conductores
 Route::prefix('conductores')->group(function () {
@@ -88,31 +86,26 @@ Route::prefix('rutas/{ruta}')->group(function () {
 
 // Reportes 
 
-// Rutas API para reportes
-Route::prefix('reporte')->group(function () {
-    Route::get('/viaticosRuta/{id}', [ReporteController::class, 'viaticosPorRuta']);
-    Route::get('/combustibleRuta/{id}', [ReporteController::class, 'combustiblePorRuta']);
-    Route::get('/completoRuta/{id}', [ReporteController::class, 'reporteCompletoPorRuta']);
-    //Route::get('/rutas-consumos', [ReporteController::class, 'rutasConsumos']);
-});
+// // Rutas API para reportes
+// Route::prefix('reporte')->group(function () {
+//     Route::get('/viaticosRuta/{id}', [ReporteController::class, 'viaticosPorRuta']);
+//     Route::get('/combustibleRuta/{id}', [ReporteController::class, 'combustiblePorRuta']);
+//     Route::get('/completoRuta/{id}', [ReporteController::class, 'reporteCompletoPorRuta']);
+//     //Route::get('/rutas-consumos', [ReporteController::class, 'rutasConsumos']);
+// });
 
-// Ruta para obtener rutas, viáticos y combustible según los filtros (ID, fechas o todo)
-Route::get('reporte/rutas-consumos', [ReporteController::class, 'rutasConsumos']);  // todas las rutas y consumo total
-Route::get('reporte/rutas-consumos?id=1', [ReporteController::class, 'rutasConsumos']); // de un id especifico
-Route::get('reporte/rutas-consumos?fecha_inicio=2024-09-26', [ReporteController::class, 'rutasConsumos']); //todos los de una fecha
-Route::get('reporte/rutas-consumos?fecha_inicio=2024-09-26&fecha_fin=2024-09-27', [ReporteController::class, 'rutasConsumos']); // en rango de fechas
-Route::get('reporte/rutas-consumos?exportar=1', [ReporteController::class, 'rutasConsumos']); // en cualquier de las anteriores si es necesario con agreagr el exportar exporta en excel
+// // Ruta para obtener rutas, viáticos y combustible según los filtros (ID, fechas o todo)
+// Route::get('reporte/rutas-consumos', [ReporteController::class, 'rutasConsumos']);  // todas las rutas y consumo total
+// Route::get('reporte/rutas-consumos?id=1', [ReporteController::class, 'rutasConsumos']); // de un id especifico
+// Route::get('reporte/rutas-consumos?fecha_inicio=2024-09-26', [ReporteController::class, 'rutasConsumos']); //todos los de una fecha
+// Route::get('reporte/rutas-consumos?fecha_inicio=2024-09-26&fecha_fin=2024-09-27', [ReporteController::class, 'rutasConsumos']); // en rango de fechas
+// Route::get('reporte/rutas-consumos?exportar=1', [ReporteController::class, 'rutasConsumos']); // en cualquier de las anteriores si es necesario con agreagr el exportar exporta en excel
 
 
 
-Route::prefix('productos')->group(function () {
-    Route::get('/', [ProductoController::class, 'index']);   // Obtener todos los productos
-    Route::post('/', [ProductoController::class, 'store']);  // Crear un nuevo producto
-    Route::get('/{id}', [ProductoController::class, 'show']); // Mostrar un producto específico
-    Route::put('/{id}', [ProductoController::class, 'update']); // Actualizar un producto
-    Route::delete('/{id}', [ProductoController::class, 'destroy']); // Eliminar un producto
-});
 
+
+Route::apiResource('productos', ProductoController::class);
 
 
 
@@ -161,14 +154,18 @@ Route::middleware(['auth:api'])->group(function () {
         Route::delete('/{id}', [RutaController::class, 'destroy']);
     });
 
-Route::get('/reporte/ruta/{id}',[ReporteRutaController::class,'exportRutaDetalle']);
+// Route::get('/reporte/ruta/{id}',[ReporteRutaController::class,'exportRutaDetalle']);
 
-//facturacion ::
+// //facturacion ::
 
 
-Route::post('/comprobantes/create', [ComprobanteController::class, 'emitirFactura']);
+// Route::post('/comprobantes/create', [ComprobanteController::class, 'emitirFactura']);
+
+
 ///contruccion mia
 route::post('/factura/nuevaventa', [FacturaController::class, 'newventa']);
+route::get('/facturas', [VentasController::class, 'listaFacturas']);
 
 
 route::post('/factura/pdf', [FacturaController::class, 'pdf']);
+Route::apiResource('/clientes', ClienteController::class);
