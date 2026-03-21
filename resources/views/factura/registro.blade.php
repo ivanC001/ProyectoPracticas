@@ -2,81 +2,147 @@
 
 @csrf
 
-<div class="form-group">
-    <label>Tipo Comprobante</label>
-    <select class="form-control" id="tipo_documento">
-        <option value="01">Factura</option>
-        <option value="03">Boleta</option>
-    </select>
+<!-- DATOS -->
+<div class="row">
+    <div class="col-md-4">
+        <label>Tipo</label>
+        <select class="form-control" id="tipo_documento">
+            <option value="01">Factura</option>
+            <option value="03">Boleta</option>
+        </select>
+    </div>
+
+    <div class="col-md-4">
+        <label>Fecha</label>
+        <input type="datetime-local" class="form-control" id="fecha_emision">
+    </div>
+
+    <div class="col-md-4">
+        <label>Moneda</label>
+        <select class="form-control" id="moneda">
+            <option value="PEN">Soles</option>
+            <option value="USD">Dólares</option>
+        </select>
+    </div>
 </div>
 
-<div class="form-group">
-    <label>Fecha Emisión</label>
-    <input type="datetime-local" class="form-control" id="fecha_emision">
-</div>
+<!-- CLIENTE -->
+<hr>
+<h6 class="text-primary">Datos del Cliente</h6>
 
-<div class="form-row">
-
-    <div class="form-group col-md-4">
-        <label>Tipo Doc</label>
+<div class="row">
+    <div class="col-md-2">
         <select class="form-control" id="cliente_tipo_doc">
             <option value="1">DNI</option>
             <option value="6">RUC</option>
         </select>
     </div>
 
-    <div class="form-group col-md-4">
-        <label>Número</label>
-        <input type="text" class="form-control" id="cliente_num_doc">
+    <div class="col-md-3">
+        <input type="text" class="form-control" id="cliente_num_doc" placeholder="Documento">
+        <small id="clienteEstado"></small>
     </div>
 
-    <div class="form-group col-md-4">
-        <label>Razón Social</label>
-        <input type="text" class="form-control" id="cliente_razon_social">
-    </div>
-
-</div>
-
-<div class="form-group">
-    <label>Moneda</label>
-    <select class="form-control" id="moneda">
-        <option value="PEN">Soles</option>
-        <option value="USD">Dólares</option>
-    </select>
-</div>
-
-<div class="form-group">
-    <label>Producto</label>
-    <select class="form-control" id="productos"></select>
-</div>
-
-<div class="form-row">
-    <div class="form-group col-md-6">
-        <label>Cantidad</label>
-        <input type="number" class="form-control" id="cantidadProducto">
-    </div>
-
-    <div class="form-group col-md-6">
-        <label>Total</label>
-        <input type="text" class="form-control" id="precioTotalProducto" readonly>
+    <div class="col-md-7">
+        <input type="text" class="form-control" id="cliente_razon_social" placeholder="Nombre / Razón Social">
     </div>
 </div>
 
-<button type="button" class="btn btn-secondary" onclick="agregarProducto()">Agregar</button>
+<br>
 
-<ul class="list-group mt-3" id="listaProductosSeleccionados"></ul>
+<div class="row">
+    <div class="col-md-4">
+        <input type="text" class="form-control" id="cliente_direccion" placeholder="Dirección">
+    </div>
+    <div class="col-md-4">
+        <input type="email" class="form-control" id="cliente_email" placeholder="Email">
+    </div>
+    <div class="col-md-4">
+        <input type="text" class="form-control" id="cliente_telefono" placeholder="Teléfono">
+    </div>
+</div>
 
-<h4>Total: <span id="totalGeneral">S/ 0.00</span></h4>
+<hr>
+
+<!-- PRODUCTO -->
+<div class="row">
+    <div class="col-md-4">
+        <select class="form-control" id="productos"></select>
+    </div>
+
+    <div class="col-md-2">
+        <input type="number" class="form-control" id="cantidadProducto" placeholder="Cantidad">
+    </div>
+
+    <div class="col-md-2">
+        <input type="number" class="form-control" id="descuentoProducto" value="0">
+    </div>
+
+    <div class="col-md-2">
+        <input type="text" class="form-control" id="precioUnitario" readonly>
+    </div>
+
+    <div class="col-md-2">
+        <button type="button" class="btn btn-success btn-block" onclick="agregarProducto()">+</button>
+    </div>
+</div>
+
+<br>
+
+<table class="table table-bordered table-sm">
+    <thead class="thead-dark">
+        <tr>
+            <th>Producto</th>
+            <th>Cant</th>
+            <th>Precio</th>
+            <th>Desc</th>
+            <th>Subtotal</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody id="tablaProductos"></tbody>
+</table>
+
+<div class="text-right">
+    <h5>Total: <span id="totalGeneral">S/ 0.00</span></h5>
+</div>
 
 </form>
-
-
 @push('scripts')
 <script>
 
 let productosSeleccionados = [];
+let timeoutCliente = null;
 
-/* FECHA ACTUAL */
+/* INIT */
+document.addEventListener('DOMContentLoaded', function(){
+
+    setFechaActual();
+    fetchProductos();
+
+    document.getElementById('productos').addEventListener('change', function(){
+        let opt = this.options[this.selectedIndex];
+        if(!opt.value) return;
+        document.getElementById('precioUnitario').value = opt.dataset.precio;
+    });
+
+    document.getElementById('cliente_num_doc').addEventListener('keyup', function(){
+
+        let doc = this.value.trim();
+
+        clearTimeout(timeoutCliente);
+
+        if(doc.length < 8) return;
+
+        timeoutCliente = setTimeout(() => {
+            buscarCliente(doc);
+        }, 500);
+    });
+
+});
+
+
+/* FECHA */
 function setFechaActual(){
     let now = new Date();
     let offset = now.getTimezoneOffset();
@@ -84,24 +150,17 @@ function setFechaActual(){
     document.getElementById('fecha_emision').value = local.toISOString().slice(0,16);
 }
 
+
 /* PRODUCTOS */
 function fetchProductos(){
+
     fetch('/api/productos')
     .then(r=>r.json())
     .then(data=>{
 
-        console.log("PRODUCTOS:", data);
-
         let select = document.getElementById('productos');
-
-        if(!select){
-            console.error("NO EXISTE SELECT PRODUCTOS");
-            return;
-        }
-
         select.innerHTML = "<option value=''>Seleccione</option>";
 
-        // 🔥 AQUÍ ESTÁ LA CORRECCIÓN
         data.data.forEach(p=>{
 
             let opt = document.createElement('option');
@@ -109,156 +168,134 @@ function fetchProductos(){
             opt.value = p.codigo;
             opt.text = `${p.descripcion} (Stock: ${p.stock})`;
 
-            opt.setAttribute('data-precio', p.precio);
-            opt.setAttribute('data-codigo', p.codigo);
-            opt.setAttribute('data-stock', p.stock);
+            opt.dataset.precio = p.precio;
+            opt.dataset.stock = p.stock;
+            opt.dataset.descripcion = p.descripcion;
+            opt.dataset.unidad = p.unidad;
 
-            if(p.stock <= 0){
-                opt.disabled = true;
-            }
+            if(p.stock <= 0) opt.disabled = true;
 
             select.appendChild(opt);
-
         });
 
-    })
-    .catch(err=>{
-        console.error("ERROR FETCH:", err);
     });
 }
-/* CAMBIO TIPO DOCUMENTO */
-document.getElementById('tipo_documento').addEventListener('change', function(){
 
-    let tipo = this.value;
-
-    if(tipo === '03'){ // BOLETA
-        document.getElementById('cliente_tipo_doc').value = "1";
-        document.getElementById('cliente_tipo_doc').disabled = true;
-
-        document.getElementById('cliente_num_doc').required = false;
-        document.getElementById('cliente_razon_social').required = false;
-    }
-    else{ // FACTURA
-        document.getElementById('cliente_tipo_doc').value = "6";
-        document.getElementById('cliente_tipo_doc').disabled = true;
-
-        document.getElementById('cliente_num_doc').required = true;
-        document.getElementById('cliente_razon_social').required = true;
-    }
-
-});
 
 /* AGREGAR PRODUCTO */
 function agregarProducto(){
 
     let select = document.getElementById('productos');
+    let opt = select.options[select.selectedIndex];
 
-    if(!select.value){
-        Swal.fire('Error','Seleccione un producto','error');
+    if(!opt.value){
+        Swal.fire('Error','Seleccione producto','error');
         return;
     }
 
     let cantidad = parseFloat(document.getElementById('cantidadProducto').value);
+    let descuento = parseFloat(document.getElementById('descuentoProducto').value) || 0;
+    let precio = parseFloat(opt.dataset.precio);
+    let stock = parseFloat(opt.dataset.stock);
 
     if(!cantidad || cantidad <= 0){
         Swal.fire('Error','Cantidad inválida','error');
         return;
     }
 
-    let codigo = select.options[select.selectedIndex].getAttribute('data-codigo');
+    if(cantidad > stock){
+        Swal.fire('Error','Stock insuficiente','error');
+        return;
+    }
 
-    // 🔥 EVITAR DUPLICADOS
-    let existente = productosSeleccionados.find(p => p.codigo === codigo);
+    let existente = productosSeleccionados.find(p => p.codigo === opt.value);
 
     if(existente){
         existente.cantidad += cantidad;
+        existente.descuento += descuento;
     }else{
-        let item = {
-            codigo: codigo,
-            descripcion: select.options[select.selectedIndex].text,
-            unidad: "NIU",
+        productosSeleccionados.push({
+            codigo: opt.value,
+            descripcion: opt.dataset.descripcion,
+            unidad: opt.dataset.unidad || 'NIU',
             cantidad: cantidad,
-            valor_unitario: parseFloat(select.options[select.selectedIndex].getAttribute('data-precio'))
-        };
-
-        productosSeleccionados.push(item);
+            valor_unitario: precio,
+            descuento: descuento
+        });
     }
 
-    actualizarLista();
+    actualizarTabla();
 }
 
-/* LISTA */
-function actualizarLista(){
 
-    let lista = document.getElementById('listaProductosSeleccionados');
+/* TABLA */
+function actualizarTabla(){
+
+    let tbody = document.getElementById('tablaProductos');
     let total = 0;
 
-    lista.innerHTML = '';
+    tbody.innerHTML = '';
 
     productosSeleccionados.forEach((p,index)=>{
 
-        let sub = p.cantidad * p.valor_unitario;
-        total += sub;
+        let subtotal = (p.cantidad * p.valor_unitario) - p.descuento;
+        total += subtotal;
 
-        lista.innerHTML += `
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                ${p.descripcion} | Cant: ${p.cantidad} | S/ ${sub.toFixed(2)}
-                <button class="btn btn-sm btn-danger" onclick="eliminarItem(${index})">X</button>
-            </li>
+        tbody.innerHTML += `
+            <tr>
+                <td>${p.descripcion}</td>
+                <td>${p.cantidad}</td>
+                <td>S/ ${p.valor_unitario}</td>
+                <td>S/ ${p.descuento}</td>
+                <td>S/ ${subtotal.toFixed(2)}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="eliminarItem(${index})">X</button>
+                </td>
+            </tr>
         `;
     });
 
     document.getElementById('totalGeneral').innerText = "S/ " + total.toFixed(2);
 }
 
+
 /* ELIMINAR */
-function eliminarItem(index){
-    productosSeleccionados.splice(index,1);
-    actualizarLista();
+function eliminarItem(i){
+    productosSeleccionados.splice(i,1);
+    actualizarTabla();
 }
 
-/* VALIDAR CLIENTE */
-function validarCliente(){
 
-    let tipo = document.getElementById('tipo_documento').value;
+/* BUSCAR CLIENTE */
+async function buscarCliente(doc){
 
-    if(tipo === '01'){ // FACTURA
+    let estado = document.getElementById('clienteEstado');
+    estado.innerHTML = 'Buscando...';
 
-        let ruc = document.getElementById('cliente_num_doc').value;
-        let razon = document.getElementById('cliente_razon_social').value;
+    let r = await fetch(`/api/clientes?search=${doc}`);
+    let data = await r.json();
 
-        if(!ruc || ruc.length !== 11){
-            Swal.fire('Error','RUC inválido','error');
-            return false;
-        }
+    let cliente = data.data.find(c => c.num_doc === doc);
 
-        if(!razon){
-            Swal.fire('Error','Ingrese razón social','error');
-            return false;
-        }
+    if(cliente){
+
+        document.getElementById('cliente_razon_social').value = cliente.razon_social || '';
+        document.getElementById('cliente_direccion').value = cliente.direccion || '';
+        document.getElementById('cliente_email').value = cliente.email || '';
+        document.getElementById('cliente_telefono').value = cliente.telefono || '';
+
+        estado.innerHTML = 'Cliente encontrado';
+
+    }else{
+        estado.innerHTML = 'Cliente nuevo';
     }
-
-    return true;
 }
 
-/* ENVIAR */
-function procesarFactura(){
 
-    if(productosSeleccionados.length === 0){
-        Swal.fire('Error','Agrega productos','error');
-        return;
-    }
+/* PROCESAR */
+async function procesarFactura(){
 
-    if(!validarCliente()) return;
-
-    let fecha = document.getElementById('fecha_emision').value;
-
-    if(!fecha){
-        Swal.fire('Error','Ingrese fecha','error');
-        return;
-    }
-
-    fecha = fecha.replace('T',' ') + ":00";
+    let fecha = document.getElementById('fecha_emision').value.replace('T',' ') + ":00";
 
     let data = {
         tipo_documento: document.getElementById('tipo_documento').value,
@@ -272,45 +309,25 @@ function procesarFactura(){
         items: productosSeleccionados
     };
 
-    Swal.fire({
-        title: 'Confirmar envío',
-        html: `<pre style="text-align:left">${JSON.stringify(data,null,2)}</pre>`,
-        width:700,
-        showCancelButton:true,
-        confirmButtonText:'Enviar'
-    }).then(result => {
-
-        if(result.isConfirmed){
-
-            fetch('/api/factura/nuevaventa',{
-                method:'POST',
-                headers:{
-                    'Content-Type':'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify(data)
-            })
-            .then(r=>r.json())
-            .then(resp=>{
-
-                mostrarRespuesta(resp);
-
-                if(resp.success){
-                    $('#modalFactura').modal('hide');
-                    productosSeleccionados = [];
-                    actualizarLista();
-                }
-
-            })
-            .catch(()=>{
-                Swal.fire('Error','No se pudo enviar','error');
-            });
-
-        }
-
+    let r = await fetch('/api/factura/nuevaventa',{
+        method:'POST',
+        headers:{
+            'Content-Type':'application/json',
+            'Accept':'application/json'
+        },
+        body: JSON.stringify(data)
     });
-}
 
+    let resp = await r.json();
+
+    if(resp.success){
+        Swal.fire('OK','Factura generada','success');
+        $('#modalFactura').modal('hide');
+    }else{
+        Swal.fire('Error', resp.message || resp.sunat || 'Error','error');
+    }
+
+}
 
 </script>
 @endpush
