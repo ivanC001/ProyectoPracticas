@@ -165,4 +165,6 @@ route::get('/facturas', [VentasController::class, 'listaFacturas']);
 
 
 route::post('/factura/pdf', [FacturaController::class, 'pdf']);
+
+//api para clientes
 Route::apiResource('/clientes', ClienteController::class);

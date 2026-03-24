@@ -78,3 +78,10 @@ Route::get('/login', function () {
 Route::get('/layouts', function () {
     return view('layouts.app');
 })->name('app');
+
+
+
+///Vista para clientes
+Route::get('/clientes', function () {
+    return view('vistaCliente.index');
+});

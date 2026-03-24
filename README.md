@@ -9,3 +9,5 @@
 | ❗ **IMPORTANT** |  
 |-----------------|  
 | `composer require maatwebsite/excel` |  
+
+'php artisan queue:work´
