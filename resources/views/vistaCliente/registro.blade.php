@@ -1,36 +1,59 @@
 <div class="modal fade" id="modalRegistroCliente">
-    <div class="modal-dialog">
-        <div class="modal-content">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content shadow">
 
             <div class="modal-header bg-primary text-white">
-                <h5 id="tituloModal">Registrar Cliente</h5>
+                <h5 id="tituloModal">
+                    <i class="fas fa-user-plus"></i> Registrar Cliente
+                </h5>
                 <button class="close text-white" data-dismiss="modal">&times;</button>
             </div>
 
             <div class="modal-body">
 
                 <form id="formCliente">
+                    <div class="row">
 
-                    <select class="form-control mb-2" id="tipo_doc">
-                        <option value="1">DNI</option>
-                        <option value="6">RUC</option>
-                    </select>
+                        <div class="col-md-4 mb-3">
+                            <label>Tipo Documento</label>
+                            <select class="form-control" id="tipo_doc" name="tipo_doc">
+                                <option value="1">DNI</option>
+                                <option value="6">RUC</option>
+                            </select>
+                        </div>
 
-                    <input type="text" class="form-control mb-2" id="num_doc" placeholder="Documento">
-                    <input type="text" class="form-control mb-2" id="razon_social" placeholder="Nombre">
-                    <input type="text" class="form-control mb-2" id="telefono" placeholder="Teléfono">
-                    <input type="email" class="form-control mb-2" id="email" placeholder="Email">
-                    <input type="text" class="form-control mb-2" id="direccion" placeholder="Dirección">
+                        <div class="col-md-8 mb-3">
+                            <label>N° Documento</label>
+                            <input type="text" class="form-control" id="num_doc" name="num_doc">
+                        </div>
 
+                        <div class="col-md-12 mb-3">
+                            <label>Razón Social</label>
+                            <input type="text" class="form-control" id="razon_social" name="razon_social">
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label>Teléfono</label>
+                            <input type="text" class="form-control" id="telefono" name="telefono">
+                        </div>
+
+                        <div class="col-md-8 mb-3">
+                            <label>Email</label>
+                            <input type="email" class="form-control" id="email" name="email">
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label>Dirección</label>
+                            <input type="text" class="form-control" id="direccion" name="direccion">
+                        </div>
+
+                    </div>
                 </form>
-
-                <!-- 🔥 MENSAJE -->
-                <div id="respuestaServidor" class="alert d-none mt-2"></div>
 
             </div>
 
             <div class="modal-footer">
-                <button class="btn btn-success" id="btnGuardar" onclick="guardarCliente()">
+                <button class="btn btn-success" id="btnGuardar">
                     Guardar
                 </button>
                 <button class="btn btn-secondary" data-dismiss="modal">
@@ -42,62 +65,58 @@
     </div>
 </div>
 
-
 @push('scripts')
 <script>
 
-/* 🔥 VARIABLE GLOBAL */
 window.clienteEditando = null;
 
-/* 🔥 LIMPIAR MODAL */
+/* ABRIR MODAL */
 $('#modalRegistroCliente').on('show.bs.modal', function () {
 
     if(!window.clienteEditando){
         $('#formCliente')[0].reset();
-        $('#tituloModal').text('Registrar Cliente');
+        $('#tituloModal').html('<i class="fas fa-user-plus"></i> Registrar Cliente');
     }
 
-    $('#respuestaServidor').addClass('d-none').text('');
+    limpiarErrores();
 });
 
-/* 🔥 MOSTRAR MENSAJE */
-function mostrarRespuesta(msg, tipo='success'){
-    let div = $('#respuestaServidor');
+/* CERRAR MODAL */
+$('#modalRegistroCliente').on('hidden.bs.modal', function () {
+    window.clienteEditando = null;
+});
 
-    div.removeClass('d-none alert-success alert-danger');
-    div.addClass(`alert alert-${tipo}`);
-    div.text(msg);
+/* LIMPIAR ERRORES */
+function limpiarErrores(){
+    $('.form-control').removeClass('is-invalid');
+    $('.invalid-feedback').remove();
 }
 
-/* 🔥 EDITAR (SE USA DESDE INDEX) */
-function editar(id){
+/* MOSTRAR ERRORES BACKEND */
+function mostrarErrores(errors){
 
-    fetch(`/api/clientes/${id}`)
-    .then(r=>r.json())
-    .then(c => {
+    limpiarErrores();
 
-        $('#tipo_doc').val(c.tipo_doc);
-        $('#num_doc').val(c.num_doc);
-        $('#razon_social').val(c.razon_social);
-        $('#telefono').val(c.telefono);
-        $('#email').val(c.email);
-        $('#direccion').val(c.direccion);
+    Object.keys(errors).forEach(campo => {
 
-        window.clienteEditando = id;
+        let input = $(`[name="${campo}"]`);
 
-        $('#tituloModal').text('Editar Cliente');
+        input.addClass('is-invalid');
 
-        $('#modalRegistroCliente').modal('show');
+        input.after(`
+            <div class="invalid-feedback">
+                ${errors[campo][0]}
+            </div>
+        `);
 
     });
 
 }
 
-/* 🔥 GUARDAR / ACTUALIZAR */
-function guardarCliente(){
+/* GUARDAR */
+$('#btnGuardar').on('click', function(){
 
-    let btn = $('#btnGuardar');
-    btn.prop('disabled', true).text('Guardando...');
+    limpiarErrores();
 
     let data = {
         tipo_doc: $('#tipo_doc').val(),
@@ -112,56 +131,34 @@ function guardarCliente(){
     let url = '/api/clientes';
     let method = 'POST';
 
-    // 🔥 SI ES EDITAR
     if(window.clienteEditando){
         url = `/api/clientes/${window.clienteEditando}`;
         method = 'PUT';
     }
 
-    fetch(url,{
+    apiFetch(url,{
         method: method,
-        headers:{
-            'Content-Type':'application/json',
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
         body: JSON.stringify(data)
-    })
-    .then(async r => {
-
-        let resp = await r.json();
-
-        if(!r.ok){
-            throw resp;
-        }
-
-        return resp;
     })
     .then(resp => {
 
-        // 🔥 MOSTRAR RESPUESTA API
-        mostrarRespuesta(resp.message || 'Operación exitosa');
+        Swal.fire('OK', resp.message, 'success');
 
-        setTimeout(()=>{
-            $('#modalRegistroCliente').modal('hide');
-            window.clienteEditando = null;
-        }, 1500);
+        $('#modalRegistroCliente').modal('hide');
+        fetchClientes();
 
     })
     .catch(err => {
 
         if(err.errors){
-            let errores = Object.values(err.errors).flat().join('\n');
-            mostrarRespuesta(errores, 'danger');
+            mostrarErrores(err.errors); // 🔥 backend validation
         }else{
-            mostrarRespuesta(err.message || 'Error', 'danger');
+            Swal.fire('Error', err.message, 'error');
         }
 
-    })
-    .finally(()=>{
-        btn.prop('disabled', false).text('Guardar');
     });
 
-}
+});
 
 </script>
 @endpush

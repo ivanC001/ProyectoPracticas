@@ -40,17 +40,6 @@ class Cotizacion extends Model
 
     public function detalles()
     {
-        return $this->hasMany(CotizacionDetalle::class);
-    }
-
-    /* 🔥 ACCESOR (opcional pro) */
-    public function getTotalFormateadoAttribute()
-    {
-        return number_format($this->total, 2);
-    }
-    public function scopeActivas($query)
-    {
-        return $query->where('estado', 'borrador')
-                    ->orWhere('estado', 'enviado');
+        return $this->hasMany(CotizacionDetalle::class, 'cotizacion_id');
     }
 }

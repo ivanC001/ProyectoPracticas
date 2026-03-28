@@ -11,27 +11,27 @@ use Illuminate\Validation\ValidationException;
 class ClienteController extends Controller
 {
     /**
-     * LISTAR CON PAGINACIÓN + FILTRO
+     * LISTAR CLIENTES
      */
     public function index(Request $request)
     {
         $query = Cliente::query()->where('estado', true);
 
-        // 🔍 filtro por documento
         if ($request->filled('num_doc')) {
             $query->where('num_doc', 'like', '%' . $request->num_doc . '%');
         }
 
-        // 🔍 filtro por nombre
         if ($request->filled('razon_social')) {
             $query->where('razon_social', 'like', '%' . $request->razon_social . '%');
         }
 
-        // 🔥 PAGINACIÓN
-        $clientes = $query->orderBy('id', 'desc')
-                          ->paginate($request->get('per_page', 10));
+        $clientes = $query->orderBy('id', 'desc')->get();
 
-        return response()->json($clientes);
+        return response()->json([
+            'success' => true,
+            'message' => 'Lista de clientes',
+            'data' => $clientes
+        ]);
     }
 
     /**
@@ -40,10 +40,11 @@ class ClienteController extends Controller
     public function store(ClienteRequest $request)
     {
         $cliente = Cliente::create($request->validated());
+
         return response()->json([
             'success' => true,
-            'message' => "Cliente Registrado: {$cliente->razon_social} - {$cliente->num_doc}"
-            
+            'message' => "Cliente Registrado: {$cliente->razon_social} - {$cliente->num_doc}",
+            'data' => $cliente
         ], 201);
     }
 
@@ -60,7 +61,11 @@ class ClienteController extends Controller
             ]);
         }
 
-        return response()->json($cliente);
+        return response()->json([
+            'success' => true,
+            'message' => 'Cliente encontrado',
+            'data' => $cliente
+        ]);
     }
 
     /**
@@ -79,13 +84,14 @@ class ClienteController extends Controller
         $cliente->update($request->validated());
 
         return response()->json([
-            'message' => 'Cliente actualizado',
+            'success' => true,
+            'message' => "Cliente Actualizado: {$cliente->razon_social} - {$cliente->num_doc}",
             'data' => $cliente
         ]);
     }
 
     /**
-     * ELIMINAR (LÓGICO)
+     * ELIMINAR CLIENTE (LÓGICO)
      */
     public function destroy($id)
     {
@@ -100,7 +106,8 @@ class ClienteController extends Controller
         $cliente->update(['estado' => false]);
 
         return response()->json([
-            'message' => 'Cliente Eliminado'
+            'success' => true,
+            'message' => "Cliente Eliminado: {$cliente->razon_social} - {$cliente->num_doc}"
         ]);
     }
 }

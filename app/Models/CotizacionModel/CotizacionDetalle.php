@@ -5,6 +5,8 @@ namespace App\Models\CotizacionModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\ProductosModel\Producto;
+use App\Models\ProductoModel\Servicio;
+
 
 class CotizacionDetalle extends Model
 {
@@ -14,7 +16,9 @@ class CotizacionDetalle extends Model
 
     protected $fillable = [
         'cotizacion_id',
-        'item_id',
+        'tipo',
+        'producto_id',
+        'servicio_id',
         'descripcion',
         'cantidad',
         'precio',
@@ -31,11 +35,16 @@ class CotizacionDetalle extends Model
 
     public function cotizacion()
     {
-        return $this->belongsTo(Cotizacion::class);
+        return $this->belongsTo(Cotizacion::class, 'cotizacion_id');
     }
 
-    public function item()
+    public function producto()
     {
-        return $this->belongsTo(Producto::class);
+        return $this->belongsTo(Producto::class, 'producto_id');
+    }
+
+    public function servicio()
+    {
+        return $this->belongsTo(Servicio::class, 'servicio_id');
     }
 }

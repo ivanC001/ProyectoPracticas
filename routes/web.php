@@ -85,3 +85,7 @@ Route::get('/layouts', function () {
 Route::get('/clientes', function () {
     return view('vistaCliente.index');
 });
+///Vista para COTIZACIONES
+Route::get('/cotizaciones', function () {
+    return view('vistaCotizacion.index');
+});

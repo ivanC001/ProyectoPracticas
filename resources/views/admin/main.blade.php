@@ -205,7 +205,17 @@
                 </li>
               </ul>
             </li>
-
+            {{-- Registro de Clientes --}}
+            <label for="">Control de clientes</label>
+            <li id="reControl" class="nav-item">
+              <a id="reControl" href="/clientes" class="nav-link">
+                <i class="nav-icon fa fa-table"></i>
+                <p>
+                  Registro de clientes
+                  <i class="right fas fa-angle-left"></i>
+                </p>
+              </a>
+            </li>
             {{-- Registro de transporte --}}
             <label for="" class="nav-icon">REGISTRO TRANSPORTE</label>
             <li id="reControl" class="nav-item">
@@ -300,6 +310,8 @@
   <!--Scripts -->
   <!-- jQuery -->
   <script src="{{asset('assets/plugins/jquery/jquery.min.js')}}"></script>
+  <!-- 🔥 CONFIG GLOBAL JWT -->
+<script src="{{ asset('assets/js/jwtapi.js') }}"></script>
   <!-- Bootstrap 4 -->
   <script src="{{asset('assets/plugins/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
   <!-- AdminLTE App -->
@@ -379,28 +391,18 @@
 });
 
     </script>
-  
-    <script>
-      //para el token
-  $(document).ready(function () {
-      const token = localStorage.getItem('token');
 
-      if (token) {
-          // Configuración global para todas las peticiones AJAX
-          $.ajaxSetup({
-              headers: {
-                  "Authorization": "Bearer " + token,
-                  "Accept": "application/json"
-              }
-          });
-      }
-  });
-</script>
-
-  
   @stack('scripts')
   <!-- scripts de cada plantilla -->
   <!--Fin Scripts -->
 </body>
 
 </html>
+
+<!-- cambia de esto fetch('/api/logout', {
+    headers: {
+        'Authorization': `Bearer ${token}`
+    }
+}) a esto->>>apiFetch('/api/logout', {
+    method: 'POST'
+}) -->
