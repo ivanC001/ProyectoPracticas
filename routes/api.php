@@ -15,6 +15,7 @@ use App\Http\Controllers\ProductosController\ProductoController;
 use App\Http\Controllers\VentasController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ControladorClientes\ClienteController;
+use App\Http\Controllers\ControladorCotizacion\CotizacionController;
 
 // Rutas API para conductores
 Route::prefix('conductores')->group(function () {
@@ -138,6 +139,7 @@ Route::middleware(['auth:api'])->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::post('refresh', [AuthController::class, 'refresh']);
     Route::post('me', [AuthController::class, 'me']);
+    
 
     // Tus otros endpoints protegidos
     // Rutas API para rutas
@@ -168,3 +170,5 @@ route::post('/factura/pdf', [FacturaController::class, 'pdf']);
 
 //api para clientes
 Route::apiResource('/clientes', ClienteController::class);
+//api cotizaciones
+Route::apiResource('cotizaciones', CotizacionController::class);

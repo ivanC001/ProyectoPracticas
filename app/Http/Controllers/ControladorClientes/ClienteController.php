@@ -40,10 +40,10 @@ class ClienteController extends Controller
     public function store(ClienteRequest $request)
     {
         $cliente = Cliente::create($request->validated());
-
         return response()->json([
-            'message' => 'Cliente creado correctamente',
-            'data' => $cliente
+            'success' => true,
+            'message' => "Cliente Registrado: {$cliente->razon_social} - {$cliente->num_doc}"
+            
         ], 201);
     }
 
@@ -100,7 +100,7 @@ class ClienteController extends Controller
         $cliente->update(['estado' => false]);
 
         return response()->json([
-            'message' => 'Cliente desactivado'
+            'message' => 'Cliente Eliminado'
         ]);
     }
 }
