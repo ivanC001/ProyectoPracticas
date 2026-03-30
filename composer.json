@@ -9,7 +9,7 @@
         "dompdf/dompdf": "^3.0",
         "endroid/qr-code": "^5.0",
         "greenter/core": "^5.1",
-        "greenter/greenter": "^5.1",
+        "greenter/greenter": "^5.2",
         "greenter/lite": "*",
         "greenter/report": "*",
         "greenter/ws": "^5.1",

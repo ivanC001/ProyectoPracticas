@@ -5,17 +5,16 @@ namespace App\Http\Controllers\ProductosController;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\ProductosModel\Producto;
+use App\Http\Requests\ProductoRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ProductoController extends Controller
 {
 
-    /*
-    |--------------------------------------------------------------------------
-    | Listar productos
-    |--------------------------------------------------------------------------
-    */
-
+    /**
+     * LISTAR PRODUCTOS (PAGINADO)
+     */
     public function index(Request $request)
     {
         $query = Producto::query();
@@ -26,73 +25,47 @@ class ProductoController extends Controller
 
             $query->where(function ($q) use ($search) {
                 $q->where('codigo', 'like', "%$search%")
-                ->orWhere('descripcion', 'like', "%$search%")
-                ->orWhere('categoria', 'like', "%$search%");
+                  ->orWhere('descripcion', 'like', "%$search%")
+                  ->orWhere('categoria', 'like', "%$search%");
             });
         }
 
-        // 📌 SOLO ACTIVOS (por defecto)
+        // 🔥 SOLO ACTIVOS
         if (!$request->filled('ver_inactivos')) {
             $query->where('activo', 1);
         }
 
-        // 🔽 ORDEN + SELECT OPTIMIZADO
+        // 🔥 PAGINACIÓN + ORDEN
         $productos = $query->orderBy('id', 'desc')
-            ->select(
-                'id',
-                'codigo',
-                'descripcion',
-                'categoria',
-                'unidad',
-                'precio',
-                'stock',
-                'activo'
-            )
-            ->paginate(20); // 🔥 CLAVE PRODUCCIÓN
+            ->paginate($request->get('per_page', 10));
 
-        return response()->json($productos);
+        return response()->json([
+            'success' => true,
+            'message' => 'Listado de productos',
+            'data' => $productos->items(),
+            'pagination' => [
+                'total' => $productos->total(),
+                'per_page' => $productos->perPage(),
+                'current_page' => $productos->currentPage(),
+                'last_page' => $productos->lastPage()
+            ]
+        ]);
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Crear producto
-    |--------------------------------------------------------------------------
-    */
-
-    public function store(Request $request)
+    /**
+     * CREAR PRODUCTO
+     */
+    public function store(ProductoRequest $request)
     {
-        $request->validate([
-            'descripcion' => 'required|string|max:255',
-            'categoria' => 'required|string|max:100',
-            'precio' => 'required|numeric',
-            'stock' => 'required|numeric',
-        ]);
-
         DB::beginTransaction();
 
         try {
 
-            // 🔥 OBTENER ÚLTIMO CÓDIGO
-            $ultimoProducto = Producto::orderBy('id', 'desc')->first();
+            $ultimo = Producto::orderBy('id', 'desc')->first();
+            $numero = $ultimo ? (int) substr($ultimo->codigo, -6) + 1 : 1;
 
-            if ($ultimoProducto && $ultimoProducto->codigo) {
+            $codigo = 'PROD-' . str_pad($numero, 6, '0', STR_PAD_LEFT);
 
-                // Extraer número
-                $numero = (int) substr($ultimoProducto->codigo, -6);
-                $nuevoNumero = $numero + 1;
-
-            } else {
-
-                // 🔥 SI NO EXISTE NINGUNO
-                $nuevoNumero = 1;
-
-            }
-
-            // FORMATO: PROD-000001
-            $codigo = 'PROD-' . str_pad($nuevoNumero, 6, '0', STR_PAD_LEFT);
-
-            // 🔥 CREAR PRODUCTO
             $producto = Producto::create([
                 'codigo' => $codigo,
                 'descripcion' => $request->descripcion,
@@ -100,13 +73,14 @@ class ProductoController extends Controller
                 'unidad' => $request->unidad ?? 'NIU',
                 'precio' => $request->precio,
                 'stock' => $request->stock,
-                'activo' => 1 // 🔥 SIEMPRE ACTIVO
+                'activo' => 1
             ]);
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
+                'message' => "Producto creado: {$producto->descripcion} - {$producto->codigo}",
                 'data' => $producto
             ], 201);
 
@@ -116,74 +90,71 @@ class ProductoController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al registrar producto',
-                'error' => $e->getMessage()
+                'message' => 'Error al crear producto'
             ], 500);
-
         }
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Mostrar producto
-    |--------------------------------------------------------------------------
-    */
-
+    /**
+     * MOSTRAR PRODUCTO
+     */
     public function show($id)
     {
-        return response()->json(
-            Producto::findOrFail($id)
-        );
-    }
+        $producto = Producto::find($id);
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Actualizar producto
-    |--------------------------------------------------------------------------
-    */
-
-    public function update(Request $request, $id)
-    {
-
-        $producto = Producto::findOrFail($id);
-
-        $producto->update([
-
-            'codigo' => $request->codigo,
-            'descripcion' => $request->descripcion,
-            'categoria' => $request->categoria,
-            'unidad' => $request->unidad,
-            'precio' => $request->precio,
-            'stock' => $request->stock
-
-        ]);
-
-        return response()->json($producto);
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Eliminar producto
-    |--------------------------------------------------------------------------
-    */
-
-    public function destroy($id)
-    {
-
-        $producto = Producto::findOrFail($id);
-
-        $producto->update([
-            'activo' => 0
-        ]);
+        if (!$producto) {
+            throw ValidationException::withMessages([
+                'producto' => ['Producto no encontrado']
+            ]);
+        }
 
         return response()->json([
-            'mensaje' => 'Producto eliminado'
+            'success' => true,
+            'message' => "Producto obtenido: {$producto->descripcion} - {$producto->codigo}",
+            'data' => $producto
         ]);
-
     }
 
+    /**
+     * ACTUALIZAR PRODUCTO
+     */
+    public function update(ProductoRequest $request, $id)
+    {
+        $producto = Producto::find($id);
+
+        if (!$producto) {
+            throw ValidationException::withMessages([
+                'producto' => ['Producto no encontrado']
+            ]);
+        }
+
+        $producto->update($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => "Producto actualizado: {$producto->descripcion} - {$producto->codigo}",
+            'data' => $producto
+        ]);
+    }
+
+    /**
+     * ELIMINAR PRODUCTO (LÓGICO)
+     */
+    public function destroy($id)
+    {
+        $producto = Producto::find($id);
+
+        if (!$producto) {
+            throw ValidationException::withMessages([
+                'producto' => ['Producto no encontrado']
+            ]);
+        }
+
+        $producto->update(['activo' => 0]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Producto eliminado: {$producto->descripcion} - {$producto->codigo}"
+        ]);
+    }
 }

@@ -7,23 +7,31 @@
 
         <div class="card shadow-sm border-0">
 
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <div>
-                    <h4 class="mb-0 font-weight-bold">
+            <!-- HEADER -->
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h3 class="mb-0 font-weight-bold">
                         <i class="fas fa-users text-primary"></i> Gestión de Clientes
-                    </h4>
-                    <small class="text-muted">Administración de clientes registrados</small>
-                </div>
-
-                <button class="btn btn-primary shadow-sm"
+                    </h3>
+                    <button class="btn btn-success"
                         data-toggle="modal"
                         data-target="#modalRegistroCliente">
-                    <i class="fas fa-plus"></i> Nuevo Cliente
+                    <i class="fas fa-plus-circle"></i> Nuevo Cliente
                 </button>
             </div>
 
+            <!-- BODY -->
             <div class="card-body">
 
+                <!-- 🔍 BUSCADOR BACKEND -->
+                <div class="mb-3">
+                    <input type="text"
+                           id="searchText"
+                           class="form-control"
+                           placeholder="Buscar por documento o nombre...">
+                </div>
+
+                <!-- TABLA -->
                 <div class="table-responsive">
                     <table class="table table-hover table-striped text-center">
 
@@ -45,6 +53,9 @@
                     </table>
                 </div>
 
+                <!-- 🔽 PAGINACIÓN -->
+                <div id="paginacion" class="mt-3 text-center"></div>
+
             </div>
         </div>
 
@@ -59,19 +70,55 @@
 @push('scripts')
 <script>
 
-$(document).ready(function(){
-    fetchClientes();
+let searchGlobal = '';
+let debounceTimer;
+let paginaActual = 1;
+
+/* 🔥 BUSCADOR EN TIEMPO REAL (BACKEND) */
+$('#searchText').on('input', function(){
+
+    let texto = $(this).val().trim();
+
+    clearTimeout(debounceTimer);
+
+    debounceTimer = setTimeout(() => {
+
+        if(texto.length < 2){
+            searchGlobal = '';
+        }else{
+            searchGlobal = texto;
+        }
+
+        fetchClientes(1);
+
+    }, 300);
+
 });
 
-/* LISTAR */
-function fetchClientes(){
+/* 🚀 FETCH CLIENTES */
+function fetchClientes(page = 1){
 
-    $.get('/api/clientes', function(res){
+    paginaActual = page;
+
+    apiFetch(`/api/clientes?search=${searchGlobal}&page=${page}`)
+    .then(resp => {
 
         let tbody = $("#clienteTableBody");
         tbody.empty();
 
-        res.data.forEach(c => {
+        if(resp.data.length === 0){
+            tbody.html(`
+                <tr>
+                    <td colspan="8" class="text-center text-muted">
+                        No se encontraron resultados
+                    </td>
+                </tr>
+            `);
+            $('#paginacion').html('');
+            return;
+        }
+
+        resp.data.forEach(c => {
 
             tbody.append(`
                 <tr>
@@ -88,52 +135,79 @@ function fetchClientes(){
                     </td>
 
                     <td>${c.id}</td>
-                    <td>${c.tipo_doc == 1 ? 'DNI' : 'RUC'}</td>
+                    <td>
+                        <span class="badge badge-${c.tipo_doc == 1 ? 'info':'success'}">
+                            ${c.tipo_doc == 1 ? 'DNI' : 'RUC'}
+                        </span>
+                    </td>
                     <td>${c.num_doc}</td>
-                    <td>${c.razon_social}</td>
+                    <td class="text-left">${c.razon_social}</td>
                     <td>${c.telefono ?? '-'}</td>
                     <td>${c.email ?? '-'}</td>
-                    <td>${c.direccion ?? '-'}</td>
+                    <td class="text-left">${c.direccion ?? '-'}</td>
                 </tr>
             `);
 
         });
 
+        renderPaginacion(resp.pagination);
+
+    })
+    .catch(()=>{
+        Swal.fire('Error','No se pudo cargar clientes','error');
     });
+
 }
 
-/* ELIMINAR */
+/* 🔽 PAGINACIÓN */
+function renderPaginacion(p){
+
+    let html = '';
+
+    for(let i=1;i<=p.last_page;i++){
+        html += `
+            <button class="btn btn-sm ${i===p.current_page?'btn-primary':'btn-light'}"
+                onclick="fetchClientes(${i})">
+                ${i}
+            </button>
+        `;
+    }
+
+    $('#paginacion').html(html);
+}
+
+/* 🗑️ ELIMINAR */
 function eliminar(id){
 
     Swal.fire({
         title: '¿Eliminar cliente?',
         icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Sí eliminar'
-    }).then((result) => {
+        showCancelButton: true
+    }).then(r => {
 
-        if(result.isConfirmed){
+        if(r.isConfirmed){
 
             apiFetch(`/api/clientes/${id}`,{
                 method:'DELETE'
             })
-            .then(resp => {
+            .then(resp=>{
                 Swal.fire('OK', resp.message, 'success');
-                fetchClientes();
+                fetchClientes(paginaActual);
             });
 
         }
 
     });
+
 }
 
-/* EDITAR */
+/* ✏️ EDITAR */
 function editar(id){
 
     apiFetch(`/api/clientes/${id}`)
     .then(resp => {
 
-        let c = resp.data; // 🔥 IMPORTANTE
+        let c = resp.data;
 
         $('#tipo_doc').val(c.tipo_doc);
         $('#num_doc').val(c.num_doc);
@@ -151,6 +225,11 @@ function editar(id){
     });
 
 }
+
+/* INIT */
+$(document).ready(()=>{
+    fetchClientes();
+});
 
 </script>
 @endpush

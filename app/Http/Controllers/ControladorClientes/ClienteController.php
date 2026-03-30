@@ -11,31 +11,41 @@ use Illuminate\Validation\ValidationException;
 class ClienteController extends Controller
 {
     /**
-     * LISTAR CLIENTES
+     * LISTAR CLIENTES (PAGINADO + BUSCADOR)
      */
     public function index(Request $request)
     {
         $query = Cliente::query()->where('estado', true);
 
-        if ($request->filled('num_doc')) {
-            $query->where('num_doc', 'like', '%' . $request->num_doc . '%');
+        // 🔍 BUSCADOR GLOBAL (más rápido)
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->where('num_doc', 'like', "%$search%")
+                  ->orWhere('razon_social', 'like', "%$search%");
+            });
         }
 
-        if ($request->filled('razon_social')) {
-            $query->where('razon_social', 'like', '%' . $request->razon_social . '%');
-        }
-
-        $clientes = $query->orderBy('id', 'desc')->get();
+        // 🔥 PAGINACIÓN + ORDEN
+        $clientes = $query->orderBy('id', 'desc')
+            ->paginate($request->get('per_page', 10));
 
         return response()->json([
             'success' => true,
-            'message' => 'Lista de clientes',
-            'data' => $clientes
+            'message' => 'Listado de clientes',
+            'data' => $clientes->items(),
+            'pagination' => [
+                'total' => $clientes->total(),
+                'per_page' => $clientes->perPage(),
+                'current_page' => $clientes->currentPage(),
+                'last_page' => $clientes->lastPage()
+            ]
         ]);
     }
 
     /**
-     * CREAR CLIENTE
+     * CREAR
      */
     public function store(ClienteRequest $request)
     {
@@ -43,13 +53,13 @@ class ClienteController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Cliente Registrado: {$cliente->razon_social} - {$cliente->num_doc}",
+            'message' => "Cliente creado: {$cliente->razon_social} - {$cliente->num_doc}",
             'data' => $cliente
         ], 201);
     }
 
     /**
-     * MOSTRAR CLIENTE
+     * MOSTRAR
      */
     public function show($id)
     {
@@ -63,13 +73,13 @@ class ClienteController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Cliente encontrado',
+            'message' => "Cliente obtenido: {$cliente->razon_social}",
             'data' => $cliente
         ]);
     }
 
     /**
-     * ACTUALIZAR CLIENTE
+     * ACTUALIZAR
      */
     public function update(ClienteRequest $request, $id)
     {
@@ -85,13 +95,13 @@ class ClienteController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Cliente Actualizado: {$cliente->razon_social} - {$cliente->num_doc}",
+            'message' => "Cliente actualizado: {$cliente->razon_social} - {$cliente->num_doc}",
             'data' => $cliente
         ]);
     }
 
     /**
-     * ELIMINAR CLIENTE (LÓGICO)
+     * ELIMINAR
      */
     public function destroy($id)
     {
@@ -107,7 +117,7 @@ class ClienteController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Cliente Eliminado: {$cliente->razon_social} - {$cliente->num_doc}"
+            'message' => "Cliente eliminado: {$cliente->razon_social} - {$cliente->num_doc}"
         ]);
     }
 }

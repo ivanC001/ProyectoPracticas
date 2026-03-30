@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
-
+namespace App\Http\Controllers\RutasController;
 use App\Models\Peaje;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
 class RutaPeajeController extends Controller
 {

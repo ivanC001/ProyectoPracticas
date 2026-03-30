@@ -3,69 +3,75 @@
 @section('contenido')
 <div class="content">
     <div class="container-fluid">
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="card">
 
-                    <div class="card-header">
-                        <h5 class="m-0">
-                            Registro de Productos 
-                            <button class="btn btn-primary" data-toggle="modal" data-target="#modalRegistroProducto">
-                                <i class="fas fa-file"></i> Nuevo Producto
-                            </button>
-                        </h5>
-                    </div>
+        <div class="card shadow-sm border-0">
 
-                    <div class="card-body">
+            <!-- HEADER -->
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-box text-primary"></i> Gestión de Productos
+                </h4>
 
-                        <!-- 🔍 BUSCADOR -->
-                        <div class="mb-2">
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="searchText" placeholder="Buscar producto...">
-                                <div class="input-group-append">
-                                    <button type="button" class="btn btn-info" id="searchButton">
-                                        <i class="fas fa-search"></i> Buscar
-                                    </button>                      
-                                </div>
-                            </div>
+                <button class="btn btn-primary"
+                        data-toggle="modal"
+                        data-target="#modalRegistroProducto">
+                    <i class="fas fa-plus"></i> Nuevo Producto
+                </button>
+            </div>
+
+            <!-- BODY -->
+            <div class="card-body">
+
+                <!-- 🔍 BUSCADOR EN TIEMPO REAL -->
+                <div class="mb-3">
+                    <div class="input-group shadow-sm">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-white">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
                         </div>
-
-                        <!-- 📊 TABLA -->
-                        <div class="table-responsive">
-                            <table class="table table-striped table-bordered table-hover table-sm">
-                                <thead class="thead-dark">
-                                    <tr>
-                                        <th width="10%">Opciones</th>
-                                        <th width="5%">ID</th>
-                                        <th>Código</th>
-                                        <th>Descripción</th>
-                                        <th>Categoría</th>
-                                        <th>Unidad</th>
-                                        <th>Precio</th>
-                                        <th>Stock</th>
-                                        <th>Estado</th>
-                                    </tr>
-                                </thead>
-
-                                <tbody id="productoTableBody">
-                                    <tr>
-                                        <td colspan="9" class="text-center">
-                                            <div class="spinner-border text-primary"></div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-
-                            </table>
-                        </div>
-
-                        <!-- 🔽 PAGINACIÓN (placeholder por ahora) -->
-                        <div id="paginacion" class="mt-2"></div>
-
+                        <input type="text"
+                               id="searchText"
+                               class="form-control"
+                               placeholder="Buscar por código, descripción o categoría...">
                     </div>
-
                 </div>
+
+                <!-- 📊 TABLA -->
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped text-center">
+
+                        <thead class="bg-primary text-white">
+                            <tr>
+                                <th>Acciones</th>
+                                <th>ID</th>
+                                <th>Código</th>
+                                <th>Descripción</th>
+                                <th>Categoría</th>
+                                <th>Unidad</th>
+                                <th>Precio</th>
+                                <th>Stock</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="productoTableBody">
+                            <tr>
+                                <td colspan="9" class="text-center">
+                                    <div class="spinner-border text-primary"></div>
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+                </div>
+
+                <!-- 🔽 PAGINACIÓN -->
+                <div id="paginacion" class="mt-3 text-center"></div>
+
             </div>
         </div>
+
     </div>
 </div>
 
@@ -78,122 +84,102 @@
 <script>
 
 let searchGlobal = '';
+let paginaActual = 1;
+let timeoutBusqueda;
 
-/* 🔍 BUSCADOR */
-$('#searchButton').click(function(){
-    searchGlobal = $('#searchText').val();
-    fetchProductos();
+/* 🔥 BUSCADOR EN TIEMPO REAL */
+$('#searchText').on('keyup', function(){
+
+    let texto = $(this).val();
+
+    clearTimeout(timeoutBusqueda);
+
+    timeoutBusqueda = setTimeout(() => {
+
+        // 🔥 si está vacío → muestra todo
+        if(texto.length < 2){
+            searchGlobal = '';
+        }else{
+            searchGlobal = texto;
+        }
+
+        fetchProductos(1);
+
+    }, 400);
+
 });
 
 /* 🚀 FETCH PRODUCTOS */
-function fetchProductos() {
+function fetchProductos(page = 1){
 
-    $.ajax({
-        url: "/api/productos",
-        method: "GET",
-        data: {
-            search: searchGlobal
-        },
-        success: function(response) {
+    paginaActual = page;
 
-            let tbody = $("#productoTableBody");
-            tbody.empty();
+    apiFetch(`/api/productos?search=${searchGlobal}&page=${page}`)
+    .then(resp => {
 
-            // ⚠️ PREPARADO PARA PAGINACIÓN (cuando venga)
-            let productos = response.data ? response.data : response;
+        let tbody = $("#productoTableBody");
+        tbody.empty();
 
-            if(productos.length === 0){
-                tbody.html(`
-                    <tr>
-                        <td colspan="9" class="text-center text-muted">
-                            No hay productos
-                        </td>
-                    </tr>
-                `);
-                return;
-            }
-
-            $.each(productos, function(index, producto) {
-
-                let estado = producto.activo == 1 
-                    ? '<span class="badge badge-success">Activo</span>'
-                    : '<span class="badge badge-danger">Inactivo</span>';
-
-                tbody.append(`
-                    <tr id="producto_${producto.id}">
-                        <td>
-                            <div class="d-flex">
-                                <button class="btn btn-warning btn-sm mr-1" onclick="editarProducto(${producto.id})">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-danger btn-sm" onclick="eliminarProducto(${producto.id})">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-
-                        <td>${producto.id}</td>
-                        <td>${producto.codigo}</td>
-                        <td>${producto.descripcion}</td>
-                        <td>${producto.categoria}</td>
-                        <td>${producto.unidad}</td>
-                        <td>S/ ${parseFloat(producto.precio).toFixed(2)}</td>
-                        <td>${producto.stock}</td>
-                        <td>${estado}</td>
-                    </tr>
-                `);
-            });
-
-            // 🔽 PAGINACIÓN (se activa cuando me pases el controller)
-            if(response.meta){
-                renderPaginacion(response);
-            }
-
-        },
-        error: function() {
-            Swal.fire('Error','No se pudo cargar productos','error');
+        if(resp.data.length === 0){
+            tbody.html(`
+                <tr>
+                    <td colspan="9" class="text-center text-muted">
+                        No se encontraron resultados
+                    </td>
+                </tr>
+            `);
+            $('#paginacion').html('');
+            return;
         }
+
+        resp.data.forEach(p => {
+
+            let estado = p.activo == 1
+                ? '<span class="badge badge-success">Activo</span>'
+                : '<span class="badge badge-danger">Inactivo</span>';
+
+            tbody.append(`
+                <tr>
+                    <td>
+                        <button class="btn btn-warning btn-sm" onclick="editarProducto(${p.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+
+                        <button class="btn btn-danger btn-sm" onclick="eliminarProducto(${p.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+
+                    <td>${p.id}</td>
+                    <td>${p.codigo}</td>
+                    <td class="text-left">${p.descripcion}</td>
+                    <td>${p.categoria}</td>
+                    <td>${p.unidad}</td>
+                    <td>S/ ${parseFloat(p.precio).toFixed(2)}</td>
+                    <td>${p.stock}</td>
+                    <td>${estado}</td>
+                </tr>
+            `);
+
+        });
+
+        renderPaginacion(resp.pagination);
+
+    })
+    .catch(()=>{
+        Swal.fire('Error','No se pudo cargar productos','error');
     });
+
 }
 
-/* 🗑️ ELIMINAR */
-function eliminarProducto(id) {
-
-    Swal.fire({
-        title: 'Eliminar producto',
-        text: "¿Seguro?",
-        icon: 'warning',
-        showCancelButton: true
-    }).then((result) => {
-
-        if (result.isConfirmed) {
-
-            $.ajax({
-                url: `/api/productos/${id}`,
-                method: 'DELETE',
-                headers:{
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function() {
-
-                    Swal.fire('Eliminado','','success');
-                    fetchProductos();
-
-                }
-            });
-
-        }
-    });
-}
-
-/* 🔽 PAGINACIÓN (SE ACTIVARÁ CON TU CONTROLLER) */
-function renderPaginacion(data){
+/* 🔽 PAGINACIÓN */
+function renderPaginacion(p){
 
     let html = '';
 
-    for(let i = 1; i <= data.meta.last_page; i++){
+    for(let i = 1; i <= p.last_page; i++){
         html += `
-            <button class="btn btn-sm ${i === data.meta.current_page ? 'btn-primary' : 'btn-light'}"
+            <button class="btn btn-sm ${i === p.current_page ? 'btn-primary' : 'btn-light'}"
                 onclick="fetchProductos(${i})">
                 ${i}
             </button>
@@ -203,8 +189,60 @@ function renderPaginacion(data){
     $('#paginacion').html(html);
 }
 
+/* 🗑️ ELIMINAR */
+function eliminarProducto(id){
+
+    Swal.fire({
+        title:'¿Eliminar producto?',
+        icon:'warning',
+        showCancelButton:true
+    }).then(r=>{
+
+        if(r.isConfirmed){
+
+            apiFetch(`/api/productos/${id}`,{
+                method:'DELETE'
+            })
+            .then(resp=>{
+                Swal.fire('OK', resp.message, 'success');
+                fetchProductos(paginaActual);
+            });
+
+        }
+
+    });
+
+}
+
+/* ✏️ EDITAR */
+function editarProducto(id){
+
+    apiFetch(`/api/productos/${id}`)
+    .then(resp => {
+
+        let p = resp.data;
+
+        $('#codigo').val(p.codigo);
+        $('#descripcion').val(p.descripcion);
+        $('#categoria').val(p.categoria);
+        $('#unidad').val(p.unidad);
+        $('#precio').val(p.precio);
+        $('#stock').val(p.stock);
+        $('#activo').val(p.activo);
+
+        window.editingProductoId = id;
+
+        $('#grupoActivo').show();
+        $('#modalRegistroProductoLabel').text('Editar Producto');
+
+        $('#modalRegistroProducto').modal('show');
+
+    });
+
+}
+
 /* INIT */
-$(document).ready(function(){
+$(document).ready(()=>{
     fetchProductos();
 });
 

@@ -2,13 +2,14 @@
 
 use App\Http\Controllers\ConductorController;
 use App\Http\Controllers\CamionController;
-use App\Http\Controllers\RutaController;
+use App\Http\Controllers\RutasController\RutaController;
 use App\Http\Controllers\ViaticoController;
+
 use App\Http\Controllers\CombustibleController;
-use App\Http\Controllers\RutaCombustibleController;
-use App\Http\Controllers\RutaPeajeController;
+use App\Http\Controllers\RutasController\RutaCombustibleController;
+use App\Http\Controllers\RutasController\RutaPeajeController;
 use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\RutaViaticosController;
+use App\Http\Controllers\RutasController\RutaViaticosController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Factura\Controllers\FacturaController;
 use App\Http\Controllers\ProductosController\ProductoController;

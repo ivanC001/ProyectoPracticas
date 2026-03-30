@@ -24,27 +24,27 @@
 
                         <div class="col-md-8 mb-3">
                             <label>N° Documento</label>
-                            <input type="text" class="form-control" id="num_doc" name="num_doc">
+                            <input type="text" class="form-control" name="num_doc" id="num_doc">
                         </div>
 
                         <div class="col-md-12 mb-3">
                             <label>Razón Social</label>
-                            <input type="text" class="form-control" id="razon_social" name="razon_social">
+                            <input type="text" class="form-control" name="razon_social" id="razon_social">
                         </div>
 
                         <div class="col-md-4 mb-3">
                             <label>Teléfono</label>
-                            <input type="text" class="form-control" id="telefono" name="telefono">
+                            <input type="text" class="form-control" name="telefono" id="telefono">
                         </div>
 
                         <div class="col-md-8 mb-3">
                             <label>Email</label>
-                            <input type="email" class="form-control" id="email" name="email">
+                            <input type="email" class="form-control" name="email" id="email">
                         </div>
 
                         <div class="col-md-12 mb-3">
                             <label>Dirección</label>
-                            <input type="text" class="form-control" id="direccion" name="direccion">
+                            <input type="text" class="form-control" name="direccion" id="direccion">
                         </div>
 
                     </div>
@@ -70,23 +70,7 @@
 
 window.clienteEditando = null;
 
-/* ABRIR MODAL */
-$('#modalRegistroCliente').on('show.bs.modal', function () {
-
-    if(!window.clienteEditando){
-        $('#formCliente')[0].reset();
-        $('#tituloModal').html('<i class="fas fa-user-plus"></i> Registrar Cliente');
-    }
-
-    limpiarErrores();
-});
-
-/* CERRAR MODAL */
-$('#modalRegistroCliente').on('hidden.bs.modal', function () {
-    window.clienteEditando = null;
-});
-
-/* LIMPIAR ERRORES */
+/* LIMPIAR */
 function limpiarErrores(){
     $('.form-control').removeClass('is-invalid');
     $('.invalid-feedback').remove();
@@ -101,17 +85,36 @@ function mostrarErrores(errors){
 
         let input = $(`[name="${campo}"]`);
 
-        input.addClass('is-invalid');
+        if(input.length){
+            input.addClass('is-invalid');
 
-        input.after(`
-            <div class="invalid-feedback">
-                ${errors[campo][0]}
-            </div>
-        `);
+            input.after(`
+                <div class="invalid-feedback">
+                    ${errors[campo][0]}
+                </div>
+            `);
+        }
 
     });
 
 }
+
+/* ABRIR MODAL */
+$('#modalRegistroCliente').on('show.bs.modal', function () {
+
+    if(!window.clienteEditando){
+        $('#formCliente')[0].reset();
+        $('#tituloModal').html('<i class="fas fa-user-plus"></i> Registrar Cliente');
+    }
+
+    limpiarErrores();
+
+});
+
+/* CERRAR */
+$('#modalRegistroCliente').on('hidden.bs.modal', function () {
+    window.clienteEditando = null;
+});
 
 /* GUARDAR */
 $('#btnGuardar').on('click', function(){
@@ -151,7 +154,7 @@ $('#btnGuardar').on('click', function(){
     .catch(err => {
 
         if(err.errors){
-            mostrarErrores(err.errors); // 🔥 backend validation
+            mostrarErrores(err.errors);
         }else{
             Swal.fire('Error', err.message, 'error');
         }

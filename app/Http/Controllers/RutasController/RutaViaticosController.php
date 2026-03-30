@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\RutasController;
 
 use App\Models\Ruta;
 use App\Models\Viatico;
 use App\Models\Combustible;
 use App\Http\Requests\RutaRequest;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
 class RutaViaticosController extends Controller
 {

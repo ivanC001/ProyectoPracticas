@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\RutasController;
 
 use App\Models\Combustible;
 use App\Http\Requests\CombustibleRequest;
+use App\Http\Controllers\Controller;
 
 class RutaCombustibleController extends Controller
 {
