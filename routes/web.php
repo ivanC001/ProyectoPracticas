@@ -88,4 +88,14 @@ Route::get('/clientes', function () {
 ///Vista para COTIZACIONES
 Route::get('/cotizaciones', function () {
     return view('vistaCotizacion.index');
+    
+});
+// 📄 Vista registro cotización
+Route::get('/cotizaciones/registro', function () {
+    return view('vistaCotizacion.registro');
+});
+
+///Vista para servicios
+Route::get('/servicios', function () {
+    return view('gestionProductos.servicio.index');
 });

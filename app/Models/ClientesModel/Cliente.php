@@ -3,6 +3,7 @@
 namespace App\Models\ClientesModel;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\CotizacionModel\Cotizacion;
 
 class Cliente extends Model
 {
@@ -16,6 +17,9 @@ class Cliente extends Model
         'email',
         'telefono',
         'estado'
+    ];
+    protected $casts = [
+        'estado' => 'boolean'
     ];
 
     /*
@@ -31,6 +35,15 @@ class Cliente extends Model
      /**
      * Un cliente pertenece a un tipo de documento
      */
+       /*
+    |----------------------------------------------------------------------
+    | RELACIONES
+    |----------------------------------------------------------------------
+    */
+    public function cotizaciones()
+    {
+        return $this->hasMany(Cotizacion::class, 'cliente_id');
+    }
     public function tipoDocumento()
     {
         return $this->belongsTo(TipoDocumento::class, 'tipo_doc', 'codigo');

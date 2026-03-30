@@ -155,7 +155,7 @@
               <a id="reControl" href="" class="nav-link">
                 <i class="nav-icon fa fa-table"></i>
                 <p>
-                  Gestion de productos
+                  Productos y Servicios
                   <i class="right fas fa-angle-left"></i>
                 </p>
               </a>
@@ -164,6 +164,12 @@
                   <a id="liConductor" href="/producto" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
                     <p>productos</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a id="liConductor" href="/servicios" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Servicios</p>
                   </a>
                 </li>
 
@@ -207,7 +213,9 @@
             </li>
             {{-- Registro de Clientes --}}
             <label for="">Control de clientes</label>
-            <li id="reControl" class="nav-item">
+
+            <ul>
+                <li id="reControl" class="nav-item">
               <a id="reControl" href="/clientes" class="nav-link">
                 <i class="nav-icon fa fa-table"></i>
                 <p>
@@ -216,6 +224,19 @@
                 </p>
               </a>
             </li>
+              <li id="reControl" class="nav-item">
+              <a id="reControl" href="/cotizaciones" class="nav-link">
+                <i class="nav-icon fa fa-table"></i>
+                <p>
+                  Registro de Cotizaciones
+                  <i class="right fas fa-angle-left"></i>
+                </p>
+              </a>
+            </li>
+
+
+            </ul>
+          
             {{-- Registro de transporte --}}
             <label for="" class="nav-icon">REGISTRO TRANSPORTE</label>
             <li id="reControl" class="nav-item">

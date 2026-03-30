@@ -13,10 +13,12 @@ use App\Http\Controllers\RutasController\RutaViaticosController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Factura\Controllers\FacturaController;
 use App\Http\Controllers\ProductosController\ProductoController;
-use App\Http\Controllers\VentasController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ControladorClientes\ClienteController;
 use App\Http\Controllers\ControladorCotizacion\CotizacionController;
+use App\Http\Controllers\ProductosController\ServicioController;
+use App\Http\Controllers\VentasController;
+use Illuminate\Support\Facades\Route;
+
 
 // Rutas API para conductores
 Route::prefix('conductores')->group(function () {
@@ -104,7 +106,7 @@ Route::prefix('rutas/{ruta}')->group(function () {
 
 
 
-Route::apiResource('productos', ProductoController::class);
+
 
 
 
@@ -173,3 +175,7 @@ route::post('/factura/pdf', [FacturaController::class, 'pdf']);
 Route::apiResource('/clientes', ClienteController::class);
 //api cotizaciones
 Route::apiResource('cotizaciones', CotizacionController::class);
+//api servicios
+Route::apiResource('servicios', ServicioController::class);
+//api Productos
+Route::apiResource('productos', ProductoController::class);

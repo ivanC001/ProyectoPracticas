@@ -6,38 +6,39 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-  public function up()
+    public function up(): void
     {
         Schema::create('cotizaciones', function (Blueprint $table) {
             $table->id();
 
+            // 🔹 Cliente (referencia)
             $table->foreignId('cliente_id')
-                ->constrained('clientes')
-                ->onDelete('cascade');
+                  ->constrained('clientes');
 
+            // 🔹 Fechas
             $table->date('fecha');
             $table->date('fecha_vencimiento')->nullable();
 
-            $table->decimal('subtotal', 10, 2)->default(0);
-            $table->decimal('igv', 10, 2)->default(0);
-            $table->decimal('total', 10, 2)->default(0);
+            // 🔹 Totales
+            $table->decimal('subtotal', 12, 2)->default(0);
+            $table->decimal('igv', 12, 2)->default(0);
+            $table->decimal('total', 12, 2)->default(0);
 
-            $table->enum('estado', ['borrador','enviado','aprobado','rechazado'])
-                ->default('borrador');
+            // 🔹 Estado
+            $table->enum('estado', [
+                'borrador',
+                'enviado',
+                'aprobado',
+                'rechazado'
+            ])->default('borrador');
 
+            // 🔹 Extras
             $table->text('observacion')->nullable();
 
             $table->timestamps();
         });
     }
 
-
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('cotizaciones');

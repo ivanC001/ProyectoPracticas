@@ -6,46 +6,48 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-   public function up()
-{
-    Schema::create('cotizacion_detalle', function (Blueprint $table) {
-        $table->id();
+    public function up(): void
+    {
+        Schema::create('cotizacion_detalles', function (Blueprint $table) {
+            $table->id();
 
-        $table->foreignId('cotizacion_id')
-              ->constrained('cotizaciones')
-              ->onDelete('cascade');
+            // 🔹 Relación principal
+            $table->foreignId('cotizacion_id')
+                  ->constrained('cotizaciones')
+                  ->cascadeOnDelete();
 
-        $table->enum('tipo', ['producto','servicio']);
+            // 🔹 Tipo de item
+            $table->enum('tipo', ['producto','servicio']);
 
-        // 🔥 SOLO UNO SE USA
-        $table->foreignId('producto_id')
-              ->nullable()
-              ->constrained('productos')
-              ->nullOnDelete();
+            // 🔹 Relaciones opcionales
+            $table->foreignId('producto_id')
+                  ->nullable()
+                  ->constrained('productos')
+                  ->nullOnDelete();
 
-        $table->foreignId('servicio_id')
-              ->nullable()
-              ->constrained('servicios')
-              ->nullOnDelete();
+            $table->foreignId('servicio_id')
+                  ->nullable()
+                  ->constrained('servicios')
+                  ->nullOnDelete();
 
-        $table->string('descripcion');
+            // 🔥 HISTÓRICO (CLAVE PARA FACTURACIÓN)
+            $table->string('codigo_item');
+            $table->string('nombre_item');
 
-        $table->decimal('cantidad', 10, 2);
-        $table->decimal('precio', 10, 2);
-        $table->decimal('subtotal', 10, 2);
+            // 🔹 Opcional pero útil
+            $table->string('unidad')->nullable(); // unidad, hora, servicio
 
-        $table->timestamps();
-    });
-}
+            // 💰 Datos económicos
+            $table->decimal('cantidad', 10, 2);
+            $table->decimal('precio', 12, 2);
+            $table->decimal('subtotal', 12, 2);
 
-    /**
-     * Reverse the migrations.
-     */
+            $table->timestamps();
+        });
+    }
+
     public function down(): void
     {
-        Schema::dropIfExists('cotizacion_detalle');
+        Schema::dropIfExists('cotizacion_detalles');
     }
 };

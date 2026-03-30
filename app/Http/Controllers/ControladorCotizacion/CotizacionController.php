@@ -3,92 +3,105 @@
 namespace App\Http\Controllers\ControladorCotizacion;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CotizacionRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 use App\Models\CotizacionModel\Cotizacion;
 use App\Models\CotizacionModel\CotizacionDetalle;
 use App\Models\ProductosModel\Producto;
-use App\Models\ProductoModel\Servicio;
+use App\Models\ProductosModel\Servicio;
+
 
 class CotizacionController extends Controller
 {
 
-    /* 🔥 LISTAR */
-    public function index()
+    /**
+     * 🔥 LISTAR
+     */
+    public function index(Request $request)
     {
-        return response()->json(
-            Cotizacion::with('cliente', 'detalles')->latest()->get()
-        );
+        $query = Cotizacion::with('cliente', 'detalles');
+
+        if ($request->filled('search')) {
+            $query->whereHas('cliente', function ($q) use ($request) {
+                $q->where('razon_social', 'like', "%{$request->search}%");
+            });
+        }
+
+        $data = $query->orderBy('id', 'desc')
+                      ->paginate($request->get('per_page', 10));
+
+        return response()->json([
+            'success' => true,
+            'data' => $data->items(),
+            'pagination' => [
+                'current_page' => $data->currentPage(),
+                'last_page' => $data->lastPage(),
+                'total' => $data->total()
+            ]
+        ]);
     }
 
-    /* 🔥 REGISTRAR */
-    public function store(Request $request)
+    /**
+     * 🔥 CREAR
+     */
+    public function store(CotizacionRequest $request)
     {
+        DB::beginTransaction();
+
         try {
 
-            // // 🔹 VALIDACIÓN
-            // $request->validate([
-            //     'cliente_id' => 'required|exists:clientes,id',
-            //     'items' => 'required|array|min:1',
+            $data = $request->validated();
 
-            //     'items.*.tipo' => 'required|in:producto,servicio',
-            //     'items.*.cantidad' => 'required|numeric|min:1',
-
-            //     'items.*.producto_id' => 'nullable|exists:productos,id',
-            //     'items.*.servicio_id' => 'nullable|exists:servicios,id',
-
-            //     'items.*.precio' => 'nullable|numeric|min:0'
-            // ]);
-
-            // 🔹 CREAR CABECERA
             $cotizacion = Cotizacion::create([
-                'cliente_id' => $request->cliente_id,
+                'cliente_id' => $data['cliente_id'],
                 'fecha' => now(),
-                'fecha_vencimiento' => $request->fecha_vencimiento,
                 'subtotal' => 0,
                 'igv' => 0,
                 'total' => 0,
-                'estado' => 'borrador',
-                'observacion' => $request->observacion
+                'estado' => 'borrador'
             ]);
 
             $subtotal = 0;
 
-            foreach ($request->items as $item) {
+            foreach ($data['items'] as $item) {
 
                 $tipo = $item['tipo'];
                 $cantidad = $item['cantidad'];
 
+                $producto_id = null;
+                $servicio_id = null;
+                $codigo = '';
+                $nombre = '';
+                $precio = 0;
+                $unidad = null;
+
+                /* 🟦 PRODUCTO */
                 if ($tipo === 'producto') {
 
-                    if (empty($item['producto_id'])) {
-                        throw new \Exception('Debe enviar producto_id');
-                    }
-
-                    // 🔥 IMPORTANTE: excluir eliminados (SoftDeletes)
                     $producto = Producto::where('activo', true)
-                                        ->findOrFail($item['producto_id']);
-
-                    $precio = $producto->precio;
-                    $descripcion = $producto->descripcion;
+                        ->findOrFail($item['producto_id']);
 
                     $producto_id = $producto->id;
-                    $servicio_id = null;
+                    $codigo = $producto->codigo;
+                    $nombre = $producto->descripcion;
+                    $precio = $producto->precio;
+                    $unidad = $producto->unidad ?? null;
+                }
 
-                } else {
-
-                    if (empty($item['servicio_id'])) {
-                        throw new \Exception('Debe enviar servicio_id');
-                    }
+                /* 🟩 SERVICIO */
+                if ($tipo === 'servicio') {
 
                     $servicio = Servicio::where('activo', true)
-                                        ->findOrFail($item['servicio_id']);
+                        ->findOrFail($item['servicio_id']);
 
-                    $precio = $item['precio'] ?? $servicio->precio;
-                    $descripcion = $servicio->nombre;
-
-                    $producto_id = null;
                     $servicio_id = $servicio->id;
+                    $codigo = $servicio->codigo;
+                    $nombre = $servicio->nombre;
+                    $precio = $servicio->precio;
+                    $unidad = 'servicio';
                 }
 
                 $sub = round($cantidad * $precio, 2);
@@ -98,7 +111,9 @@ class CotizacionController extends Controller
                     'tipo' => $tipo,
                     'producto_id' => $producto_id,
                     'servicio_id' => $servicio_id,
-                    'descripcion' => $descripcion,
+                    'codigo_item' => $codigo,
+                    'nombre_item' => $nombre,
+                    'unidad' => $unidad,
                     'cantidad' => $cantidad,
                     'precio' => $precio,
                     'subtotal' => $sub
@@ -107,7 +122,6 @@ class CotizacionController extends Controller
                 $subtotal += $sub;
             }
 
-            // 🔹 TOTALES
             $igv = round($subtotal * 0.18, 2);
             $total = round($subtotal + $igv, 2);
 
@@ -117,13 +131,22 @@ class CotizacionController extends Controller
                 'total' => $total
             ]);
 
+            DB::commit();
+
             return response()->json([
                 'success' => true,
-                'message' => 'Cotización registrada correctamente',
-                'data' => $cotizacion->load('cliente', 'detalles')
+                'message' => 'Cotización creada correctamente',
+                'data' => $cotizacion->load('cliente','detalles')
             ], 201);
 
+        } catch (ValidationException $e) {
+
+            DB::rollBack();
+            throw $e;
+
         } catch (\Exception $e) {
+
+            DB::rollBack();
 
             return response()->json([
                 'success' => false,
@@ -133,22 +156,43 @@ class CotizacionController extends Controller
         }
     }
 
-    /* 🔥 MOSTRAR */
+    /**
+     * 🔥 MOSTRAR
+     */
     public function show($id)
     {
-        return response()->json(
-            Cotizacion::with('cliente', 'detalles')->findOrFail($id)
-        );
-    }
+        $cotizacion = Cotizacion::with('cliente', 'detalles')->find($id);
 
-    /* 🔥 ELIMINAR */
-    public function destroy($id)
-    {
-        Cotizacion::findOrFail($id)->delete();
+        if (!$cotizacion) {
+            throw ValidationException::withMessages([
+                'cotizacion' => ['No encontrada']
+            ]);
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'Cotización eliminada'
+            'data' => $cotizacion
+        ]);
+    }
+
+    /**
+     * 🔥 ELIMINAR
+     */
+    public function destroy($id)
+    {
+        $cotizacion = Cotizacion::find($id);
+
+        if (!$cotizacion) {
+            throw ValidationException::withMessages([
+                'cotizacion' => ['No encontrada']
+            ]);
+        }
+
+        $cotizacion->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Eliminada correctamente'
         ]);
     }
 }

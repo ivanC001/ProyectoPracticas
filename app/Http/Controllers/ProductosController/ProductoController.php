@@ -8,6 +8,7 @@ use App\Models\ProductosModel\Producto;
 use App\Http\Requests\ProductoRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ProductoController extends Controller
 {
