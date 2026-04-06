@@ -23,10 +23,16 @@ class Conductor extends Model
         'email',
         'direccion',
         'ciudad',
+        'camion_id',
     ];
 
     // Habilitar las columnas de timestamps y soft deletes
     protected $dates = ['deleted_at'];
+
+    public function camion()
+    {
+        return $this->belongsTo(Camion::class, 'camion_id');
+    }
 }
 
 

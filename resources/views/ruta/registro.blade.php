@@ -1,96 +1,80 @@
-<!-- Modal de Registro/Edición de Ruta -->
-<div class="modal fade" id="modalRegistroRuta" tabindex="-1" role="dialog" aria-labelledby="modalRegistroRutaLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document"><!-- modal-lg para más espacio -->
-        <div class="modal-content">
+<div class="modal fade" id="modalRegistroRuta" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content shadow">
             <div class="modal-header bg-primary text-white">
-                <h2 id="modalRegistroRutaLabel" 
-                    class="modal-title fw-bold text-white text-uppercase border-bottom pb-2 d-inline-block"
-                    style="border-image: linear-gradient(90deg, #ffffff, #00c6ff) 1; border-image-slice: 1;">
-                🚚 Registrar Ruta
-                </h2>
-
+                <h5 class="mb-0" id="modalRegistroRutaLabel">
+                    <i class="fas fa-route"></i> Registrar Ruta
+                </h5>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
 
             <div class="modal-body">
-                <form id="formRegistroRuta" enctype="multipart/form-data">
-                    @csrf
-                    <input type="hidden" id="rutaId" name="id">
-                    <input type="hidden" name="_method" id="method_field" value="POST">
-
-                    <h5 class="text-secondary mb-3"><i class="fas fa-road"></i> Datos del viaje</h5>
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label for="origen">Origen:</label>
+                <form id="formRegistroRuta">
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label for="origen">Origen *</label>
                             <input type="text" class="form-control" id="origen" name="origen" required>
                         </div>
-                        <div class="form-group col-md-6">
-                            <label for="destino">Destino:</label>
+                        <div class="col-md-6 form-group">
+                            <label for="destino">Destino *</label>
                             <input type="text" class="form-control" id="destino" name="destino" required>
                         </div>
-                    </div>
 
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label for="fecha_inicio">Fecha de Salida:</label>
+                        <div class="col-md-6 form-group">
+                            <label for="fecha_inicio">Fecha de salida *</label>
                             <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" required>
                         </div>
-                        <div class="form-group col-md-6">
-                            <label for="fecha_fin">Fecha de Llegada:</label>
-                            <input type="date" class="form-control" id="fecha_fin" name="fecha_fin">
+                        <div class="col-md-6 form-group">
+                            <label for="fecha_fin">Fecha de llegada *</label>
+                            <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" required>
                         </div>
-                    </div>
 
-                    <h5 class="text-secondary mt-4 mb-3"><i class="fas fa-user"></i> Responsable del viaje</h5>
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label for="conductor">Conductor:</label>
-                            <select class="form-control" id="conductor" name="conductor_id" required>
-                                <option value="">Seleccione un conductor</option>
-                            </select>
+                        <div class="col-md-6 form-group">
+                            <label for="conductor">Conductor *</label>
+                            <select class="form-control" id="conductor" name="conductor_id" required></select>
                         </div>
-                        <div class="form-group col-md-6">
-                            <label for="camion">Camión:</label>
-                            <select class="form-control" id="camion" name="camion_id" required>
-                                <option value="">Seleccione un camión</option>
-                            </select>
-                        </div>
-                    </div>
 
-                    <h5 class="text-secondary mt-4 mb-3"><i class="fas fa-dollar-sign"></i> Gastos y estado del viaje</h5>
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label for="caja_chica">Caja Chica:</label>
+                        <div class="col-md-6 form-group">
+                            <label>Unidad asignada</label>
+                            <div class="border rounded bg-light p-3" id="unidadAsignadaPreview">
+                                Selecciona un conductor para ver su tracto y trailer.
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 form-group">
+                            <label for="caja_chica">Caja chica</label>
                             <input type="number" step="0.01" class="form-control" id="caja_chica" name="caja_chica">
                         </div>
-                        <div class="form-group col-md-6">
-                            <label for="pago_viaje">Pago del Viaje:</label>
+                        <div class="col-md-4 form-group">
+                            <label for="pago_viaje">Pago del viaje</label>
                             <input type="number" step="0.01" class="form-control" id="pago_viaje" name="pago_viaje">
                         </div>
-                    </div>
+                        <div class="col-md-4 form-group">
+                            <label for="estado">Estado *</label>
+                            <select class="form-control" id="estado" name="estado" required>
+                                <option value="">Seleccione...</option>
+                                <option value="pendiente">Pendiente</option>
+                                <option value="en curso">En curso</option>
+                                <option value="finalizado">Finalizado</option>
+                                <option value="cancelado">Cancelado</option>
+                            </select>
+                        </div>
 
-                    <div class="form-group">
-                        <label for="estado">Estado:</label>
-                        <select class="form-control" id="estado" name="estado" required>
-                            <option value="">Seleccione un estado</option>
-                            <option value="pendiente">Pendiente</option>
-                            <option value="en curso">En curso</option>
-                            <option value="finalizado">Finalizado</option>
-                            <option value="cancelado">Cancelado</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="observaciones">Observaciones:</label>
-                        <textarea class="form-control" id="observaciones" name="observaciones" rows="3"></textarea>
-                    </div>
-
-                    <div class="text-right">
-                        <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Guardar Ruta</button>
+                        <div class="col-md-12 form-group">
+                            <label for="observaciones">Observaciones</label>
+                            <textarea class="form-control" id="observaciones" name="observaciones" rows="3"></textarea>
+                        </div>
                     </div>
                 </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnGuardarRuta">
+                    <i class="fas fa-save"></i> Guardar Ruta
+                </button>
             </div>
         </div>
     </div>
@@ -98,154 +82,133 @@
 
 @push('scripts')
 <script>
-    let editingRutaId = null; // ID de la ruta en edición
+let editingRutaId = null;
+let conductoresRuta = [];
 
-    // Función para establecer fechas por defecto
-    function setDefaultDates() {
-        let today = new Date().toISOString().split('T')[0];
-        let nextWeek = new Date();
-        nextWeek.setDate(nextWeek.getDate() + 7);
-        let nextWeekFormatted = nextWeek.toISOString().split('T')[0];
+function setDefaultDatesRuta() {
+    const today = new Date();
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
 
-        document.getElementById('fecha_inicio').value = today;
-        document.getElementById('fecha_fin').value = nextWeekFormatted;
+    $('#fecha_inicio').val(today.toISOString().slice(0, 10));
+    $('#fecha_fin').val(nextWeek.toISOString().slice(0, 10));
+}
+
+function renderUnidadAsignada(conductorId = '') {
+    const conductor = conductoresRuta.find(item => Number(item.id) === Number(conductorId));
+
+    if (!conductor || !conductor.camion) {
+        $('#unidadAsignadaPreview').html('Selecciona un conductor para ver su tracto y trailer.');
+        return;
     }
 
-    // Guardar/Editar ruta
-    $('#formRegistroRuta').on('submit', function (event) {
-        event.preventDefault();
+    $('#unidadAsignadaPreview').html(`
+        <strong>Tracto:</strong> ${conductor.camion.placa_tracto || '-'}<br>
+        <strong>Trailer:</strong> ${conductor.camion.placa_carreto || '-'}<br>
+        <strong>MTC:</strong> ${conductor.camion.mtc || '-'}
+    `);
+}
 
-        const formData = new FormData(this);
-        const url = editingRutaId ? `/api/rutas/${editingRutaId}` : '/api/rutas';
+function fetchConductoresRuta(selectedId = '') {
+    return apiFetch('/api/conductores?per_page=200')
+        .then(resp => {
+            conductoresRuta = (resp.data || []).filter(conductor => conductor.camion);
+            const conductorSelect = $('#conductor');
+            conductorSelect.empty().append('<option value="">Seleccione un conductor</option>');
 
-        if (editingRutaId) {
-            formData.append('_method', 'PUT'); // Laravel necesita esto para update
-        }
+            conductoresRuta.forEach(conductor => {
+                const nombre = `${conductor.nombre || ''} ${conductor.apellido || ''}`.trim();
+                const unidad = conductor.camion
+                    ? ` - ${conductor.camion.placa_tracto} / ${conductor.camion.placa_carreto}`
+                    : ' - Sin unidad';
+                const selected = Number(selectedId) === Number(conductor.id) ? 'selected' : '';
 
-        $.ajax({
-            url: url,
-            method: 'POST', // Laravel interpreta PUT con _method
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function () {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Registro exitoso',
-                    text: 'La ruta ha sido registrada/actualizada correctamente.',
-                });
-                $('#modalRegistroRuta').modal('hide');
-                $('#formRegistroRuta')[0].reset();
-                editingRutaId = null;
-                fetchRutas(); // Recargar tabla
-            },
-            error: function (xhr) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: xhr.responseJSON?.message || 'Hubo un problema al registrar la ruta.',
-                });
-            }
+                conductorSelect.append(`
+                    <option value="${conductor.id}" ${selected}>
+                        ${nombre}${unidad}
+                    </option>
+                `);
+            });
+
+            renderUnidadAsignada(selectedId);
         });
-    });
+}
 
-    // Función para editar una ruta
-    function editar(id) {
+function editar(id) {
+    Promise.all([
+        apiFetch(`/api/rutas/${id}`),
+        fetchConductoresRuta()
+    ]).then(([resp]) => {
+        const ruta = resp.data;
+
         editingRutaId = id;
-        $.ajax({
-            url: `/api/rutas/${id}`,
-            method: 'GET',
-            success: function(ruta) {
-                $('#modalRegistroRutaLabel').text('Editar Ruta');
+        $('#modalRegistroRutaLabel').html('<i class="fas fa-edit"></i> Editar Ruta');
+        $('#origen').val(ruta.origen || '');
+        $('#destino').val(ruta.destino || '');
+        $('#fecha_inicio').val(ruta.fecha_inicio || '');
+        $('#fecha_fin').val(ruta.fecha_fin || '');
+        $('#conductor').val(ruta.conductor_id || '');
+        $('#caja_chica').val(ruta.caja_chica || '');
+        $('#pago_viaje').val(ruta.pago_viaje || '');
+        $('#estado').val(ruta.estado || '');
+        $('#observaciones').val(ruta.observaciones || '');
+        renderUnidadAsignada(ruta.conductor_id || '');
 
-                // Datos del viaje
-                $('#origen').val(ruta.origen);
-                $('#destino').val(ruta.destino);
-                $('#fecha_inicio').val(ruta.fecha_inicio);
-                $('#fecha_fin').val(ruta.fecha_fin);
-
-                // Responsable
-                $('#conductor').val(ruta.conductor_id);
-                $('#camion').val(ruta.camion_id);
-
-                // Gastos y estado
-                $('#caja_chica').val(ruta.caja_chica);
-                $('#pago_viaje').val(ruta.pago_viaje);
-                $('#estado').val(ruta.estado);
-                $('#observaciones').val(ruta.observaciones);
-
-                $('#method_field').val('PUT');
-                $('#modalRegistroRuta').modal('show');
-            },
-            error: function() {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'No se pudieron cargar los datos de la ruta.',
-                });
-            }
-        });
-    }
-
-    // Reset al cerrar modal
-    $('#modalRegistroRuta').on('hidden.bs.modal', function () {
-        editingRutaId = null;
-        $('#method_field').val('POST');
-        document.getElementById('formRegistroRuta').reset();
-        setDefaultDates();
-        $('#modalRegistroRutaLabel').text('Registrar Ruta');
+        $('#modalRegistroRuta').modal('show');
+    }).catch(err => {
+        Swal.fire('Error', err.message || 'No se pudo cargar la ruta', 'error');
     });
+}
 
-    // Cargar listas al inicio
-    $(document).ready(function() {
-        fetchConductores();
-        fetchCamiones();
-        fetchRutas();
-        setDefaultDates();
+$('#conductor').on('change', function () {
+    renderUnidadAsignada($(this).val());
+});
+
+$('#btnGuardarRuta').on('click', function () {
+    const payload = {
+        origen: $('#origen').val().trim(),
+        destino: $('#destino').val().trim(),
+        fecha_inicio: $('#fecha_inicio').val(),
+        fecha_fin: $('#fecha_fin').val(),
+        conductor_id: $('#conductor').val(),
+        caja_chica: $('#caja_chica').val() || null,
+        pago_viaje: $('#pago_viaje').val() || null,
+        estado: $('#estado').val(),
+        observaciones: $('#observaciones').val().trim()
+    };
+
+    const url = editingRutaId ? `/api/rutas/${editingRutaId}` : '/api/rutas';
+    const method = editingRutaId ? 'PUT' : 'POST';
+
+    apiFetch(url, {
+        method,
+        body: JSON.stringify(payload)
+    }).then(resp => {
+        Swal.fire('OK', resp.message, 'success');
+        $('#modalRegistroRuta').modal('hide');
+        fetchRutas(paginaActual);
+    }).catch(err => {
+        const message = err.errors
+            ? Object.values(err.errors).flat()[0]
+            : (err.message || 'No se pudo guardar la ruta');
+        Swal.fire('Error', message, 'error');
     });
+});
 
-    // Cargar camiones
-    function fetchCamiones() {
-        $.ajax({
-            url: "/api/camiones",
-            method: "GET",
-            success: function(camiones) {
-                let camionSelect = $('#camion');
-                camionSelect.empty().append('<option value="">Seleccione un camión</option>');
-                $.each(camiones, function(index, camion) {
-                    camionSelect.append(`<option value="${camion.id}">${camion.placa_tracto} - ${camion.placa_carreto}</option>`);
-                });
-            },
-            error: function() {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'No se pudieron cargar los camiones.',
-                });
-            }
-        });
-    }
+$('#modalRegistroRuta').on('show.bs.modal', function () {
+    fetchConductoresRuta(editingRutaId ? $('#conductor').val() : '');
 
-    // Cargar conductores
-    function fetchConductores() {
-        $.ajax({
-            url: "/api/conductores",
-            method: "GET",
-            success: function(conductores) {
-                let conductorSelect = $('#conductor');
-                conductorSelect.empty().append('<option value="">Seleccione un conductor</option>');
-                $.each(conductores, function(index, conductor) {
-                    conductorSelect.append(`<option value="${conductor.id}">${conductor.nombre} ${conductor.apellido}</option>`);
-                });
-            },
-            error: function() {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'No se pudieron cargar los conductores.',
-                });
-            }
-        });
+    if (!editingRutaId) {
+        setDefaultDatesRuta();
     }
+});
+
+$('#modalRegistroRuta').on('hidden.bs.modal', function () {
+    editingRutaId = null;
+    $('#modalRegistroRutaLabel').html('<i class="fas fa-route"></i> Registrar Ruta');
+    $('#formRegistroRuta')[0].reset();
+    setDefaultDatesRuta();
+    renderUnidadAsignada('');
+});
 </script>
 @endpush

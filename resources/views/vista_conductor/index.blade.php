@@ -1,225 +1,166 @@
 @extends('admin.main')
 
 @section('contenido')
-    <div class="content">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="m-0">
-                                Registro de conductor
-                                <button class="btn btn-primary" data-toggle="modal" data-target="#modalRegistroConductor">
-                                    <i class="fas fa-file"></i> Nuevo
-                                </button>
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div>
-                                <form action="" method="get">
-                                    {{-- <div class="input-group">
-                                    <input name="texto" type="text" class="form-control" id="searchText" placeholder="Buscar...">
-                                    <div class="input-group-append">
-                                        <button type="button" class="btn btn-info" id="searchButton">
-                                            <i class="fas fa-search"></i> Buscar
-                                        </button>                      
-                                    </div>
-                                </div> --}}
-
-                                    <input class="form-control me-2" type="search" placeholder="Buscar conductor"
-                                        aria-label="Search" id="buscador">
-
-                                </form>
-                            </div>
-                            <div class="mt-2">
-                                <div class="table-responsive" >
-                                    <table class="table table-striped table-bordered table-hover table-sm" >
-                                        <thead>
-                                            <tr>
-                                                <th width="10%">Opciones</th>
-                                                <th width="5%">ID</th>
-                                                <th width="15%">Nombre</th>
-                                                <th width="15%">Apellidos</th>
-                                                <th width="12%">Tipo de Licencia</th>
-                                                <th width="10%">Licencia</th>
-                                                <th width="10%">Teléfono</th>
-                                                <th width="15%">Email</th>
-                                                <th width="23%">Dirección</th>
-                                            </tr>
-
-                                        </thead>
-                                        <tbody id="conductorTableBody">
-                                            {{-- Aquí se llenará dinámicamente la tabla con JavaScript --}}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+<div class="content">
+    <div class="container-fluid">
+        <div class="card shadow-sm border-0">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h3 class="mb-0 font-weight-bold">
+                        <i class="fas fa-id-card-alt text-primary"></i> Gestion de Conductores
+                    </h3>
+                    <button class="btn btn-success" data-toggle="modal" data-target="#modalRegistroConductor">
+                        <i class="fas fa-plus-circle"></i> Nuevo Conductor
+                    </button>
                 </div>
+            </div>
+
+            <div class="card-body">
+                <div class="mb-3">
+                    <input type="text"
+                        id="searchText"
+                        class="form-control"
+                        placeholder="Buscar por nombre, licencia o placa asignada...">
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped text-center">
+                        <thead class="bg-primary text-white">
+                            <tr>
+                                <th>Acciones</th>
+                                <th>ID</th>
+                                <th>Conductor</th>
+                                <th>Licencia</th>
+                                <th>Telefono</th>
+                                <th>Email</th>
+                                <th>Ciudad</th>
+                                <th>Tracto</th>
+                                <th>Trailer</th>
+                            </tr>
+                        </thead>
+                        <tbody id="conductorTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div id="paginacion" class="mt-3 text-center"></div>
             </div>
         </div>
     </div>
+</div>
 
-    @include('vista_conductor.registro')
+@include('vista_conductor.registro')
 @endsection
 
 @push('scripts')
-    <script>
-        // busca por cualquier item q este mostrandoce 
-        // $(document).ready(function() {
-        //     $("#buscador").on("keyup", function() {
-        //         var value = $(this).val().toLowerCase();
-        //         let hasVisibleRow = false; // Variable para verificar si hay resultados visibles
-        //         $("#conductorTableBody tr").filter(function() {
-        //             const isVisible = $(this).text().toLowerCase().indexOf(value) > -1;
-        //             $(this).toggle(isVisible);
-        //             if (isVisible) {
-        //                 hasVisibleRow =
-        //                     true; // Si hay alguna fila visible, actualizamos la variable
-        //             }
-        //         });
+<script>
+let searchConductor = '';
+let debounceConductor;
+let paginaConductorActual = 1;
 
-        //         // Si no hay resultados visibles, mostramos un mensaje
-        //         if (!hasVisibleRow) {
-        //             $("#conductorTableBody").html(
-        //                 '<tr><td colspan="9" class="text-center">No se encontraron resultados</td></tr>'
-        //             );
-        //         }
-        //     });
-        // });
+$('#searchText').on('input', function () {
+    const texto = $(this).val().trim();
 
-        // busca solo por nombre
+    clearTimeout(debounceConductor);
+    debounceConductor = setTimeout(() => {
+        searchConductor = texto.length >= 2 ? texto : '';
+        fetchConductores(1);
+    }, 300);
+});
 
-         $(document).ready(function() {
-        $("#buscador").on("keyup", function() {
-            var value = $(this).val().toLowerCase();
-            let hasVisibleRow = false;
+function renderConductorPagination(pagination = {}) {
+    let html = '';
 
-            // Si el buscador está vacío, recargar los conductores completos
-            if (value === "") {
-                fetchConductores(); // Llamar a la función que carga los conductores
-            } else {
-                // Filtrar por nombre (columna 3) y por la cuarta columna
-                $("#conductorTableBody tr").filter(function() {
-                    const nombre = $(this).find('td:eq(2)').text().toLowerCase();
-                    const otraColumna = $(this).find('td:eq(3)').text().toLowerCase(); // Agregar la cuarta columna
-                    const isVisible = nombre.indexOf(value) > -1 || otraColumna.indexOf(value) > -1; // Buscar en ambas columnas
-                    $(this).toggle(isVisible);
-                    if (isVisible) {
-                        hasVisibleRow = true;
-                    }
-                });
+    for (let i = 1; i <= (pagination.last_page || 1); i++) {
+        html += `
+            <button class="btn btn-sm ${i === pagination.current_page ? 'btn-primary' : 'btn-light'}"
+                onclick="fetchConductores(${i})">
+                ${i}
+            </button>
+        `;
+    }
 
-                // Si no hay resultados visibles, mostrar un mensaje
-                if (!hasVisibleRow) {
-                    $("#conductorTableBody").html(
-                        '<tr><td colspan="9" class="text-center">No se encontraron resultados</td></tr>'
-                    );
-                }
+    $('#paginacion').html(html);
+}
+
+function fetchConductores(page = 1) {
+    paginaConductorActual = page;
+
+    apiFetch(`/api/conductores?search=${encodeURIComponent(searchConductor)}&page=${page}`)
+        .then(resp => {
+            const tbody = $('#conductorTableBody');
+            tbody.empty();
+
+            if (!resp.data.length) {
+                tbody.html(`
+                    <tr>
+                        <td colspan="9" class="text-center text-muted">
+                            No se encontraron conductores
+                        </td>
+                    </tr>
+                `);
+                $('#paginacion').html('');
+                return;
             }
+
+            resp.data.forEach(conductor => {
+                const nombreCompleto = `${conductor.nombre || ''} ${conductor.apellido || ''}`.trim();
+
+                tbody.append(`
+                    <tr>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="editar(${conductor.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="eliminarConductor(${conductor.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                        <td>${conductor.id}</td>
+                        <td class="text-left">
+                            <strong>${nombreCompleto || '-'}</strong>
+                            <small class="d-block text-muted">${conductor.genero || '-'}</small>
+                        </td>
+                        <td>
+                            <span class="badge badge-info">${conductor.tipo_licencia || '-'}</span>
+                            <div>${conductor.licencia || '-'}</div>
+                        </td>
+                        <td>${conductor.telefono || '-'}</td>
+                        <td class="text-left">${conductor.email || '-'}</td>
+                        <td>${conductor.ciudad || '-'}</td>
+                        <td>${conductor.camion?.placa_tracto || '-'}</td>
+                        <td>${conductor.camion?.placa_carreto || '-'}</td>
+                    </tr>
+                `);
+            });
+
+            renderConductorPagination(resp.pagination);
+        })
+        .catch(() => {
+            Swal.fire('Error', 'No se pudo cargar conductores', 'error');
+        });
+}
+
+function eliminarConductor(id) {
+    Swal.fire({
+        title: '¿Eliminar conductor?',
+        icon: 'warning',
+        showCancelButton: true
+    }).then(result => {
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        apiFetch(`/api/conductores/${id}`, {
+            method: 'DELETE'
+        }).then(resp => {
+            Swal.fire('OK', resp.message, 'success');
+            fetchConductores(paginaConductorActual);
         });
     });
+}
 
-
-
-
-
-        // Function to fetch conductores data from API
-        function fetchConductores() {
-            $.ajax({
-                url: "http://127.0.0.1:8000/api/conductores",
-                method: "GET",
-                success: function(response) {
-                    let tbody = $("#conductorTableBody");
-                    tbody.empty();
-                    $.each(response, function(index, conductor) {
-                        tbody.append(`
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <button type="button" class="btn btn-warning btn-sm editar me-2" onclick="editar(${conductor.id})">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-
-                                    <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar(${conductor.id})">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-
-                            <td>${conductor.id}</td>
-                            <td>${conductor.nombre}</td>
-                            <td>${conductor.apellido}</td>
-                            <td>${conductor.tipo_licencia}</td>
-                            <td>${conductor.licencia}</td>
-                            <td>${conductor.telefono}</td>
-                            <td>${conductor.email}</td>
-                            <td>${conductor.direccion}</td>
-                    `);
-                    });
-                },
-                error: function() {
-                    alert("Error fetching conductores data.");
-                }
-            });
-        }
-
-        // Load conductores data when page loads
-        // $(document).ready(function() {
-        //     fetchConductores();
-
-        //     // Search functionality (filtering could also be added to the backend)
-        //     $("#searchButton").click(function() {
-        //         let searchText = $("#searchText").val();
-        //         if (searchText.trim() !== "") {
-        //             // Add filtering logic here if needed, for now it will just refresh the table
-        //             fetchConductores();
-        //         }
-        //     });
-        // });
-
-        // Example function to handle edit
-        // function editar(id) {
-        //     alert('Editar conductor ' + id);
-        // }
-
-
-        function eliminar(id) {
-            Swal.fire({
-                title: 'Eliminar registro',
-                text: "¿Esta seguro de querer eliminar el registro?",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Si',
-                cancelButtonText: 'No'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        method: 'DELETE',
-                        url: `http://127.0.0.1:8000/api/conductores/${id}`,
-                        headers: {
-                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                        },
-                        success: function(res) {
-                            window.location.reload();
-                            Swal.fire({
-                                icon: res.status,
-                                title: res.message,
-                                showConfirmButton: false,
-                                timer: 1500
-                            });
-                        },
-                        error: function(res) {
-
-                        }
-                    });
-
-                }
-            })
-
-        }
-    </script>
+$(document).ready(() => {
+    fetchConductores();
+});
+</script>
 @endpush

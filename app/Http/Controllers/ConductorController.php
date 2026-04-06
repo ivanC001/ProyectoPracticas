@@ -2,55 +2,106 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ConductorRequest;
 use App\Models\Conductor;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class ConductorController extends Controller
 {
-    // Obtener todos los conductores
-    public function index()
+    public function index(Request $request)
     {
-        $conductores = Conductor::whereNull('deleted_at')->get();
-        return response()->json($conductores); 
+        $query = Conductor::with('camion:id,placa_tracto,placa_carreto,color,mtc');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->where('nombre', 'like', "%{$search}%")
+                    ->orWhere('apellido', 'like', "%{$search}%")
+                    ->orWhere('licencia', 'like', "%{$search}%")
+                    ->orWhereHas('camion', function ($camionQuery) use ($search) {
+                        $camionQuery->where('placa_tracto', 'like', "%{$search}%")
+                            ->orWhere('placa_carreto', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $conductores = $query->orderBy('id', 'desc')
+            ->paginate($request->get('per_page', 10));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Listado de conductores',
+            'data' => $conductores->items(),
+            'pagination' => [
+                'total' => $conductores->total(),
+                'per_page' => $conductores->perPage(),
+                'current_page' => $conductores->currentPage(),
+                'last_page' => $conductores->lastPage(),
+            ],
+        ]);
     }
 
     public function deleted()
     {
-        $conductoresEliminados = Conductor::onlyTrashed()->get();
-        return response()->json($conductoresEliminados);
+        $conductores = Conductor::onlyTrashed()
+            ->with('camion:id,placa_tracto,placa_carreto')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Conductores eliminados',
+            'data' => $conductores,
+        ]);
     }
 
-    public function store(Request $request)
+    public function store(ConductorRequest $request)
     {
-        $conductor = Conductor::create($request->all());
-        $conductor->updated_at = null;
-        $conductor->save();
-    
-        return response()->json($conductor, 201);
+        $conductor = Conductor::create($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => "Conductor registrado: {$conductor->nombre} {$conductor->apellido}",
+            'data' => $conductor->load('camion:id,placa_tracto,placa_carreto,color,mtc'),
+        ], 201);
     }
 
     public function show($id)
     {
-        $conductor = Conductor::find($id);
+        $conductor = Conductor::with('camion:id,placa_tracto,placa_carreto,color,mtc')->find($id);
 
         if (!$conductor) {
-            return response()->json(['message' => 'Conductor no encontrado'], 404);
+            throw ValidationException::withMessages([
+                'conductor' => ['Conductor no encontrado'],
+            ]);
         }
 
-        return response()->json($conductor);
+        return response()->json([
+            'success' => true,
+            'message' => 'Conductor encontrado',
+            'data' => $conductor,
+        ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(ConductorRequest $request, $id)
     {
         $conductor = Conductor::find($id);
 
         if (!$conductor) {
-            return response()->json(['message' => 'Conductor no encontrado'], 404);
+            throw ValidationException::withMessages([
+                'conductor' => ['Conductor no encontrado'],
+            ]);
         }
 
-        $conductor->update($request->all());
-        return response()->json($conductor, 200);
+        $conductor->update($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => "Conductor actualizado: {$conductor->nombre} {$conductor->apellido}",
+            'data' => $conductor->fresh('camion:id,placa_tracto,placa_carreto,color,mtc'),
+        ]);
     }
 
     public function destroy($id)
@@ -58,11 +109,17 @@ class ConductorController extends Controller
         $conductor = Conductor::find($id);
 
         if (!$conductor) {
-            return response()->json(['message' => 'Conductor no encontrado'], 404);
+            throw ValidationException::withMessages([
+                'conductor' => ['Conductor no encontrado'],
+            ]);
         }
 
         $conductor->delete();
-        return response()->json(['message' => 'Conductor eliminado'], 204);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Conductor eliminado: {$conductor->nombre} {$conductor->apellido}",
+        ]);
     }
 
     public function restore($id)
@@ -70,11 +127,17 @@ class ConductorController extends Controller
         $conductor = Conductor::withTrashed()->find($id);
 
         if (!$conductor || !$conductor->trashed()) {
-            return response()->json(['message' => 'Conductor no encontrado o no está eliminado'], 404);
+            throw ValidationException::withMessages([
+                'conductor' => ['Conductor no encontrado o no esta eliminado'],
+            ]);
         }
 
         $conductor->restore();
-        return response()->json(['message' => 'Conductor restaurado'], 200);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Conductor restaurado: {$conductor->nombre} {$conductor->apellido}",
+            'data' => $conductor->fresh('camion:id,placa_tracto,placa_carreto,color,mtc'),
+        ]);
     }
 }
-

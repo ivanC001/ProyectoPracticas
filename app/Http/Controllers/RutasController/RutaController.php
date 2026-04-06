@@ -2,32 +2,36 @@
 
 namespace App\Http\Controllers\RutasController;
 
-use App\Models\Ruta;
-use App\Http\Requests\RutaRequest;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RutaRequest;
+use App\Models\Conductor;
+use App\Models\Ruta;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class RutaController extends Controller
 {
-    /**
-     * LISTAR (PAGINADO + BUSCADOR)
-     */
     public function index(Request $request)
     {
-        $query = Ruta::with(['conductor', 'camion']);
+        $query = Ruta::with(['conductor.camion', 'camion']);
 
-        // 🔍 BUSCADOR GLOBAL
         if ($request->filled('search')) {
             $search = $request->search;
 
             $query->where(function ($q) use ($search) {
-                $q->where('origen', 'like', "%$search%")
-                  ->orWhere('destino', 'like', "%$search%");
+                $q->where('origen', 'like', "%{$search}%")
+                    ->orWhere('destino', 'like', "%{$search}%")
+                    ->orWhereHas('conductor', function ($conductorQuery) use ($search) {
+                        $conductorQuery->where('nombre', 'like', "%{$search}%")
+                            ->orWhere('apellido', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('camion', function ($camionQuery) use ($search) {
+                        $camionQuery->where('placa_tracto', 'like', "%{$search}%")
+                            ->orWhere('placa_carreto', 'like', "%{$search}%");
+                    });
             });
         }
 
-        // 🔥 ORDEN + PAGINACIÓN
         $rutas = $query->orderBy('id', 'desc')
             ->paginate($request->get('per_page', 10));
 
@@ -39,89 +43,98 @@ class RutaController extends Controller
                 'total' => $rutas->total(),
                 'per_page' => $rutas->perPage(),
                 'current_page' => $rutas->currentPage(),
-                'last_page' => $rutas->lastPage()
-            ]
+                'last_page' => $rutas->lastPage(),
+            ],
         ]);
     }
 
-    /**
-     * CREAR
-     */
     public function store(RutaRequest $request)
     {
-        $ruta = Ruta::create($request->validated());
+        $data = $request->validated();
+        $data['camion_id'] = $this->resolveCamionIdFromConductor($data['conductor_id']);
+
+        $ruta = Ruta::create($data);
 
         return response()->json([
             'success' => true,
-            'message' => "Ruta creada: {$ruta->origen} → {$ruta->destino}",
-            'data' => $ruta
+            'message' => "Ruta creada: {$ruta->origen} -> {$ruta->destino}",
+            'data' => $ruta->fresh(['conductor.camion', 'camion']),
         ], 201);
     }
 
-    /**
-     * MOSTRAR
-     */
     public function show($id)
     {
-        $ruta = Ruta::with(['conductor', 'camion'])->find($id);
+        $ruta = Ruta::with(['conductor.camion', 'camion'])->find($id);
 
         if (!$ruta) {
             throw ValidationException::withMessages([
-                'ruta' => ['Ruta no encontrada']
+                'ruta' => ['Ruta no encontrada'],
             ]);
         }
 
         return response()->json([
             'success' => true,
-            'message' => "Ruta obtenida: {$ruta->origen} → {$ruta->destino}",
-            'data' => $ruta
+            'message' => "Ruta obtenida: {$ruta->origen} -> {$ruta->destino}",
+            'data' => $ruta,
         ]);
     }
 
-    /**
-     * ACTUALIZAR
-     */
     public function update(RutaRequest $request, $id)
     {
         $ruta = Ruta::find($id);
 
         if (!$ruta) {
             throw ValidationException::withMessages([
-                'ruta' => ['Ruta no encontrada']
+                'ruta' => ['Ruta no encontrada'],
             ]);
         }
 
-        $ruta->update($request->validated());
+        $data = $request->validated();
+        $data['camion_id'] = $this->resolveCamionIdFromConductor($data['conductor_id']);
+
+        $ruta->update($data);
 
         return response()->json([
             'success' => true,
-            'message' => "Ruta actualizada: {$ruta->origen} → {$ruta->destino}",
-            'data' => $ruta
+            'message' => "Ruta actualizada: {$ruta->origen} -> {$ruta->destino}",
+            'data' => $ruta->fresh(['conductor.camion', 'camion']),
         ]);
     }
 
-    /**
-     * ELIMINAR (RECOMENDADO: LÓGICO)
-     */
     public function destroy($id)
     {
         $ruta = Ruta::find($id);
 
         if (!$ruta) {
             throw ValidationException::withMessages([
-                'ruta' => ['Ruta no encontrada']
+                'ruta' => ['Ruta no encontrada'],
             ]);
         }
 
-        // 🔥 OPCIÓN 1: eliminación lógica
-        // $ruta->update(['estado' => false]);
-
-        // 🔥 OPCIÓN 2: eliminación física
         $ruta->delete();
 
         return response()->json([
             'success' => true,
-            'message' => "Ruta eliminada: {$ruta->origen} → {$ruta->destino}"
+            'message' => "Ruta eliminada: {$ruta->origen} -> {$ruta->destino}",
         ]);
+    }
+
+    private function resolveCamionIdFromConductor(int $conductorId): int
+    {
+        $conductor = Conductor::with('camion')->find($conductorId);
+
+        if (!$conductor) {
+            throw ValidationException::withMessages([
+                'conductor_id' => ['El conductor seleccionado no existe.'],
+            ]);
+        }
+
+        if (!$conductor->camion_id || !$conductor->camion) {
+            throw ValidationException::withMessages([
+                'conductor_id' => ['El conductor debe tener un tracto y trailer asignados.'],
+            ]);
+        }
+
+        return (int) $conductor->camion_id;
     }
 }

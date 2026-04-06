@@ -10,7 +10,6 @@ class Servicio extends Model
     protected $table = 'servicios';
 
     protected $fillable = [
-        'codigo',
         'nombre',
         'descripcion',
         'precio',

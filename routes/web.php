@@ -1,101 +1,50 @@
 <?php
 
+use App\Http\Controllers\ControladorCotizacion\CotizacionController;
+use App\Http\Controllers\ReporteRutaController;
 use Illuminate\Support\Facades\Route;
-// Route::get('/', function () {
-//     return view('admin.main');
-// })->name('');
 
 Route::get('/', function () {
     return view('Inicio.welcome');
 })->name('');
 
-
-
-
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->name('dashboard');
-Route::get('/conductor', function () {
-    return view('vista_conductor.index');
-});
-Route::get('/camion', function () {
-    return view('camion.index');
-});
-Route::get('/rutas', function () {
-    return view('ruta.index');
-});
-Route::get('/viaticos', function () {
-    return view('viaticos.index');
-});
-Route::get('/combustible', function () {
-    return view('combustible.index');
-});
 
-///reportes
- /////reporte general
-Route::get('/reporte-ruta', function () {
-    return view('reporte.index');
+Route::get('/conductor', fn () => view('vista_conductor.index'));
+Route::get('/camion', fn () => view('camion.index'));
+Route::get('/rutas', fn () => view('ruta.index'));
+Route::get('/viaticos', fn () => view('viaticos.index'));
+Route::get('/combustible', fn () => view('combustible.index'));
+
+Route::get('/reporte-ruta', fn () => view('reporte.index'));
+Route::get('/reportes/rutas/{id}', function ($id) {
+    return view('reporte.rutaCompleto', ['id' => $id]);
 });
-// reporte ruta y lista de viáticos
+Route::get('/reportes/rutas/{id}/pdf', [ReporteRutaController::class, 'pdf']);
 Route::get('/reporte/ruta-viaticos/{id}', function ($id) {
     return view('reporte.rutaViaticos', ['id' => $id]);
 });
-
-// reporte ruta y lista combustible
 Route::get('/reporte/ruta-combustible/{id}', function ($id) {
     return view('reporte.rutaCombustible', ['id' => $id]);
 });
-// reporte completo de ruta
+Route::get('/reporte/ruta-completo', fn () => redirect('/reporte-ruta'));
 
-Route::get('/reporte/ruta-completo', function () {
-    return view('reporte.rutaCompleto');
-});
-Route::get('/producto', function () {
-    return view('gestionProductos.producto.index');
-});
-Route::get('/venta', function () {
-    return view('factura.index');
-});
-Route::get('/nueva-venta', function () {
-    return view('factura.registro');
-})->name('nueva-venta');
+Route::get('/producto', fn () => view('gestionProductos.producto.index'));
+Route::get('/servicios', fn () => view('gestionProductos.servicio.index'));
+Route::get('/venta', fn () => view('factura.index'));
+Route::get('/nueva-venta', fn () => view('factura.registro'))->name('nueva-venta');
 
-//////////rutas con viaticos y combustibles devuelve////
+Route::get('/ruta/{id}/rutaviatico', fn ($id) => view('ruta.rutaviatico'));
+Route::get('/ruta/{id}/rutacombustible', fn ($id) => view('ruta.rutacombustible'));
+Route::get('/ruta/{id}/rutapeaje', fn ($id) => view('ruta.rutapeaje'));
 
+Route::get('/login', fn () => view('auth.login'));
+Route::get('/layouts', fn () => view('layouts.app'))->name('app');
 
-Route::get('/ruta/{id}/rutaviatico', function ($id) {
-    return view('ruta.rutaviatico');
-});
-Route::get('/ruta/{id}/rutacombustible', function ($id) {
-    return view('ruta.rutacombustible');
-});
-Route::get('/ruta/{id}/rutapeaje', function ($id) {
-    return view('ruta.rutapeaje');
-});
-Route::get('/login', function () {
-    return view('auth.login');
-});
-Route::get('/layouts', function () {
-    return view('layouts.app');
-})->name('app');
-
-
-
-///Vista para clientes
-Route::get('/clientes', function () {
-    return view('vistaCliente.index');
-});
-///Vista para COTIZACIONES
-Route::get('/cotizaciones', function () {
-    return view('vistaCotizacion.index');
-    
-});
-// 📄 Vista registro cotización
-Route::get('/cotizaciones/registro', function () {
-    return view('vistaCotizacion.registro');
-});
-
-///Vista para servicios
-Route::get('/servicios', function () {
-    return view('gestionProductos.servicio.index');
-});
+Route::get('/clientes', fn () => view('vistaCliente.index'));
+Route::get('/cotizaciones', fn () => view('vistaCotizacion.index'));
+Route::get('/cotizaciones/registro', fn () => view('vistaCotizacion.registro'));
+Route::get('/cotizaciones/pdf/{id}', [CotizacionController::class, 'pdf']);
+Route::get('/usuarios', fn () => view('usuarios.index'));

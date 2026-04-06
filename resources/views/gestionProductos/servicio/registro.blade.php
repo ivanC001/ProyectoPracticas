@@ -1,4 +1,3 @@
-
 <div class="modal fade" id="modalServicio">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -11,24 +10,15 @@
             </div>
 
             <div class="modal-body">
-
                 <form id="formServicio">
-
                     <div class="row">
-
-                        <!-- 🔹 BÁSICO -->
-                        <div class="col-md-4">
-                            <label>Código <small class="text-muted">(Opcional)</small></label>
-                            <input type="text" class="form-control" id="codigo">
-                        </div>
-
-                        <div class="col-md-8">
+                        <div class="col-md-12">
                             <label>Nombre <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="nombre">
                         </div>
 
                         <div class="col-md-12 mt-2">
-                            <label>Descripción <small class="text-muted">(Opcional)</small></label>
+                            <label>Descripcion <small class="text-muted">(Opcional)</small></label>
                             <textarea class="form-control" id="descripcion"></textarea>
                         </div>
 
@@ -43,16 +33,15 @@
                         </div>
 
                         <div class="col-md-4 mt-2">
-                            <label>Duración (min) <small class="text-muted">(Opcional)</small></label>
+                            <label>Duracion (min) <small class="text-muted">(Opcional)</small></label>
                             <input type="number" class="form-control" id="duracion_estimada">
                         </div>
 
-                        <!-- 🔹 RECURSOS -->
                         <div class="col-md-6 mt-3">
-                            <label>¿Requiere personal?</label>
+                            <label>Requiere personal?</label>
                             <select class="form-control" id="requiere_personal">
                                 <option value="0">No</option>
-                                <option value="1">Sí</option>
+                                <option value="1">Si</option>
                             </select>
                         </div>
 
@@ -62,10 +51,10 @@
                         </div>
 
                         <div class="col-md-6 mt-3">
-                            <label>¿Requiere equipo?</label>
+                            <label>Requiere equipo?</label>
                             <select class="form-control" id="requiere_equipo">
                                 <option value="0">No</option>
-                                <option value="1">Sí</option>
+                                <option value="1">Si</option>
                             </select>
                         </div>
 
@@ -74,9 +63,8 @@
                             <input type="text" class="form-control" id="equipos_descripcion">
                         </div>
 
-                        <!-- 🔹 UBICACIÓN -->
                         <div class="col-md-6 mt-3">
-                            <label>Tipo de servicio <span class="text-danger">*</span></label>
+                            <label>Tipo de servicio</label>
                             <select class="form-control" id="tipo_servicio">
                                 <option value="local">Local</option>
                                 <option value="domicilio">Domicilio</option>
@@ -85,24 +73,23 @@
                         </div>
 
                         <div class="col-md-6 mt-3">
-                            <label>¿Requiere transporte?</label>
+                            <label>Requiere transporte?</label>
                             <select class="form-control" id="requiere_transporte">
                                 <option value="0">No</option>
-                                <option value="1">Sí</option>
+                                <option value="1">Si</option>
                             </select>
                         </div>
 
-                        <!-- 🔹 COMERCIAL -->
                         <div class="col-md-6 mt-3">
-                            <label>Garantía (días)</label>
+                            <label>Garantia (dias)</label>
                             <input type="number" class="form-control" id="garantia_dias">
                         </div>
 
                         <div class="col-md-6 mt-3">
-                            <label>Nivel de servicio <span class="text-danger">*</span></label>
+                            <label>Nivel de servicio</label>
                             <select class="form-control" id="nivel_servicio">
-                                <option value="basico">Básico</option>
-                                <option value="estandar">Estándar</option>
+                                <option value="basico">Basico</option>
+                                <option value="estandar">Estandar</option>
                                 <option value="premium">Premium</option>
                             </select>
                         </div>
@@ -119,12 +106,11 @@
                         <div class="col-md-6 mt-3">
                             <label>Frecuencia</label>
                             <select class="form-control" id="frecuencia">
-                                <option value="unico">Único</option>
+                                <option value="unico">Unico</option>
                                 <option value="recurrente">Recurrente</option>
                             </select>
                         </div>
 
-                        <!-- 🔹 TEXTOS -->
                         <div class="col-md-12 mt-2">
                             <label>Condiciones</label>
                             <textarea class="form-control" id="condiciones"></textarea>
@@ -139,15 +125,12 @@
                             <label>Instrucciones</label>
                             <textarea class="form-control" id="instrucciones"></textarea>
                         </div>
-
                     </div>
 
                     <small class="text-muted mt-3 d-block">
                         <span class="text-danger">*</span> Campos obligatorios
                     </small>
-
                 </form>
-
             </div>
 
             <div class="modal-footer">
@@ -160,38 +143,28 @@
 
 @push('scripts')
 <script>
-
 window.servicioEditando = null;
 
-/* LIMPIAR ERRORES */
 function limpiarErrores(){
     $('.form-control').removeClass('is-invalid');
     $('.invalid-feedback').remove();
 }
 
-/* MOSTRAR ERRORES BACKEND */
 function mostrarErrores(errors){
-
     limpiarErrores();
 
     Object.keys(errors).forEach(campo => {
-
         let input = $(`#${campo}`);
-
         input.addClass('is-invalid');
-
         input.after(`
             <div class="invalid-feedback">
                 ${errors[campo][0]}
             </div>
         `);
     });
-
 }
 
-/* ABRIR MODAL */
 $('#modalServicio').on('show.bs.modal', function () {
-
     if(!window.servicioEditando){
         $('#formServicio')[0].reset();
         $('#tituloModal').html('<i class="fas fa-plus"></i> Registrar Servicio');
@@ -200,38 +173,29 @@ $('#modalServicio').on('show.bs.modal', function () {
     limpiarErrores();
 });
 
-/* CERRAR MODAL */
 $('#modalServicio').on('hidden.bs.modal', function () {
     window.servicioEditando = null;
 });
 
-/* GUARDAR */
 $('#btnGuardar').click(function(){
-
     limpiarErrores();
 
     let data = {
-        codigo: $('#codigo').val(),
         nombre: $('#nombre').val(),
         descripcion: $('#descripcion').val(),
         precio: $('#precio').val(),
         costo: $('#costo').val(),
         duracion_estimada: $('#duracion_estimada').val(),
-
         requiere_personal: $('#requiere_personal').val(),
         cantidad_personal: $('#cantidad_personal').val(),
         requiere_equipo: $('#requiere_equipo').val(),
         equipos_descripcion: $('#equipos_descripcion').val(),
-
         tipo_servicio: $('#tipo_servicio').val(),
         requiere_transporte: $('#requiere_transporte').val(),
-
         garantia_dias: $('#garantia_dias').val(),
         nivel_servicio: $('#nivel_servicio').val(),
         prioridad: $('#prioridad').val(),
-
         frecuencia: $('#frecuencia').val(),
-
         condiciones: $('#condiciones').val(),
         requisitos_cliente: $('#requisitos_cliente').val(),
         instrucciones: $('#instrucciones').val()
@@ -250,24 +214,17 @@ $('#btnGuardar').click(function(){
         body: JSON.stringify(data)
     })
     .then(resp => {
-
         Swal.fire('OK', resp.message, 'success');
-
         $('#modalServicio').modal('hide');
         fetchServicios();
-
     })
     .catch(err => {
-
         if(err.errors){
             mostrarErrores(err.errors);
         }else{
             Swal.fire('Error', err.message, 'error');
         }
-
     });
-
 });
-
 </script>
 @endpush

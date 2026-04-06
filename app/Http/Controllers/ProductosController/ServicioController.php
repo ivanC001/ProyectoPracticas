@@ -4,28 +4,24 @@ namespace App\Http\Controllers\ProductosController;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ServicioRequest;
-use Illuminate\Validation\ValidationException;
 use App\Models\ProductosModel\Servicio;
+use Illuminate\Validation\ValidationException;
 
 class ServicioController extends Controller
 {
-    /**
-     * 🔥 LISTAR (PAGINADO + BUSCADOR)
-     */
     public function index(\Illuminate\Http\Request $request)
     {
-        $query = Servicio::query()->where('activo', true);
+        $query = Servicio::with('pasos')->where('activo', true);
 
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->where('nombre', 'like', '%' . $request->search . '%')
-                  ->orWhere('descripcion', 'like', '%' . $request->search . '%')
-                  ->orWhere('codigo', 'like', '%' . $request->search . '%');
+                    ->orWhere('descripcion', 'like', '%' . $request->search . '%');
             });
         }
 
         $servicios = $query->orderBy('id', 'desc')
-                           ->paginate($request->get('per_page', 10));
+            ->paginate($request->get('per_page', 10));
 
         return response()->json([
             'success' => true,
@@ -40,27 +36,9 @@ class ServicioController extends Controller
         ]);
     }
 
-    /**
-     * 🔥 CREAR
-     */
     public function store(ServicioRequest $request)
     {
         $data = $request->validated();
-
-        // 🔥 GENERAR CÓDIGO SI NO VIENE
-        if (empty($data['codigo'])) {
-            $ultimo = Servicio::orderBy('id', 'desc')->first();
-
-            if ($ultimo && $ultimo->codigo) {
-                $numero = (int) substr($ultimo->codigo, -6) + 1;
-            } else {
-                $numero = 1;
-            }
-
-            $data['codigo'] = 'SERV-' . str_pad($numero, 6, '0', STR_PAD_LEFT);
-        }
-
-        // 🔥 Defaults
         $data['requiere_personal'] = $data['requiere_personal'] ?? false;
         $data['requiere_equipo'] = $data['requiere_equipo'] ?? false;
         $data['requiere_transporte'] = $data['requiere_transporte'] ?? false;
@@ -75,12 +53,9 @@ class ServicioController extends Controller
         ], 201);
     }
 
-    /**
-     * 🔥 MOSTRAR
-     */
     public function show($id)
     {
-        $servicio = Servicio::find($id);
+        $servicio = Servicio::with('pasos')->find($id);
 
         if (!$servicio) {
             throw ValidationException::withMessages([
@@ -95,9 +70,6 @@ class ServicioController extends Controller
         ]);
     }
 
-    /**
-     * 🔥 ACTUALIZAR
-     */
     public function update(ServicioRequest $request, $id)
     {
         $servicio = Servicio::find($id);
@@ -109,8 +81,6 @@ class ServicioController extends Controller
         }
 
         $data = $request->validated();
-
-        // 🔥 Defaults (por si no vienen)
         $data['requiere_personal'] = $data['requiere_personal'] ?? false;
         $data['requiere_equipo'] = $data['requiere_equipo'] ?? false;
         $data['requiere_transporte'] = $data['requiere_transporte'] ?? false;
@@ -124,9 +94,6 @@ class ServicioController extends Controller
         ]);
     }
 
-    /**
-     * 🔥 ELIMINAR (LÓGICO)
-     */
     public function destroy($id)
     {
         $servicio = Servicio::find($id);

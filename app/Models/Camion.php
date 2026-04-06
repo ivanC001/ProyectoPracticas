@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 
-
 class Camion extends Model{
 
     use HasFactory, SoftDeletes;
@@ -23,4 +22,14 @@ class Camion extends Model{
     ];
 
     protected $dates = ['deleted_at'];
+
+    public function conductores()
+    {
+        return $this->hasMany(Conductor::class, 'camion_id');
+    }
+
+    public function seguros()
+    {
+        return $this->hasMany(CamionSeguro::class, 'camion_id');
+    }
 }

@@ -9,22 +9,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('servicios', function (Blueprint $table) {
-
             $table->id();
-
-            // 🔹 Básico
-            $table->string('codigo')->unique();
             $table->string('nombre');
             $table->text('descripcion')->nullable();
-
             $table->decimal('precio', 12, 2);
             $table->decimal('costo', 12, 2)->nullable();
-
             $table->integer('duracion_estimada')->nullable();
-
-            // 🔹 Estado
             $table->boolean('activo')->default(true);
-
             $table->timestamps();
         });
     }

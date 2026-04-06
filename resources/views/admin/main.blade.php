@@ -1,429 +1,583 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="csrf-token" content="{{ csrf_token() }}">
-  <meta name="jwt-token" content="{{ session('jwt') }}"> <!-- O donde guardes tu JWT -->
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sistema de Gestion</title>
-  <meta name="robots" content="noindex">
-  <meta name="googlebot" content="noindex">
-  <link rel="icon" type="image/png" href="dist/img/favicon.ico">
-  <!-- Google Font: Source Sans Pro -->
-  <link rel="stylesheet"
-    href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
-  <!-- Font Awesome Icons -->
-  <link rel="stylesheet" href="{{asset('assets/plugins/fontawesome-free/css/all.min.css')}}">
-  <!-- Theme style -->
+    <meta charset="utf-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <meta name="googlebot" content="noindex">
+    <title>Sistema de Gestion</title>
 
-  <link rel="stylesheet" href="{{asset('assets/css/adminlte.css')}}">
-  <link rel="stylesheet" href="{{asset('assets/css/jquery.dataTables.min.css')}}">
-  <style>
-    .sidebar-dark-blue {
-      background: #2b91bd !important;
-    }
-  </style>
-  <!--Estilos -->
-  <style>
-  /* Logo adaptado al ancho del sidebar con margen lateral */
-      .brand-logo-full {
-        width: 90%;            /* ocupa 90% del ancho → queda un margen a los lados */
-        height: auto;          /* mantiene proporción */
-        object-fit: contain;   /* evita deformación */
-        display: block;
-        max-height: 65px;      /* alto máximo del brand-link */
-        margin: 0 auto;        /* centra horizontalmente */
-      }
+    <link rel="icon" type="image/png" href="{{ asset('assets/dist/img/AdminLTELogo.png') }}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700&display=fallback">
+    <link rel="stylesheet" href="{{ asset('assets/plugins/fontawesome-free/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/adminlte.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/jquery.dataTables.min.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">
 
-      /* Ajuste responsive en móviles */
-      @media (max-width: 576px) {
-        .brand-logo-full {
-          width: 85%;         /* un poco más de margen en pantallas chicas */
-          max-height: 50px;
+    <style>
+        body {
+            background: linear-gradient(180deg, #f4f8fc 0%, #eef3f9 100%);
+            color: #1f2937;
         }
-      }
+
+        .main-header.navbar {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        }
+
+        .main-sidebar {
+            background:
+                radial-gradient(circle at top, rgba(56, 189, 248, 0.22), transparent 34%),
+                linear-gradient(180deg, #0f172a 0%, #102a43 42%, #0b1f33 100%) !important;
+            border-right: 1px solid rgba(148, 163, 184, 0.08);
+        }
+
+        .brand-link {
+            border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+            padding: 18px 16px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .brand-shell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo-full {
+            width: 54px;
+            height: 54px;
+            object-fit: contain;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.96);
+            padding: 6px;
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.18);
+        }
+
+        .brand-copy {
+            color: #f8fafc;
+            min-width: 0;
+        }
+
+        .brand-title {
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.1;
+            margin: 0;
+            letter-spacing: 0.2px;
+        }
+
+        .brand-subtitle {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(226, 232, 240, 0.75);
+            margin-top: 4px;
+        }
+
+        .sidebar {
+            padding: 14px 12px 28px;
+        }
+
+        .sidebar-user-card {
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            background: rgba(15, 23, 42, 0.32);
+            border-radius: 18px;
+            padding: 14px;
+            margin-bottom: 14px;
+            color: #e2e8f0;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        .sidebar-user-card small {
+            display: block;
+            color: rgba(226, 232, 240, 0.68);
+            text-transform: uppercase;
+            letter-spacing: .9px;
+            margin-bottom: 6px;
+            font-size: 10px;
+        }
+
+        .sidebar-user-card strong {
+            display: block;
+            font-size: 14px;
+            word-break: break-word;
+        }
+
+        .sidebar-user-role {
+            display: inline-flex;
+            margin-top: 10px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(14, 165, 233, 0.14);
+            color: #bae6fd;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .8px;
+            text-transform: uppercase;
+        }
+
+        .nav-section-label {
+            color: rgba(191, 219, 254, 0.72);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.1px;
+            padding: 12px 12px 8px;
+        }
+
+        .nav-sidebar .nav-item {
+            margin-bottom: 6px;
+        }
+
+        .nav-sidebar .nav-link {
+            border-radius: 14px;
+            padding: 11px 14px;
+            color: rgba(226, 232, 240, 0.86);
+            transition: all .2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-sidebar .nav-link .nav-icon {
+            width: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .nav-sidebar .nav-link:hover {
+            background: rgba(59, 130, 246, 0.16);
+            color: #fff;
+            transform: translateX(2px);
+        }
+
+        .nav-sidebar .nav-link.active {
+            background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
+            color: #fff;
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.28);
+        }
+
+        .nav-sidebar .nav-link .nav-pill {
+            margin-left: auto;
+            font-size: 10px;
+            background: rgba(255, 255, 255, 0.14);
+            padding: 2px 8px;
+            border-radius: 999px;
+        }
+
+        .content-wrapper {
+            background: transparent;
+        }
+
+        .content-header {
+            padding: 18px 22px 0;
+        }
+
+        .main-footer {
+            background: rgba(255, 255, 255, 0.9);
+            border-top: 1px solid rgba(148, 163, 184, 0.15);
+            color: #475569;
+        }
+
+        .topbar-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .topbar-chip i {
+            color: #0ea5e9;
+        }
+
+        .user-dropdown-trigger {
+            border-radius: 999px;
+            background: #fff;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            padding: 6px 12px;
+        }
+
+        .topbar-role {
+            display: inline-flex;
+            margin-left: 8px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 991.98px) {
+            .brand-title {
+                font-size: 16px;
+            }
+
+            .topbar-chip {
+                display: none;
+            }
+        }
     </style>
 </head>
-
-<body class="hold-transition sidebar-mini">
-  <div class="wrapper">
-
-    <!-- Navbar -->
-    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
-      <!-- Left navbar links -->
-      <ul class="navbar-nav">
-        <li class="nav-item">
-          <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
-        </li>
-        <li class="nav-item d-none d-sm-inline-block">
-          <a href="index3.html" class="nav-link"><i class="nav-icon fas fa-th text-success"></i> Escritorio</a>
-        </li>
-        <li class="nav-item d-none d-sm-inline-block">
-          <a href="#" class="nav-link"><i class="fas fa-cart-plus text-blue"></i> POS</a>
-        </li>
-      </ul>
-
-      <!-- Right navbar links -->
-      <ul class="navbar-nav ml-auto">
-        <!-- Messages Dropdown Menu -->
-        <li class="nav-item dropdown">
-          <a class="nav-link" id="userDropdown" data-toggle="dropdown" href="#">
-            <i class="fa fa-user text-warning"></i> <span id="userEmail">Cargando...</span>
-          </a>
-          <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-            <button id="logoutBtn" class="dropdown-item dropdown-footer">
-              <i class="mr-2 fas fa-sign-out-alt text-danger"></i> Cerrar sesión
-            </button>
-          </div>
-        </li>
-        <!-- Notifications Dropdown Menu -->
-        <li class="nav-item dropdown">
-          <a class="nav-link" data-toggle="dropdown" href="#">
-            <i class="far fa-bell"></i>
-            <span class="badge badge-warning navbar-badge">15</span>
-          </a>
-          <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-            <span class="dropdown-header">15 Notifications</span>
-            <div class="dropdown-divider"></div>
-            <a href="#" class="dropdown-item">
-              <i class="fas fa-envelope mr-2"></i> 4 new messages
-              <span class="float-right text-muted text-sm">3 mins</span>
-            </a>
-            <div class="dropdown-divider"></div>
-            <a href="#" class="dropdown-item">
-              <i class="fas fa-users mr-2"></i> 8 friend requests
-              <span class="float-right text-muted text-sm">12 hours</span>
-            </a>
-            <div class="dropdown-divider"></div>
-            <a href="#" class="dropdown-item">
-              <i class="fas fa-file mr-2"></i> 3 new reports
-              <span class="float-right text-muted text-sm">2 days</span>
-            </a>
-            <div class="dropdown-divider"></div>
-            <a href="#" class="dropdown-item dropdown-footer">See All Notifications</a>
-          </div>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" data-widget="fullscreen" href="#" role="button">
-            <i class="fas fa-expand-arrows-alt"></i>
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" data-widget="control-sidebar" data-slide="true" href="#" role="button">
-            <i class="fas fa-th-large"></i>
-          </a>
-        </li>
-      </ul>
-    </nav>
-    <!-- /.navbar -->
-
-    <!-- Main Sidebar Container -->
-    <aside class="main-sidebar sidebar-dark-blue elevation-4">
-      <!-- Brand Logo -->
-      <a href="{{ url('/') }}" class="brand-link p-0 m-0 text-center">
-        <img src="{{ asset('assets/dist/img/AdminLTELogo.png') }}" 
-            alt="HECAB Logo" 
-            class="brand-logo-full">
-      </a>
-      <!-- Sidebar -->
-      <div class="sidebar">
-        <!-- Sidebar Menu -->
-        <nav class="mt-2">
-          <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-            <!-- Add icons to the links using the .nav-icon class
-                with font-awesome or any other icon font library -->
-            <li id="liConductors" class="nav-item">
-              <a id="aConductors" href="/" class="nav-link">
-                <i class="nav-icon fas fa-th"></i>
-                <p>
-                  Control Facturas
-                </p>
-              </a>
-              <ul class="nav nav-treeview">
+@php
+    $menuSections = [
+        [
+            'key' => 'general',
+            'label' => 'Vista General',
+            'items' => [
+                ['href' => '/', 'icon' => 'fas fa-home', 'text' => 'Inicio', 'match' => '', 'roles' => ['admin', 'comercial', 'operaciones']],
+                ['href' => '/reporte-ruta', 'icon' => 'fas fa-chart-line', 'text' => 'Reportes de rutas', 'match' => 'reporte-ruta*', 'pill' => 'Nuevo', 'roles' => ['admin', 'operaciones']],
+            ],
+        ],
+        [
+            'key' => 'comercial',
+            'label' => 'Comercial',
+            'items' => [
+                ['href' => '/clientes', 'icon' => 'fas fa-users', 'text' => 'Clientes', 'match' => 'clientes*', 'roles' => ['admin', 'comercial']],
+                ['href' => '/cotizaciones', 'icon' => 'fas fa-file-signature', 'text' => 'Cotizaciones', 'match' => 'cotizaciones*', 'roles' => ['admin', 'comercial']],
+                ['href' => '/venta', 'icon' => 'fas fa-cash-register', 'text' => 'Ventas', 'match' => 'venta*', 'roles' => ['admin', 'comercial']],
+                ['href' => '/nueva-venta', 'icon' => 'fas fa-plus-circle', 'text' => 'Nueva venta', 'match' => 'nueva-venta*', 'roles' => ['admin', 'comercial']],
+            ],
+        ],
+        [
+            'key' => 'catalogo',
+            'label' => 'Catalogo',
+            'items' => [
+                ['href' => '/producto', 'icon' => 'fas fa-boxes', 'text' => 'Productos', 'match' => 'producto*', 'roles' => ['admin', 'comercial']],
+                ['href' => '/servicios', 'icon' => 'fas fa-concierge-bell', 'text' => 'Servicios', 'match' => 'servicios*', 'roles' => ['admin', 'comercial']],
+            ],
+        ],
+        [
+            'key' => 'transporte',
+            'label' => 'Transporte',
+            'items' => [
+                ['href' => '/conductor', 'icon' => 'fas fa-id-card-alt', 'text' => 'Conductores', 'match' => 'conductor*', 'roles' => ['admin', 'operaciones']],
+                ['href' => '/camion', 'icon' => 'fas fa-truck-moving', 'text' => 'Tractos y trailers', 'match' => 'camion*', 'roles' => ['admin', 'operaciones']],
+                ['href' => '/rutas', 'icon' => 'fas fa-route', 'text' => 'Rutas', 'match' => 'rutas*', 'roles' => ['admin', 'operaciones']],
+                ['href' => '/viaticos', 'icon' => 'fas fa-wallet', 'text' => 'Viaticos', 'match' => 'viaticos*', 'roles' => ['admin', 'operaciones']],
+                ['href' => '/combustible', 'icon' => 'fas fa-gas-pump', 'text' => 'Combustible', 'match' => 'combustible*', 'roles' => ['admin', 'operaciones']],
+            ],
+        ],
+        [
+            'key' => 'sistema',
+            'label' => 'Sistema',
+            'items' => [
+                ['href' => '/usuarios', 'icon' => 'fas fa-users-cog', 'text' => 'Usuarios y roles', 'match' => 'usuarios*', 'roles' => ['admin']],
+            ],
+        ],
+    ];
+    $roleDefinitions = config('roles.definitions', []);
+@endphp
+<body class="hold-transition sidebar-mini layout-fixed">
+    <div class="wrapper">
+        <nav class="main-header navbar navbar-expand navbar-light">
+            <ul class="navbar-nav">
                 <li class="nav-item">
-                  <a id="liVenta" href="/venta" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>ventas</p>
-                  </a>
+                    <a class="nav-link" data-widget="pushmenu" href="#" role="button">
+                        <i class="fas fa-bars"></i>
+                    </a>
                 </li>
+                <li class="nav-item d-none d-md-flex align-items-center">
+                    <span class="topbar-chip">
+                        <i class="fas fa-bolt"></i> Panel operativo y comercial
+                    </span>
                 </li>
-              </ul>
-            <label for="" class="nav-icon">CONTROL DE PRODUCTOS</label>
-            <li id="reControl" class="nav-item">
-              <a id="reControl" href="" class="nav-link">
-                <i class="nav-icon fa fa-table"></i>
-                <p>
-                  Productos y Servicios
-                  <i class="right fas fa-angle-left"></i>
-                </p>
-              </a>
-              <ul class="nav nav-treeview">
-                <li class="nav-item">
-                  <a id="liConductor" href="/producto" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>productos</p>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a id="liConductor" href="/servicios" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Servicios</p>
-                  </a>
-                </li>
-
-              </ul>
-            </li>
-            {{-- Control de transporte --}}
-            <li id="reControl" class="nav-item">
-              <a id="reControl" href="" class="nav-link">
-                <i class="nav-icon fa fa-table"></i>
-                <p>
-                  Control de rutas
-                  <i class="right fas fa-angle-left"></i>
-                </p>
-              </a>
-              <ul class="nav nav-treeview">
-                <li class="nav-item">
-                  <a id="liReporte" href="/reporte-ruta" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>reporte</p>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a id="liViaticos" href="/viaticos" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Viaticos</p>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a id="liCombustible" href="/combustible" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Combustible</p>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a id="liRutas" href="/rutas" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Ruta</p>
-                  </a>
-                </li>
-              </ul>
-            </li>
-            {{-- Registro de Clientes --}}
-            <label for="">Control de clientes</label>
-
-            <ul>
-                <li id="reControl" class="nav-item">
-              <a id="reControl" href="/clientes" class="nav-link">
-                <i class="nav-icon fa fa-table"></i>
-                <p>
-                  Registro de clientes
-                  <i class="right fas fa-angle-left"></i>
-                </p>
-              </a>
-            </li>
-              <li id="reControl" class="nav-item">
-              <a id="reControl" href="/cotizaciones" class="nav-link">
-                <i class="nav-icon fa fa-table"></i>
-                <p>
-                  Registro de Cotizaciones
-                  <i class="right fas fa-angle-left"></i>
-                </p>
-              </a>
-            </li>
-
-
             </ul>
-          
-            {{-- Registro de transporte --}}
-            <label for="" class="nav-icon">REGISTRO TRANSPORTE</label>
-            <li id="reControl" class="nav-item">
-              <a id="reControl" href="" class="nav-link">
-                <i class="nav-icon fa fa-table"></i>
-                <p>
-                  Registro de Datos
-                  <i class="right fas fa-angle-left"></i>
-                </p>
-              </a>
-              <ul class="nav nav-treeview">
-                <li class="nav-item">
-                  <a id="liConductor" href="/conductor" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Conductor</p>
-                  </a>
+
+            <ul class="navbar-nav ml-auto align-items-center">
+                <li class="nav-item dropdown">
+                    <a class="nav-link user-dropdown-trigger" id="userDropdown" data-toggle="dropdown" href="#">
+                        <i class="fas fa-user-circle text-primary mr-1"></i>
+                        <span id="userName">Invitado</span>
+                        <span id="userRole" class="topbar-role d-none">Rol</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right shadow border-0">
+                        <div class="dropdown-item-text small text-muted">
+                            <strong id="userEmail">sin-correo</strong>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <button id="logoutBtn" class="dropdown-item">
+                            <i class="mr-2 fas fa-sign-out-alt text-danger"></i> Cerrar sesion
+                        </button>
+                    </div>
                 </li>
                 <li class="nav-item">
-                  <a id="liCamion" href="/camion" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Trailer</p>
-                  </a>
+                    <a class="nav-link" data-widget="fullscreen" href="#" role="button">
+                        <i class="fas fa-expand-arrows-alt"></i>
+                    </a>
                 </li>
-              </ul>
-            </li>
-            <li id="liSeguridad" class="nav-item">
-              <a id="aSeguridad" href="#" class="nav-link">
-                <i class="fas fa-users-cog"></i>
-                <p>
-                  Seguridad
-                  <i class="right fas fa-angle-left"></i>
-                </p>
-              </a>
-              <ul class="nav nav-treeview">
-                <li class="nav-item">
-                  <a id="liUsuario" href="/usuarios" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Usuarios</p>
-                  </a>
-                </li>
-              </ul>
-            </li>
-            <li class="nav-item">
-              <a href="#" class="nav-link">
-                <i class="fas fa-info-circle"></i>
-                <p>
-                  Acerca de
-                </p>
-              </a>
-            </li>
-          </ul>
+            </ul>
         </nav>
-        <!-- /.sidebar-menu -->
-      </div>
-      <!-- /.sidebar -->
-    </aside>
 
-    <!-- Content Wrapper. Contains page content -->
-    <div class="content-wrapper">
-      <div class="content-header">
+        <aside class="main-sidebar elevation-4">
+            <a href="{{ url('/') }}" class="brand-link">
+                <div class="brand-shell">
+                    <img src="{{ asset('assets/dist/img/AdminLTELogo.png') }}" alt="HECAB Logo" class="brand-logo-full">
+                    <div class="brand-copy">
+                        <p class="brand-title">HECAB</p>
+                        <div class="brand-subtitle">Sistema de gestion</div>
+                    </div>
+                </div>
+            </a>
 
-      </div>
+            <div class="sidebar">
+                <div class="sidebar-user-card">
+                    <small>Sesion activa</small>
+                    <strong id="sidebarUserName">Invitado</strong>
+                    <span id="sidebarUserEmail">sin-correo</span>
+                    <div id="sidebarUserRole" class="sidebar-user-role d-none">Rol</div>
+                </div>
 
-      <!-- /.content-header -->
-      @yield('contenido') 
+                <nav class="mt-2">
+                    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                        @foreach($menuSections as $section)
+                            <li class="nav-header nav-section-label" data-section-label="{{ $section['key'] }}">{{ $section['label'] }}</li>
+                            @foreach($section['items'] as $item)
+                                @php
+                                    $match = $item['match'] ?? ltrim($item['href'], '/');
+                                    $isActive = $match === ''
+                                        ? request()->path() === '/'
+                                        : request()->is($match);
+                                @endphp
+                                <li class="nav-item"
+                                    data-section-item="{{ $section['key'] }}"
+                                    data-role-guard="{{ implode(',', $item['roles'] ?? []) }}"
+                                    data-nav-path="{{ $item['href'] }}">
+                                    <a href="{{ $item['href'] }}" class="nav-link {{ $isActive ? 'active' : '' }}">
+                                        <i class="nav-icon {{ $item['icon'] }}"></i>
+                                        <p>{{ $item['text'] }}</p>
+                                        @if(!empty($item['pill']))
+                                            <span class="nav-pill">{{ $item['pill'] }}</span>
+                                        @endif
+                                    </a>
+                                </li>
+                            @endforeach
+                        @endforeach
+                    </ul>
+                </nav>
+            </div>
+        </aside>
+
+        <div class="content-wrapper">
+            <div class="content-header"></div>
+            @yield('contenido')
+        </div>
+
+        <footer class="main-footer">
+            <div class="float-right d-none d-sm-inline">
+                HECAB · Operaciones, rutas y ventas
+            </div>
+            <strong>Copyright &copy; 2026 <a href="{{ url('/') }}">HECAB</a>.</strong> Todos los derechos reservados.
+        </footer>
     </div>
-    <!-- /.content-wrapper -->
 
-    <!-- Control Sidebar -->
-    <aside class="control-sidebar control-sidebar-dark">
-      <!-- Control sidebar content goes here -->
-      <div class="p-3">
-        <h5>Plantilla</h5>
-        <p>Desarrollado por Ivan calderon</p>
-      </div>
-    </aside>
-    <!-- /.control-sidebar -->
+    <script src="{{ asset('assets/plugins/jquery/jquery.min.js') }}"></script>
+    <script src="{{ asset('assets/js/jwtapi.js') }}"></script>
+    <script src="{{ asset('assets/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ asset('assets/js/adminlte.min.js') }}"></script>
+    <script src="{{ asset('assets/js/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('assets/js/sweetalert2@11.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 
-    <!-- Main Footer -->
-    <footer class="main-footer">
-      <!-- To the right -->
-      <div class="float-right d-none d-sm-inline">
-        
-      </div>
-      <!-- Default to the left -->
-      <strong>Copyright &copy; 2024 <a href="">USS</a>.</strong> Derechos reservados.
-    </footer>
-  </div>
-  <!-- ./wrapper -->
+    <script>
+        const ROLE_DEFINITIONS = @json($roleDefinitions);
 
-  <!-- REQUIRED SCRIPTS -->
-  <!--Scripts -->
-  <!-- jQuery -->
-  <script src="{{asset('assets/plugins/jquery/jquery.min.js')}}"></script>
-  <!-- 🔥 CONFIG GLOBAL JWT -->
-<script src="{{ asset('assets/js/jwtapi.js') }}"></script>
-  <!-- Bootstrap 4 -->
-  <script src="{{asset('assets/plugins/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
-  <!-- AdminLTE App -->
-  <script src="{{asset('assets/js/adminlte.min.js')}}"></script>
-  <script src="{{asset('assets/js/jquery.dataTables.min.js')}}"></script>
-  <script src="{{asset('assets/js/sweetalert2@11.js')}}"></script>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        function getStoredUser() {
+            const raw = localStorage.getItem('auth_user');
 
-  <!-- Agregar estilos y scripts de Select2 -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-    // Obtener token y usuario desde localStorage
-    const token = localStorage.getItem('token');
-    const userEmail = localStorage.getItem('user');
+            if (!raw) {
+                return null;
+            }
 
-    // Redirigir al login si no hay token ->activar para verificar sesion
-    // if (!token) {
-    //     Swal.fire({
-    //         icon: 'info',
-    //         title: 'Sesión',
-    //         text: 'No hay sesión activa.',
-    //         timer: 2000,
-    //         showConfirmButton: false
-    //     }).then(() => window.location.href = '/login');
-    //     return;
-    // }
-
-    // Mostrar el correo del usuario en el dropdown
-    const userSpan = document.getElementById('userEmail');
-    if (userSpan) {
-        userSpan.textContent = userEmail || 'Invitado';
-    }
-
-    // Funcionalidad para cerrar sesión
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
             try {
-                const response = await fetch('/api/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                return JSON.parse(raw);
+            } catch (error) {
+                localStorage.removeItem('auth_user');
+                return null;
+            }
+        }
+
+        function setStoredUser(user) {
+            localStorage.setItem('auth_user', JSON.stringify(user));
+            localStorage.setItem('user', user.email || '');
+        }
+
+        function isPathAllowed(role, path) {
+            const definition = ROLE_DEFINITIONS[role];
+
+            if (!definition) {
+                return false;
+            }
+
+            const allowedPaths = definition.paths || [];
+
+            if (allowedPaths.includes('*')) {
+                return true;
+            }
+
+            return allowedPaths.some((allowedPath) => {
+                if (allowedPath === '/') {
+                    return path === '/';
+                }
+
+                return path === allowedPath || path.startsWith(`${allowedPath}/`);
+            });
+        }
+
+        function getFallbackPath(role) {
+            const definition = ROLE_DEFINITIONS[role];
+
+            if (!definition) {
+                return '/';
+            }
+
+            if (definition.default_path) {
+                return definition.default_path;
+            }
+
+            if (!Array.isArray(definition.paths) || definition.paths.length === 0 || definition.paths.includes('*')) {
+                return '/';
+            }
+
+            return definition.paths.find((path) => path !== '/') || '/';
+        }
+
+        function applyUserToLayout(user) {
+            const roleLabel = user.rol_label || ROLE_DEFINITIONS[user.rol]?.label || user.rol || 'Sin rol';
+
+            document.getElementById('userName').textContent = user.name || 'Usuario';
+            document.getElementById('userEmail').textContent = user.email || 'sin-correo';
+            document.getElementById('sidebarUserName').textContent = user.name || 'Usuario';
+            document.getElementById('sidebarUserEmail').textContent = user.email || 'sin-correo';
+
+            const topRole = document.getElementById('userRole');
+            const sideRole = document.getElementById('sidebarUserRole');
+
+            topRole.textContent = roleLabel;
+            sideRole.textContent = roleLabel;
+            topRole.classList.remove('d-none');
+            sideRole.classList.remove('d-none');
+        }
+
+        function filterMenuByRole(role) {
+            document.querySelectorAll('[data-role-guard]').forEach((item) => {
+                const roles = (item.dataset.roleGuard || '').split(',').filter(Boolean);
+                const visible = roles.includes(role);
+                item.classList.toggle('d-none', !visible);
+            });
+
+            document.querySelectorAll('[data-section-label]').forEach((label) => {
+                const key = label.dataset.sectionLabel;
+                const hasVisibleItems = Array.from(document.querySelectorAll(`[data-section-item="${key}"]`))
+                    .some((item) => !item.classList.contains('d-none'));
+
+                label.classList.toggle('d-none', !hasVisibleItems);
+            });
+        }
+
+        async function ensureUserContext() {
+            const token = localStorage.getItem('token');
+
+            if (!token) {
+                window.location.href = '/login';
+                return null;
+            }
+
+            let user = getStoredUser();
+
+            if (user && user.rol) {
+                return user;
+            }
+
+            const response = await apiFetch('/api/me', {
+                method: 'POST',
+            });
+
+            user = response.user;
+            setStoredUser(user);
+
+            return user;
+        }
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            try {
+                const user = await ensureUserContext();
+
+                if (!user) {
+                    return;
+                }
+
+                applyUserToLayout(user);
+                filterMenuByRole(user.rol);
+
+                const currentPath = window.location.pathname;
+
+                if (!isPathAllowed(user.rol, currentPath)) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Acceso restringido',
+                        text: 'Tu rol no tiene acceso a esta seccion.',
+                        timer: 1800,
+                        showConfirmButton: false,
+                    }).then(() => {
+                        window.location.href = getFallbackPath(user.rol);
+                    });
+
+                    return;
+                }
+
+                document.getElementById('logoutBtn').addEventListener('click', async () => {
+                    try {
+                        const response = await fetch('/api/logout', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+                                'Accept': 'application/json',
+                            },
+                        });
+
+                        const data = await response.json();
+
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        localStorage.removeItem('auth_user');
+
+                        Swal.fire({
+                            icon: response.ok ? 'success' : 'error',
+                            title: response.ok ? 'Sesion cerrada' : 'Error',
+                            text: data.message || data.error || 'No se pudo cerrar sesion',
+                            timer: 1800,
+                            showConfirmButton: false,
+                        }).then(() => window.location.href = '/login');
+                    } catch (error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'No se pudo cerrar sesion',
+                            timer: 1800,
+                            showConfirmButton: false,
+                        });
                     }
                 });
-
-                const data = await response.json();
-
-                // Limpiar localStorage
+            } catch (error) {
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
-
-                // Mostrar mensaje del backend con SweetAlert2
-                Swal.fire({
-                    icon: response.ok ? 'success' : 'error',
-                    title: response.ok ? '¡Éxito!' : 'Error',
-                    text: data.message || data.error,
-                    timer: 2000,
-                    showConfirmButton: false
-                }).then(() => window.location.href = '/login');
-
-            } catch (error) {
-                console.error('Error cerrando sesión:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'No se pudo cerrar sesión',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
+                localStorage.removeItem('auth_user');
+                window.location.href = '/login';
             }
         });
-    }
-});
-
     </script>
 
-  @stack('scripts')
-  <!-- scripts de cada plantilla -->
-  <!--Fin Scripts -->
+    @stack('scripts')
 </body>
-
 </html>
-
-<!-- cambia de esto fetch('/api/logout', {
-    headers: {
-        'Authorization': `Bearer ${token}`
-    }
-}) a esto->>>apiFetch('/api/logout', {
-    method: 'POST'
-}) -->

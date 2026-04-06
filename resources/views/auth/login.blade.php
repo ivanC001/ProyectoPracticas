@@ -3,13 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login & Registro - Harper Ingenieros</title>
+  <title>Acceso al Sistema HECAB</title>
 
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <!-- FontAwesome -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://kit.fontawesome.com/64d58efce2.js" crossorigin="anonymous"></script>
-  <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <style>
@@ -21,199 +18,290 @@
     }
 
     body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
       min-height: 100vh;
-      background: linear-gradient(120deg, #2980b9, #6dd5fa, #ffffff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at top right, rgba(109, 213, 250, .35), transparent 30%),
+        linear-gradient(135deg, #0f172a 0%, #123b64 45%, #6dd5fa 100%);
+      padding: 24px;
     }
 
-    .container {
-      position: relative;
+    .shell {
       width: 100%;
-      max-width: 900px;
-      background: #fff;
-      border-radius: 20px;
+      max-width: 980px;
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 28px;
       overflow: hidden;
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      grid-template-columns: 1.05fr .95fr;
+      box-shadow: 0 30px 70px rgba(15, 23, 42, 0.35);
     }
 
-    .forms-container {
+    .panel-copy {
+      padding: 54px 48px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
+        linear-gradient(150deg, #0f172a 0%, #102a43 52%, #1d4ed8 100%);
+      color: #fff;
+      position: relative;
+    }
+
+    .panel-copy::after {
+      content: "";
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      right: -40px;
+      bottom: -40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .brand img {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: #fff;
+      padding: 8px;
+    }
+
+    .brand h1 {
+      font-size: 1.35rem;
+      line-height: 1.1;
+    }
+
+    .brand span {
+      display: block;
+      font-size: .8rem;
+      opacity: .78;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    .panel-copy h2 {
+      font-size: 2rem;
+      margin-bottom: 14px;
+    }
+
+    .panel-copy p {
+      color: rgba(255, 255, 255, .82);
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+
+    .role-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .role-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .role-item i {
+      margin-top: 2px;
+      color: #7dd3fc;
+    }
+
+    .role-item strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .panel-form {
+      padding: 54px 48px;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 50px;
     }
 
-    form {
+    .form-card {
       width: 100%;
+      max-width: 380px;
     }
 
-    .title {
-      font-size: 2rem;
-      margin-bottom: 20px;
-      color: #2980b9;
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: .82rem;
       font-weight: 600;
-      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .form-card h3 {
+      font-size: 2rem;
+      color: #0f172a;
+      margin-bottom: 10px;
+    }
+
+    .form-card p {
+      color: #64748b;
+      margin-bottom: 24px;
+      line-height: 1.6;
     }
 
     .input-field {
       position: relative;
-      margin: 15px 0;
-      width: 100%;
+      margin-bottom: 16px;
     }
 
     .input-field i {
       position: absolute;
       top: 50%;
-      left: 15px;
+      left: 16px;
       transform: translateY(-50%);
-      color: #2980b9;
+      color: #3b82f6;
     }
 
     .input-field input {
       width: 100%;
-      padding: 12px 40px;
-      border-radius: 25px;
-      border: 1px solid #ccc;
+      border: 1px solid #dbe3ef;
+      border-radius: 16px;
+      padding: 13px 16px 13px 44px;
       outline: none;
-      transition: all 0.3s ease;
+      transition: all .2s ease;
     }
 
     .input-field input:focus {
-      border-color: #2980b9;
-      box-shadow: 0 0 5px rgba(41, 128, 185, 0.5);
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, .12);
     }
 
     .btn {
-      display: inline-block;
       width: 100%;
-      padding: 12px;
-      margin: 20px 0;
-      border-radius: 25px;
-      background: #2980b9;
       border: none;
-      color: #fff;
-      font-size: 1rem;
-      font-weight: 600;
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-weight: 700;
       cursor: pointer;
-      transition: 0.3s;
+      transition: all .2s ease;
     }
 
-    .btn:hover {
-      background: #1c5980;
-    }
-
-    .social-text {
-      text-align: center;
-      margin: 10px 0;
-      font-size: 0.9rem;
-      color: #666;
-    }
-
-    .social-media {
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-    }
-
-    .social-icon {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      border: 1px solid #2980b9;
-      color: #2980b9;
-      text-decoration: none;
-      transition: 0.3s;
-    }
-
-    .social-icon:hover {
-      background: #2980b9;
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%);
       color: #fff;
+      box-shadow: 0 14px 26px rgba(37, 99, 235, .22);
     }
 
-    .panels-container {
-      background: linear-gradient(120deg, #6dd5fa, #2980b9);
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 40px;
-      text-align: center;
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 30px rgba(37, 99, 235, .26);
     }
 
-    .panels-container h3 {
-      font-size: 1.5rem;
-      margin-bottom: 10px;
+    .hint-card {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      color: #475569;
+      line-height: 1.6;
+      font-size: .94rem;
     }
 
-    .panels-container p {
-      font-size: 0.9rem;
-      margin-bottom: 20px;
+    .hint-card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #0f172a;
     }
 
-    .btn.transparent {
-      background: transparent;
-      border: 2px solid #fff;
-      color: #fff;
-    }
-
-    .btn.transparent:hover {
-      background: #fff;
-      color: #2980b9;
-    }
-
-    .image {
-      width: 80%;
-      margin-top: 20px;
-    }
-
-    @media (max-width: 768px) {
-      .container {
+    @media (max-width: 920px) {
+      .shell {
         grid-template-columns: 1fr;
       }
-      .panels-container {
-        display: none;
+
+      .panel-copy,
+      .panel-form {
+        padding: 38px 28px;
       }
     }
   </style>
 </head>
+@php
+  $bootstrapMode = \App\Models\User::count() === 0;
+  $roleDefinitions = config('roles.definitions', []);
+@endphp
 <body>
-  <div class="container">
-    <!-- Formulario -->
-    <div class="forms-container">
-      <div class="signin-signup">
-        <!-- LOGIN -->
-        <form class="sign-in-form">
-          <h2 class="title">Iniciar Sesión</h2>
+  <div class="shell">
+    <section class="panel-copy">
+      <div class="brand">
+        <img src="{{ asset('assets/dist/img/AdminLTELogo.png') }}" alt="HECAB">
+        <div>
+          <h1>HECAB</h1>
+          <span>Sistema de gestion</span>
+        </div>
+      </div>
 
-          <div class="input-field">
-            <i class="fas fa-user"></i>
-            <input type="email" name="email" placeholder="Correo" required />
+      <h2>Acceso por usuarios y roles</h2>
+      <p>Ahora cada cuenta puede entrar solo a las areas que le corresponden. Eso nos ayuda a ordenar comercial, operaciones y administracion desde un mismo panel.</p>
+
+      <div class="role-list">
+        <div class="role-item">
+          <i class="fas fa-shield-alt"></i>
+          <div>
+            <strong>Administrador</strong>
+            <span>Gestiona usuarios, roles y acceso total al sistema.</span>
           </div>
-
-          <div class="input-field">
-            <i class="fas fa-lock"></i>
-            <input type="password" name="password" placeholder="Contraseña" required />
+        </div>
+        <div class="role-item">
+          <i class="fas fa-briefcase"></i>
+          <div>
+            <strong>Comercial</strong>
+            <span>Trabaja clientes, cotizaciones, ventas, productos y servicios.</span>
           </div>
-
-          <button type="submit" class="btn">Ingresar</button>
-        </form>
-
-        <!-- REGISTRO -->
-        <form class="sign-up-form" style="display:none;">
-          <h2 class="title">Registrarse</h2>
-
-          <div class="input-field">
-            <i class="fas fa-user"></i>
-            <input type="text" name="name" placeholder="Nombre completo" required />
+        </div>
+        <div class="role-item">
+          <i class="fas fa-route"></i>
+          <div>
+            <strong>Operaciones</strong>
+            <span>Gestiona conductores, unidades, rutas, gastos y reportes.</span>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel-form">
+      <div class="form-card">
+        <span class="eyebrow">
+          <i class="fas fa-lock"></i>
+          {{ $bootstrapMode ? 'Configuracion inicial' : 'Ingreso seguro' }}
+        </span>
+
+        <h3>{{ $bootstrapMode ? 'Crear usuario administrador' : 'Iniciar sesion' }}</h3>
+        <p>
+          {{ $bootstrapMode
+              ? 'Como aun no existen usuarios, este primer registro se guardara automaticamente como administrador.'
+              : 'Ingresa con tu cuenta asignada. Los nuevos usuarios se crean desde el modulo de Usuarios por un administrador.' }}
+        </p>
+
+        <form id="{{ $bootstrapMode ? 'bootstrapForm' : 'loginForm' }}">
+          @if($bootstrapMode)
+            <div class="input-field">
+              <i class="fas fa-user"></i>
+              <input type="text" name="name" placeholder="Nombre completo" required />
+            </div>
+          @endif
 
           <div class="input-field">
             <i class="fas fa-envelope"></i>
@@ -222,138 +310,124 @@
 
           <div class="input-field">
             <i class="fas fa-lock"></i>
-            <input type="password" name="password" placeholder="Contraseña" required />
+            <input type="password" name="password" placeholder="Contrasena" required />
           </div>
 
-          <div class="input-field">
-            <i class="fas fa-lock"></i>
-            <input type="password" name="password_confirmation" placeholder="Confirmar contraseña" required />
-          </div>
+          @if($bootstrapMode)
+            <div class="input-field">
+              <i class="fas fa-check-circle"></i>
+              <input type="password" name="password_confirmation" placeholder="Confirmar contrasena" required />
+            </div>
+          @endif
 
-          <button type="submit" class="btn">Crear Cuenta</button>
+          <button type="submit" class="btn btn-primary">
+            {{ $bootstrapMode ? 'Crear administrador e ingresar' : 'Ingresar al sistema' }}
+          </button>
         </form>
+
+        <div class="hint-card">
+          <strong>{{ $bootstrapMode ? 'Primer paso recomendado' : 'Importante' }}</strong>
+          {{ $bootstrapMode
+              ? 'Despues de entrar, crea los demas usuarios desde Usuarios y roles para asignarles su acceso correcto.'
+              : 'Si necesitas una cuenta nueva o cambio de rol, debe hacerlo un administrador desde el sistema.' }}
+        </div>
       </div>
-    </div>
-
-    <!-- Panel derecho -->
-    <div class="panels-container">
-      <h3 id="panel-title">¿Nuevo aquí?</h3>
-      <p id="panel-text">Servicios Energeticos HECAB S.A.C</p>
-      <button class="btn transparent" id="toggle-btn">Registrarse</button>
-      <img src="{{ asset('assets/dist/img/AdminLTELogo.png') }}" class="image" alt="Login" />
-
-    </div>
+    </section>
   </div>
 
-<script>
-  const toggleBtn = document.getElementById("toggle-btn");
-  const signInForm = document.querySelector(".sign-in-form");
-  const signUpForm = document.querySelector(".sign-up-form");
-  const panelTitle = document.getElementById("panel-title");
-  const panelText = document.getElementById("panel-text");
-  const panelBtn = document.getElementById("toggle-btn");
+  <script>
+    const bootstrapMode = @json($bootstrapMode);
+    const roleDefinitions = @json($roleDefinitions);
 
-  toggleBtn.addEventListener("click", () => {
-    if (signInForm.style.display !== "none") {
-      signInForm.style.display = "none";
-      signUpForm.style.display = "block";
-      panelTitle.innerText = "¿Ya tienes cuenta?";
-      panelText.innerText = "Inicia sesión para acceder a tu cuenta.";
-      panelBtn.innerText = "Iniciar Sesión";
-    } else {
-      signInForm.style.display = "block";
-      signUpForm.style.display = "none";
-      panelTitle.innerText = "¿Nuevo aquí?";
-      panelText.innerText = "Regístrate y forma parte de Harper Ingenieros.";
-      panelBtn.innerText = "Registrarse";
+    function getRedirectPath(user) {
+      const definition = roleDefinitions[user?.rol] || {};
+
+      if (definition.default_path) {
+        return definition.default_path;
+      }
+
+      const paths = definition.paths || [];
+
+      if (!paths.length || paths.includes('*')) {
+        return '/';
+      }
+
+      return paths.find((path) => path !== '/') || '/';
     }
-  });
 
-  // Loader
-  function showLoader(msg = "Procesando...") {
-    Swal.fire({
-      title: msg,
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading()
-    });
-  }
-
-  function showMessage(type, title, text) {
-    Swal.fire({ icon: type, title, text });
-  }
-
-  // LOGIN
-  document.querySelector('.sign-in-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const email = this.email.value;
-    const password = this.password.value;
-
-    try {
-      showLoader("Iniciando sesión...");
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+    function showLoader(message = 'Procesando...') {
+      Swal.fire({
+        title: message,
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
       });
-      const data = await res.json();
-      Swal.close();
-
-    if (res.ok && data.access_token) {
-    localStorage.setItem('token', data.access_token);
-    localStorage.setItem('user', data.email ?? '');
-    // opcional: si quieres un objeto usuario con más info, modifica tu API
-    // localStorage.setItem('user', JSON.stringify({email: data.usuario}));
-    window.location.href = '/';
-      } else {
-        showMessage('error', 'Error', data.error || data.message);
-      }
-    } catch (err) {
-      Swal.close();
-      showMessage('warning', 'Advertencia', 'Error al conectar con el servidor');
     }
-  });
 
-  // REGISTRO
-  // REGISTRO
-document.querySelector('.sign-up-form').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const name = this.name.value;
-  const email = this.email.value;
-  const password = this.password.value;
-  const password_confirmation = this.password_confirmation.value;
-
-  try {
-    showLoader("Registrando usuario...");
-    const res = await fetch('/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, password_confirmation })
-    });
-
-    const data = await res.json();
-    Swal.close();
-
-    if (res.ok && data.access_token) {
+    function saveSession(data) {
       localStorage.setItem('token', data.access_token);
-      localStorage.setItem('user', data.user.email ?? '');
-      window.location.href = '/';
-    } else if (res.status === 422 && data.errors) {
-      // Mostrar errores de validación
-      let errores = '';
-      for (const key in data.errors) {
-        if (data.errors.hasOwnProperty(key)) {
-          errores += `${data.errors[key].join(' ')}\n`;
-        }
-      }
-      showMessage('error', 'Error de validación', errores);
-    } else {
-      showMessage('error', 'Error', data.error || data.message);
+      localStorage.setItem('user', data.user?.email || data.email || '');
+      localStorage.setItem('auth_user', JSON.stringify(data.user || {}));
     }
-  } catch (err) {
-    Swal.close();
-    showMessage('warning', 'Advertencia', 'Error al conectar con el servidor');
-  }
-});
-</script>
+
+    async function submitJson(url, payload, loadingTitle) {
+      showLoader(loadingTitle);
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      Swal.close();
+
+      if (!response.ok) {
+        if (response.status === 422 && data.errors) {
+          const messages = Object.values(data.errors)
+            .flat()
+            .join('\n');
+
+          throw new Error(messages || data.message || 'Error de validacion');
+        }
+
+        throw new Error(data.error || data.message || 'No se pudo completar la accion');
+      }
+
+      return data;
+    }
+
+    document.getElementById(bootstrapMode ? 'bootstrapForm' : 'loginForm').addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      try {
+        const payload = Object.fromEntries(new FormData(this).entries());
+        const url = bootstrapMode ? '/api/register' : '/api/login';
+        const loadingTitle = bootstrapMode ? 'Creando administrador...' : 'Iniciando sesion...';
+
+        const data = await submitJson(url, payload, loadingTitle);
+
+        saveSession(data);
+
+        Swal.fire({
+          icon: 'success',
+          title: bootstrapMode ? 'Administrador creado' : 'Bienvenido',
+          text: bootstrapMode ? 'La configuracion inicial quedo lista.' : 'Acceso concedido correctamente.',
+          timer: 1400,
+          showConfirmButton: false,
+        }).then(() => {
+          window.location.href = getRedirectPath(data.user);
+        });
+      } catch (error) {
+        Swal.fire({
+          icon: 'error',
+          title: 'No se pudo continuar',
+          text: error.message || 'Ocurrio un problema al conectar con el servidor.',
+        });
+      }
+    });
+  </script>
 </body>
 </html>

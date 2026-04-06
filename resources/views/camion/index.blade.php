@@ -3,182 +3,200 @@
 @section('contenido')
 <div class="content">
     <div class="container-fluid">
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="m-0">
-                            Registro camiones 
-                            <button class="btn btn-primary" data-toggle="modal" data-target="#modalRegistroCamion">
-                                <i class="fas fa-file"></i> Nuevo
-                            </button>
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div>
-                            <form action="" method="get">
-                                <div class="input-group">
-                                    <input class="form-control me-2" type="search" placeholder="Buscar Trailer por Placa"
-                                    aria-label="Search" id="buscador">
-                                </div>
-                            </form>
-                        </div>
-                        <div class="mt-2">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-bordered table-hover table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th width="10%">Opciones</th>
-                                            <th width="5%">ID</th>
-                                            <th width="15%">Placa tracto</th>
-                                            <th width="15%">Placa carreto</th>
-                                            <th width="10%">Color</th>
-                                            <th width="10%">MTC</th>
-                                            <th width="15%">Fecha ingreso</th>
-                                            <th width="10%">Foto camino</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="camionTableBody">
-                                        {{-- Aquí se llenará dinámicamente la tabla con JavaScript --}}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+        <div class="card shadow-sm border-0">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h3 class="mb-0 font-weight-bold">
+                        <i class="fas fa-truck-moving text-primary"></i> Gestion de Tractos y Trailers
+                    </h3>
+                    <button class="btn btn-success" data-toggle="modal" data-target="#modalRegistroCamion">
+                        <i class="fas fa-plus-circle"></i> Nueva Unidad
+                    </button>
                 </div>
+            </div>
+
+            <div class="card-body">
+                <div class="mb-3">
+                    <input type="text"
+                        id="searchTextCamion"
+                        class="form-control"
+                        placeholder="Buscar por placa, MTC o color...">
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped text-center">
+                        <thead class="bg-primary text-white">
+                            <tr>
+                                <th>Acciones</th>
+                                <th>ID</th>
+                                <th>Tracto</th>
+                                <th>Trailer</th>
+                                <th>Color</th>
+                                <th>MTC</th>
+                                <th>Seguros</th>
+                                <th>Proximo vencimiento</th>
+                                <th>Fecha ingreso</th>
+                                <th>Conductores asignados</th>
+                            </tr>
+                        </thead>
+                        <tbody id="camionTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div id="paginacionCamion" class="mt-3 text-center"></div>
             </div>
         </div>
     </div>
 </div>
 
 @include('camion.registro')
-
+@include('camion.seguros')
 @endsection
 
 @push('scripts')
 <script>
-    // Function to fetch camiones data from API
-    function fetchCamiones() {
-        $.ajax({
-            url: "http://127.0.0.1:8000/api/camiones",
-            method: "GET",
-            success: function(response) {
-                let tbody = $("#camionTableBody");
-                tbody.empty(); 
-                $.each(response, function(index, camion) {
-                    tbody.append(`
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <button type="button" class="btn btn-warning btn-sm editar me-2" onclick="editar(${camion.id})">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
+let searchCamion = '';
+let debounceCamion;
+let paginaCamionActual = 1;
 
-                                    <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar(${camion.id})">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-
-                            <td>${camion.id}</td>
-                            <td>${camion.placa_tracto}</td>
-                            <td>${camion.placa_carreto}</td>
-                            <td>${camion.color}</td>
-                            <td>${camion.mtc}</td>
-                            <td>${camion.fecha_ingreso}</td>
-                            <td>${camion.foto_camino}</td>
-                        </tr>
-                    `);
-                });
-            },
-            error: function() {
-                alert("Error fetching Camion data.");
-            }
-        });
+function renderSeguroBadge(camion) {
+    if ((camion.seguros_vencidos_count || 0) > 0) {
+        return `<span class="badge badge-danger">${camion.seguros_vencidos_count} vencido(s)</span>`;
     }
 
-    // Load camiones data when page loads
-    $(document).ready(function() {
-        fetchCamiones();
-
-        // Search functionality (filtering could also be added to the backend)
-        $("#searchButton").click(function() {
-            let searchText = $("#searchText").val();
-            if (searchText.trim() !== "") {
-                // Add filtering logic here if needed, for now it will just refresh the table
-                fetchCamiones();
-            }
-        });
-    });
-
-    function eliminar(id) {
-        Swal.fire({
-            title: 'Eliminar registro',
-            text: "¿Está seguro de querer eliminar el registro?",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Sí',
-            cancelButtonText: 'No'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    method: 'DELETE',
-                    url: `http://127.0.0.1:8000/api/camiones/${id}`,
-                    headers:{
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    success: function(res){
-                        window.location.reload();
-                        Swal.fire({
-                            icon: res.status,
-                            title: res.message,
-                            showConfirmButton: false,
-                            timer: 1500
-                        });
-                    },
-                    error: function(res){
-                        alert("Error al eliminar el camión.");
-                    }
-                });
-            }
-        });
+    if ((camion.seguros_por_vencer_count || 0) > 0) {
+        return `<span class="badge badge-warning">${camion.seguros_por_vencer_count} por vencer</span>`;
     }
-    $(document).ready(function() {
-    $("#buscador").on("keyup", function() {
-        var value = $(this).val().toLowerCase();
-        let hasVisibleRow = false;
 
-        if (value === "") {
-            fetchCamiones(); 
-        } else {
-            $("#camionTableBody tr").filter(function() {
-                // Obtener los textos de las columnas 3 y 4 y combinarlos
-                const nombreCol3 = $(this).find('td:eq(3)').text().toLowerCase();
-                const nombreCol4 = $(this).find('td:eq(4)').text().toLowerCase();
-                
-                // Verificar si el valor de búsqueda coincide con alguna de las columnas
-                const isVisible = nombreCol3.indexOf(value) > -1 || nombreCol4.indexOf(value) > -1;
-                
-                // Mostrar u ocultar la fila
-                $(this).toggle(isVisible);
-                
-                if (isVisible) {
-                    hasVisibleRow = true;
-                }
-            });
+    if (camion.proximo_seguro) {
+        return '<span class="badge badge-success">Al dia</span>';
+    }
 
-            // Si no hay resultados visibles, mostrar un mensaje
-            if (!hasVisibleRow) {
-                $("#camionTableBody").html(
-                    '<tr><td colspan="9" class="text-center">No se encontraron resultados</td></tr>'
-                );
-            }
-        }
-    });
+    return '<span class="badge badge-secondary">Sin seguros</span>';
+}
+
+function renderProximoSeguro(camion) {
+    if (!camion.proximo_seguro) {
+        return '<span class="text-muted">Sin registro</span>';
+    }
+
+    const dias = Number(camion.proximo_seguro.dias_restantes || 0);
+    const clase = dias < 0 ? 'text-danger' : (dias <= 30 ? 'text-warning' : 'text-success');
+
+    return `
+        <div class="text-left">
+            <strong>${camion.proximo_seguro.tipo_seguro}</strong>
+            <small class="d-block ${clase}">
+                ${camion.proximo_seguro.fecha_vencimiento} · ${dias < 0 ? `Vencido hace ${Math.abs(dias)} dia(s)` : `Vence en ${dias} dia(s)`}
+            </small>
+        </div>
+    `;
+}
+
+$('#searchTextCamion').on('input', function () {
+    const texto = $(this).val().trim();
+
+    clearTimeout(debounceCamion);
+    debounceCamion = setTimeout(() => {
+        searchCamion = texto.length >= 2 ? texto : '';
+        fetchCamiones(paginaCamionActual = 1);
+    }, 300);
 });
 
+function renderCamionPagination(pagination = {}) {
+    let html = '';
 
+    for (let i = 1; i <= (pagination.last_page || 1); i++) {
+        html += `
+            <button class="btn btn-sm ${i === pagination.current_page ? 'btn-primary' : 'btn-light'}"
+                onclick="fetchCamiones(${i})">
+                ${i}
+            </button>
+        `;
+    }
+
+    $('#paginacionCamion').html(html);
+}
+
+function fetchCamiones(page = 1) {
+    paginaCamionActual = page;
+
+    apiFetch(`/api/camiones?search=${encodeURIComponent(searchCamion)}&page=${page}`)
+        .then(resp => {
+            const tbody = $('#camionTableBody');
+            tbody.empty();
+
+            if (!resp.data.length) {
+                tbody.html(`
+                    <tr>
+                        <td colspan="10" class="text-center text-muted">
+                            No se encontraron unidades
+                        </td>
+                    </tr>
+                `);
+                $('#paginacionCamion').html('');
+                return;
+            }
+
+            resp.data.forEach(camion => {
+                tbody.append(`
+                    <tr>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="editarUnidad(${camion.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-info btn-sm" onclick="abrirSeguros(${camion.id}, '${camion.placa_tracto || ''}', '${camion.placa_carreto || ''}')">
+                                <i class="fas fa-shield-alt"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="eliminarCamion(${camion.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                        <td>${camion.id}</td>
+                        <td><strong>${camion.placa_tracto || '-'}</strong></td>
+                        <td><strong>${camion.placa_carreto || '-'}</strong></td>
+                        <td>${camion.color || '-'}</td>
+                        <td>${camion.mtc || '-'}</td>
+                        <td>${renderSeguroBadge(camion)}</td>
+                        <td>${renderProximoSeguro(camion)}</td>
+                        <td>${camion.fecha_ingreso || '-'}</td>
+                        <td>
+                            <span class="badge badge-${(camion.conductores_count || 0) > 0 ? 'success' : 'secondary'}">
+                                ${camion.conductores_count || 0}
+                            </span>
+                        </td>
+                    </tr>
+                `);
+            });
+
+            renderCamionPagination(resp.pagination);
+        })
+        .catch(() => {
+            Swal.fire('Error', 'No se pudo cargar la flota', 'error');
+        });
+}
+
+function eliminarCamion(id) {
+    Swal.fire({
+        title: '¿Eliminar unidad?',
+        icon: 'warning',
+        showCancelButton: true
+    }).then(result => {
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        apiFetch(`/api/camiones/${id}`, {
+            method: 'DELETE'
+        }).then(resp => {
+            Swal.fire('OK', resp.message, 'success');
+            fetchCamiones(paginaCamionActual);
+        });
+    });
+}
+
+$(document).ready(() => {
+    fetchCamiones();
+});
 </script>
 @endpush

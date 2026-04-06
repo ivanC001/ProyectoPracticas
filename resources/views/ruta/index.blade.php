@@ -27,7 +27,7 @@
                     <input type="text"
                            id="buscador"
                            class="form-control text-center"
-                           placeholder="Buscar por origen o destino...">
+                           placeholder="Buscar por origen, destino, conductor o placa...">
                 </div>
 
                 <!-- TABLA (TU FORMATO ORIGINAL) -->
@@ -144,17 +144,17 @@ function fetchRutas(page = 1){
                             <strong>Destino:</strong><br> ${rutas.destino ?? 'N/A'}<br>
 
                             <i class="fas fa-user text-warning"></i>
-                            <strong>Conductor:</strong><br> ${rutas.conductor?.nombre ?? 'N/A'}
+                            <strong>Conductor:</strong><br> ${(rutas.conductor?.nombre ?? '')} ${(rutas.conductor?.apellido ?? '') || 'N/A'}
                         </div>
                     </td>
 
                     <td>
                         <div class="border rounded p-2 bg-light">
                             <i class="fas fa-truck text-secondary"></i>
-                            <strong>Tracto:</strong><br> ${rutas.camion?.placa_tracto ?? 'N/A'}<br>
+                            <strong>Tracto:</strong><br> ${rutas.camion?.placa_tracto ?? rutas.conductor?.camion?.placa_tracto ?? 'N/A'}<br>
 
                             <i class="fas fa-trailer text-primary"></i>
-                            <strong>Carreto:</strong><br> ${rutas.camion?.placa_carreto ?? 'N/A'}
+                            <strong>Trailer:</strong><br> ${rutas.camion?.placa_carreto ?? rutas.conductor?.camion?.placa_carreto ?? 'N/A'}
                         </div>
                     </td>
 
@@ -182,9 +182,14 @@ function fetchRutas(page = 1){
                     </td>
 
                     <td>
-                        <a class="btn btn-primary btn-sm" href="/api/reporte/ruta/${rutas.id}">
-                            <i class="fas fa-file-alt"></i>
-                        </a>
+                        <div class="d-flex justify-content-center">
+                            <a class="btn btn-primary btn-sm mr-1" href="/reportes/rutas/${rutas.id}">
+                                <i class="fas fa-file-alt"></i>
+                            </a>
+                            <button class="btn btn-danger btn-sm" onclick="window.open('/reportes/rutas/${rutas.id}/pdf', '_blank')">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                        </div>
                     </td>
 
                 </tr>
