@@ -8,7 +8,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <meta name="viewport" content="initial-scale=1, maximum-scale=1">
       <!-- site metas -->
-      <title>blueneek</title>
+      <title>Servicios Energeticos HECAB</title>
       <meta name="keywords" content="">
       <meta name="description" content="">
       <meta name="author" content="">
@@ -46,7 +46,7 @@
                      <div class="full">
                         <div class="center-desk">
                            <div class="logo">
-                              <a href="index.html"><img src="{{ asset('assets/dinamic/images/logo.png') }}" alt="#" /></a>
+                              <a href="/clientes"><img src="{{ asset('assets/dinamic/images/logo.png') }}" alt="#" /></a>
                            </div>
                         </div>
                      </div>
@@ -60,16 +60,19 @@
                            <div class="collapse navbar-collapse" id="navbarsExample04">
                               <ul class="navbar-nav mr-auto">
                                  <li class="nav-item active">
-                                    <a class="nav-link" href="about.html"> About Us  </a>
+                                    <a class="nav-link" href="about.html"> Inicio </a>
                                  </li> 
                                  <li class="nav-item">
-                                    <a class="nav-link" href="clients.html">Our Clients</a>
+                                    <a class="nav-link" href="ourwork.html">Productos</a>
                                  </li>
                                  <li class="nav-item">
-                                    <a class="nav-link" href="ourwork.html">Our Work</a>
+                                    <a class="nav-link" hef="clients.html">Servicios</a>
                                  </li>
                                  <li class="nav-item">
-                                    <a class="nav-link" href="contact.html">Contact Us</a>
+                                    <a class="nav-link" href="ourwork.html">Nuestro Clientes</a>
+                                 </li>
+                                 <li class="nav-item">
+                                    <a class="nav-link" href="contact.html">Contactanos</a>
                                  </li>
                               </ul>
                               <div class="sign_btn"><a href="#">Get A Quote</a></div>

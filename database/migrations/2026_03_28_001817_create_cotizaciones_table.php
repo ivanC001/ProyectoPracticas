@@ -9,31 +9,30 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('cotizaciones', function (Blueprint $table) {
+
             $table->id();
 
-            // 🔹 Cliente (referencia)
+            // 🔹 Cliente
             $table->foreignId('cliente_id')
                   ->constrained('clientes');
 
-            // 🔹 Fechas
+            // 🔥 Datos tipo tu PDF
+            $table->string('asunto'); // CAMBIO DE SELLOS...
             $table->date('fecha');
-            $table->date('fecha_vencimiento')->nullable();
 
-            // 🔹 Totales
+            $table->text('descripcion_general')->nullable();
+
+            // 🔹 Notas
+            $table->text('notas')->nullable();
+
+            // 💰 Totales
             $table->decimal('subtotal', 12, 2)->default(0);
             $table->decimal('igv', 12, 2)->default(0);
             $table->decimal('total', 12, 2)->default(0);
 
             // 🔹 Estado
-            $table->enum('estado', [
-                'borrador',
-                'enviado',
-                'aprobado',
-                'rechazado'
-            ])->default('borrador');
-
-            // 🔹 Extras
-            $table->text('observacion')->nullable();
+            $table->enum('estado', ['borrador','aprobado','rechazado'])
+                  ->default('borrador');
 
             $table->timestamps();
         });

@@ -4,6 +4,7 @@ namespace App\Models\CotizacionModel;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\ClientesModel\Cliente;
+use App\Models\CotizacionModel\CotizacionDetalle;
 
 class Cotizacion extends Model
 {
@@ -11,18 +12,18 @@ class Cotizacion extends Model
 
     protected $fillable = [
         'cliente_id',
+        'asunto',
         'fecha',
-        'fecha_vencimiento',
+        'descripcion_general',
+        'notas',
         'subtotal',
         'igv',
         'total',
-        'estado',
-        'observacion'
+        'estado'
     ];
 
     protected $casts = [
         'fecha' => 'date',
-        'fecha_vencimiento' => 'date',
         'subtotal' => 'float',
         'igv' => 'float',
         'total' => 'float'
@@ -37,9 +38,6 @@ class Cotizacion extends Model
 
     public function detalles()
     {
-        return $this->hasMany(
-            CotizacionDetalle::class,
-            'cotizacion_id'
-        );
+        return $this->hasMany(CotizacionDetalle::class, 'cotizacion_id');
     }
 }

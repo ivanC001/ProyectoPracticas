@@ -7,7 +7,7 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="jwt-token" content="{{ session('jwt') }}"> <!-- O donde guardes tu JWT -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sistema - Plantilla</title>
+  <title>Sistema de Gestion</title>
   <meta name="robots" content="noindex">
   <meta name="googlebot" content="noindex">
   <link rel="icon" type="image/png" href="dist/img/favicon.ico">

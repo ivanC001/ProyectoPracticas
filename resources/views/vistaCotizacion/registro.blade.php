@@ -67,14 +67,19 @@
 <label>Cliente *</label>
 <select id="cliente_id" class="form-control mb-3"></select>
 
+<label>Asunto *</label>
+<input type="text" id="asunto" class="form-control mb-3">
+
+<label>Notas</label>
+<textarea id="notas" class="form-control mb-3"></textarea>
+
 <hr>
 
 <p>Subtotal: S/ <span id="subtotal">0.00</span></p>
 <p>IGV: S/ <span id="igv">0.00</span></p>
 <h4>Total: S/ <span id="total">0.00</span></h4>
 
-<button class="btn btn-success btn-block mt-3"
-        onclick="guardar()">
+<button id="btnGuardar" class="btn btn-success btn-block mt-3">
     Guardar
 </button>
 
@@ -88,6 +93,7 @@
 </div>
 </div>
 @endsection
+
 @push('scripts')
 <script>
 
@@ -96,12 +102,16 @@ let servicios = [];
 let clientes = [];
 let items = [];
 
+let cargando = false; // 🔥 evita doble envío
+
 /* INIT */
 async function init(){
 
-    let p = await apiFetch('/api/productos');
-    let s = await apiFetch('/api/servicios');
-    let c = await apiFetch('/api/clientes');
+    let [p,s,c] = await Promise.all([
+        apiFetch('/api/productos'),
+        apiFetch('/api/servicios'),
+        apiFetch('/api/clientes')
+    ]);
 
     productos = p.data;
     servicios = s.data;
@@ -120,7 +130,6 @@ $('#buscar').on('input', function(){
 
     let txt = $(this).val().toLowerCase();
     let tipo = $('#tipo').val();
-
     let lista = tipo==='producto'?productos:servicios;
 
     let html='';
@@ -179,19 +188,26 @@ function render(){
         <tr>
 
             <td>${i.tipo}</td>
-            <td>${i.nombre}</td>
 
             <td>
-                <input type="number" value="${i.cantidad}"
+                ${i.nombre}
+            </td>
+
+            <td>
+                <input type="number" class="form-control"
+                    value="${i.cantidad}"
                     onchange="items[${index}].cantidad=this.value;calc()">
             </td>
 
-            <td>${i.precio}</td>
+            <td>S/ ${i.precio}</td>
 
-            <td>${(i.precio*i.cantidad).toFixed(2)}</td>
+            <td>S/ ${(i.precio*i.cantidad).toFixed(2)}</td>
 
             <td>
-                <button onclick="items.splice(${index},1);render()">X</button>
+                <button class="btn btn-danger btn-sm"
+                    onclick="items.splice(${index},1);render()">
+                    X
+                </button>
             </td>
 
         </tr>`;
@@ -218,13 +234,27 @@ function calc(){
     $('#total').text((sub+igv).toFixed(2));
 }
 
-/* GUARDAR */
-function guardar(){
+/* 🔥 GUARDAR (CORREGIDO) */
+$('#btnGuardar').click(function(){
+
+    if(cargando) return;
+    cargando = true;
+
+    let cliente = $('#cliente_id').val();
+    let asunto = $('#asunto').val();
+
+    if(!cliente || !asunto || items.length===0){
+        Swal.fire('Error','Completa los campos obligatorios','error');
+        cargando = false;
+        return;
+    }
 
     apiFetch('/api/cotizaciones',{
         method:'POST',
         body: JSON.stringify({
-            cliente_id: $('#cliente_id').val(),
+            cliente_id: cliente,
+            asunto: asunto,
+            notas: $('#notas').val(),
             items: items.map(i=>({
                 tipo: i.tipo,
                 cantidad: i.cantidad,
@@ -232,12 +262,21 @@ function guardar(){
                 servicio_id: i.tipo==='servicio'?i.id:null
             }))
         })
-    }).then(()=>{
+    })
+    .then(resp=>{
+        Swal.fire('OK', resp.message, 'success');
         window.location='/cotizaciones';
+    })
+    .catch(()=>{
+        Swal.fire('Error','No se pudo guardar','error');
+    })
+    .finally(()=>{
+        cargando = false;
     });
 
-}
+});
 
+/* INIT */
 $(document).ready(init);
 
 </script>

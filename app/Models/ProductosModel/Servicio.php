@@ -2,50 +2,20 @@
 
 namespace App\Models\ProductosModel;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\ProductosModel\ServicioDetalle;
 
 class Servicio extends Model
 {
-    use HasFactory;
-
     protected $table = 'servicios';
 
     protected $fillable = [
-
-        // 🔹 Básico
         'codigo',
         'nombre',
         'descripcion',
         'precio',
         'costo',
         'duracion_estimada',
-
-        // 🔹 Recursos
-        'requiere_personal',
-        'cantidad_personal',
-        'requiere_equipo',
-        'equipos_descripcion',
-
-        // 🔹 Ubicación
-        'tipo_servicio',
-        'requiere_transporte',
-
-        // 🔹 Comercial
-        'condiciones',
-        'requisitos_cliente',
-        'garantia_dias',
-
-        // 🔹 Clasificación
-        'nivel_servicio',
-        'prioridad',
-
-        // 🔹 Otros
-        'instrucciones',
-        'observaciones_internas',
-        'frecuencia',
-        'recurrente_cada',
-
         'activo'
     ];
 
@@ -53,19 +23,20 @@ class Servicio extends Model
         'precio' => 'float',
         'costo' => 'float',
         'duracion_estimada' => 'integer',
-
-        'requiere_personal' => 'boolean',
-        'requiere_equipo' => 'boolean',
-        'requiere_transporte' => 'boolean',
-        'activo' => 'boolean',
-
-        'garantia_dias' => 'integer',
-        'cantidad_personal' => 'integer',
+        'activo' => 'boolean'
     ];
 
     /* 🔥 RELACIONES */
 
-    public function detalles()
+    // 👉 pasos del servicio
+    public function pasos()
+    {
+        return $this->hasMany(ServicioDetalle::class, 'servicio_id')
+                    ->orderBy('orden');
+    }
+
+    // 👉 uso en cotización
+    public function cotizaciones()
     {
         return $this->hasMany(
             \App\Models\CotizacionModel\CotizacionDetalle::class,

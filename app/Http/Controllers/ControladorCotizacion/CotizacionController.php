@@ -13,16 +13,17 @@ use App\Models\CotizacionModel\CotizacionDetalle;
 use App\Models\ProductosModel\Producto;
 use App\Models\ProductosModel\Servicio;
 
-
 class CotizacionController extends Controller
 {
 
-    /**
-     * 🔥 LISTAR
-     */
+    /* 🔥 LISTAR (OPTIMIZADO) */
     public function index(Request $request)
     {
-        $query = Cotizacion::with('cliente', 'detalles');
+        $query = Cotizacion::select(
+                'id','cliente_id','fecha','total','estado','asunto'
+            )
+            ->with(['cliente:id,razon_social'])
+            ->withCount('detalles');
 
         if ($request->filled('search')) {
             $query->whereHas('cliente', function ($q) use ($request) {
@@ -30,7 +31,7 @@ class CotizacionController extends Controller
             });
         }
 
-        $data = $query->orderBy('id', 'desc')
+        $data = $query->orderBy('id','desc')
                       ->paginate($request->get('per_page', 10));
 
         return response()->json([
@@ -38,15 +39,12 @@ class CotizacionController extends Controller
             'data' => $data->items(),
             'pagination' => [
                 'current_page' => $data->currentPage(),
-                'last_page' => $data->lastPage(),
-                'total' => $data->total()
+                'last_page' => $data->lastPage()
             ]
         ]);
     }
 
-    /**
-     * 🔥 CREAR
-     */
+    /* 🔥 CREAR */
     public function store(CotizacionRequest $request)
     {
         DB::beginTransaction();
@@ -57,7 +55,10 @@ class CotizacionController extends Controller
 
             $cotizacion = Cotizacion::create([
                 'cliente_id' => $data['cliente_id'],
+                'asunto' => $data['asunto'] ?? 'Cotización',
                 'fecha' => now(),
+                'descripcion_general' => $data['descripcion_general'] ?? null,
+                'notas' => $data['notas'] ?? null,
                 'subtotal' => 0,
                 'igv' => 0,
                 'total' => 0,
@@ -77,6 +78,7 @@ class CotizacionController extends Controller
                 $nombre = '';
                 $precio = 0;
                 $unidad = null;
+                $detalleServicio = null;
 
                 /* 🟦 PRODUCTO */
                 if ($tipo === 'producto') {
@@ -94,7 +96,8 @@ class CotizacionController extends Controller
                 /* 🟩 SERVICIO */
                 if ($tipo === 'servicio') {
 
-                    $servicio = Servicio::where('activo', true)
+                    $servicio = Servicio::with('pasos')
+                        ->where('activo', true)
                         ->findOrFail($item['servicio_id']);
 
                     $servicio_id = $servicio->id;
@@ -102,6 +105,11 @@ class CotizacionController extends Controller
                     $nombre = $servicio->nombre;
                     $precio = $servicio->precio;
                     $unidad = 'servicio';
+
+                    // 🔥 JSON automático
+                    $detalleServicio = $servicio->pasos
+                        ->pluck('descripcion')
+                        ->toArray();
                 }
 
                 $sub = round($cantidad * $precio, 2);
@@ -114,6 +122,7 @@ class CotizacionController extends Controller
                     'codigo_item' => $codigo,
                     'nombre_item' => $nombre,
                     'unidad' => $unidad,
+                    'detalle_servicio' => $detalleServicio,
                     'cantidad' => $cantidad,
                     'precio' => $precio,
                     'subtotal' => $sub
@@ -135,8 +144,11 @@ class CotizacionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Cotización creada correctamente',
-                'data' => $cotizacion->load('cliente','detalles')
+                'message' => "Cotización #{$cotizacion->id} creada",
+                'data' => [
+                    'id' => $cotizacion->id,
+                    'asunto' => $cotizacion->asunto
+                ]
             ], 201);
 
         } catch (ValidationException $e) {
@@ -150,18 +162,18 @@ class CotizacionController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al registrar cotización',
-                'error' => $e->getMessage()
+                'message' => 'Error al registrar'
             ], 500);
         }
     }
 
-    /**
-     * 🔥 MOSTRAR
-     */
+    /* 🔥 MOSTRAR (DETALLE COMPLETO) */
     public function show($id)
     {
-        $cotizacion = Cotizacion::with('cliente', 'detalles')->find($id);
+        $cotizacion = Cotizacion::with([
+            'cliente:id,razon_social,num_doc',
+            'detalles'
+        ])->find($id);
 
         if (!$cotizacion) {
             throw ValidationException::withMessages([
@@ -175,9 +187,7 @@ class CotizacionController extends Controller
         ]);
     }
 
-    /**
-     * 🔥 ELIMINAR
-     */
+    /* 🔥 ELIMINAR */
     public function destroy($id)
     {
         $cotizacion = Cotizacion::find($id);
@@ -192,7 +202,7 @@ class CotizacionController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Eliminada correctamente'
+            'message' => "Cotización #{$id} eliminada"
         ]);
     }
 }

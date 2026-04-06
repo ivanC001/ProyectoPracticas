@@ -9,33 +9,32 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('cotizacion_detalles', function (Blueprint $table) {
+
             $table->id();
 
-            // 🔹 Relación principal
+            // 🔗 Relación principal
             $table->foreignId('cotizacion_id')
                   ->constrained('cotizaciones')
                   ->cascadeOnDelete();
 
-            // 🔹 Tipo de item
+            // 🔹 Tipo
             $table->enum('tipo', ['producto','servicio']);
 
             // 🔹 Relaciones opcionales
-            $table->foreignId('producto_id')
-                  ->nullable()
+            $table->foreignId('producto_id')->nullable()
                   ->constrained('productos')
                   ->nullOnDelete();
 
-            $table->foreignId('servicio_id')
-                  ->nullable()
+            $table->foreignId('servicio_id')->nullable()
                   ->constrained('servicios')
                   ->nullOnDelete();
 
-            // 🔥 HISTÓRICO (CLAVE PARA FACTURACIÓN)
-            $table->string('codigo_item');
+            // 🔥 SNAPSHOT
+            $table->string('codigo_item')->nullable();
             $table->string('nombre_item');
 
-            // 🔹 Opcional pero útil
-            $table->string('unidad')->nullable(); // unidad, hora, servicio
+            // 🔥 AQUÍ ESTÁ EL JSON
+            $table->json('detalle_servicio')->nullable();
 
             // 💰 Datos económicos
             $table->decimal('cantidad', 10, 2);
