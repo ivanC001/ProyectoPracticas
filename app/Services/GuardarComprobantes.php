@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Support\Facades\Storage;
 use App\Services\SunatService;
 
@@ -75,13 +77,43 @@ class GuardarComprobantes
         $nombreArchivo = $ruc . '-' .
             $invoice->getTipoDoc() . '-' .
             $invoice->getSerie() . '-' .
-            $invoice->getCorrelativo() . '.html';
+            $invoice->getCorrelativo() . '.pdf';
 
         $ruta = 'comprobantes/pdf/' . $nombreArchivo;
 
-        Storage::disk('local')->put($ruta, $html);
+        $pdfBinary = $this->renderPdf($html);
+
+        Storage::disk('local')->put($ruta, $pdfBinary);
 
         return $ruta;
+    }
+
+    public function guardarPdfDesdeHtml(string $sourcePath, string $html): string
+    {
+        $pdfPath = preg_replace('/\.html?$/i', '.pdf', $sourcePath);
+
+        if (!$pdfPath) {
+            $pdfPath = $sourcePath . '.pdf';
+        }
+
+        $pdfBinary = $this->renderPdf($html);
+
+        Storage::disk('local')->put($pdfPath, $pdfBinary);
+
+        return $pdfPath;
+    }
+
+    protected function renderPdf(string $html): string
+    {
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html, 'UTF-8');
+        $dompdf->setPaper('A4');
+        $dompdf->render();
+
+        return $dompdf->output();
     }
 
 }

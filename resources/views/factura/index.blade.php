@@ -70,6 +70,35 @@
 </div>
 </div>
 
+<div class="modal fade" id="modalPdfFactura" tabindex="-1">
+<div class="modal-dialog modal-xl modal-dialog-centered">
+<div class="modal-content">
+
+<div class="modal-header bg-danger text-white">
+    <h5 class="modal-title">
+        <i class="fas fa-file-pdf"></i> Vista previa de factura
+    </h5>
+    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+</div>
+
+<div class="modal-body p-0" style="height:80vh;">
+    <iframe id="pdfFacturaFrame" src="about:blank" style="width:100%;height:100%;border:0;"></iframe>
+</div>
+
+<div class="modal-footer justify-content-between">
+    <small class="text-muted" id="pdfFacturaHint">Selecciona una factura para visualizar su PDF.</small>
+    <div>
+        <a id="btnDescargarPdfFactura" class="btn btn-danger" href="#" target="_blank" rel="noopener">
+            <i class="fas fa-download"></i> Descargar PDF
+        </a>
+        <button class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+    </div>
+</div>
+
+</div>
+</div>
+</div>
+
 <!-- MODAL -->
 <div class="modal fade" id="modalFactura" tabindex="-1">
 <div class="modal-dialog modal-xl">
@@ -104,8 +133,8 @@
 <script>
 
 let searchGlobal = '';
+let facturaPdfActual = null;
 
-/* INIT */
 document.addEventListener('DOMContentLoaded', () => {
     cargarFacturas();
 });
@@ -116,17 +145,18 @@ document.getElementById('buscar').addEventListener('keyup', function(){
     cargarFacturas(1);
 });
 
-/* CARGAR FACTURAS */
+/* CARGAR */
 function cargarFacturas(page = 1) {
 
-    fetch(`/api/facturas?page=${page}&search=${searchGlobal}`)
-    .then(res => res.json())
+    apiFetch(`/api/facturas?page=${page}&search=${searchGlobal}`)
     .then(data => {
 
         let tbody = document.getElementById('facturaTableBody');
         tbody.innerHTML = '';
 
-        if (!data.data || data.data.length === 0) {
+        let lista = data.data || [];
+
+        if (lista.length === 0) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="9" class="text-center text-muted">
@@ -136,11 +166,9 @@ function cargarFacturas(page = 1) {
             return;
         }
 
-        data.data.forEach(f => {
+        lista.forEach(f => {
 
-            let estado = `
-                <span class="badge badge-warning">Pendiente</span>
-            `;
+            let estado = `<span class="badge badge-warning">Pendiente</span>`;
 
             if (f.estado_envio === 'aceptado') {
                 estado = `<span class="badge badge-success">Aceptado</span>`;
@@ -160,11 +188,11 @@ function cargarFacturas(page = 1) {
                     <td>S/ ${parseFloat(f.total_venta).toFixed(2)}</td>
                     <td>${estado}</td>
                     <td>
-                        <button class="btn btn-sm btn-info" onclick="verFactura(${f.id})">
+                        <button class="btn btn-sm btn-info" onclick="mostrarPdf(${f.id}, '${(f.numero_comprobante || '').replace(/'/g, "\\'")}')">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn btn-sm btn-danger" onclick="verPdf(${f.id})">
-                            <i class="fas fa-file-pdf"></i>
+                        <button class="btn btn-sm btn-danger" onclick="descargarPdf(${f.id})">
+                            <i class="fas fa-download"></i>
                         </button>
                     </td>
                 </tr>
@@ -175,7 +203,7 @@ function cargarFacturas(page = 1) {
 
     })
     .catch(err => {
-        console.error("Error:", err);
+        console.error("ERROR FACTURAS:", err);
     });
 
 }
@@ -199,32 +227,51 @@ function renderPaginacion(data){
 
 /* FECHA */
 function formatearFecha(fecha) {
-    const f = new Date(fecha);
-    return f.toLocaleString('es-PE');
+    return new Date(fecha).toLocaleString('es-PE');
 }
 
 /* ACCIONES */
-function verFactura(id) {
-    window.location.href = "/factura/ver/" + id;
+function getPdfUrl(id) {
+    return `/factura/pdf/${id}`;
 }
 
-function verPdf(id) {
-    window.open("/factura/pdf/" + id, "_blank");
+function getPdfDownloadUrl(id) {
+    return `/factura/pdf/${id}/descargar`;
 }
 
-/* MODAL EVENTOS */
+function mostrarPdf(id, numeroComprobante = '') {
+    facturaPdfActual = id;
+
+    document.getElementById('pdfFacturaFrame').src = getPdfUrl(id);
+    document.getElementById('btnDescargarPdfFactura').href = getPdfDownloadUrl(id);
+    document.getElementById('pdfFacturaHint').innerText = numeroComprobante
+        ? `Factura ${numeroComprobante}`
+        : `Factura #${id}`;
+
+    $('#modalPdfFactura').modal('show');
+}
+
+function descargarPdf(id) {
+    window.open(getPdfDownloadUrl(id), '_blank');
+}
+
+/* MODAL */
 $(document).ready(function(){
 
-    // 🔥 AL ABRIR
     $('#modalFactura').on('shown.bs.modal', function () {
         fetchProductos();
         setFechaActual();
-        resetFormularioFactura();
     });
 
-    // 🔥 AL CERRAR → RECARGA TABLA
     $('#modalFactura').on('hidden.bs.modal', function () {
         cargarFacturas();
+    });
+
+    $('#modalPdfFactura').on('hidden.bs.modal', function () {
+        document.getElementById('pdfFacturaFrame').src = 'about:blank';
+        document.getElementById('btnDescargarPdfFactura').href = '#';
+        document.getElementById('pdfFacturaHint').innerText = 'Selecciona una factura para visualizar su PDF.';
+        facturaPdfActual = null;
     });
 
 });

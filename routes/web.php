@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ControladorCotizacion\CotizacionController;
+use App\Http\Controllers\Factura\Controllers\FacturaPdfController;
 use App\Http\Controllers\ReporteRutaController;
 use Illuminate\Support\Facades\Route;
 
@@ -35,6 +36,8 @@ Route::get('/producto', fn () => view('gestionProductos.producto.index'));
 Route::get('/servicios', fn () => view('gestionProductos.servicio.index'));
 Route::get('/venta', fn () => view('factura.index'));
 Route::get('/nueva-venta', fn () => view('factura.registro'))->name('nueva-venta');
+Route::get('/factura/pdf/{id}', [FacturaPdfController::class, 'show']);
+Route::get('/factura/pdf/{id}/descargar', [FacturaPdfController::class, 'download']);
 
 Route::get('/ruta/{id}/rutaviatico', fn ($id) => view('ruta.rutaviatico'));
 Route::get('/ruta/{id}/rutacombustible', fn ($id) => view('ruta.rutacombustible'));
@@ -48,3 +51,4 @@ Route::get('/cotizaciones', fn () => view('vistaCotizacion.index'));
 Route::get('/cotizaciones/registro', fn () => view('vistaCotizacion.registro'));
 Route::get('/cotizaciones/pdf/{id}', [CotizacionController::class, 'pdf']);
 Route::get('/usuarios', fn () => view('usuarios.index'));
+Route::get('/notascredito', fn () => view('NotasCredito.index'));

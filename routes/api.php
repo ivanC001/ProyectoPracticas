@@ -9,6 +9,7 @@ use App\Http\Controllers\ConductorController;
 use App\Http\Controllers\ControladorClientes\ClienteController;
 use App\Http\Controllers\ControladorCotizacion\CotizacionController;
 use App\Http\Controllers\Factura\Controllers\FacturaController;
+use App\Http\Controllers\Factura\Controllers\FacturaPdfController;
 use App\Http\Controllers\ProductosController\ProductoController;
 use App\Http\Controllers\ProductosController\ServicioController;
 use App\Http\Controllers\ReporteRutaController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\VentasController;
 use App\Http\Controllers\ViaticoController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Factura\NotaCreditoController;
 
 Route::post('register', [RegisterController::class, 'store'])->name('register');
 Route::post('login', [AuthController::class, 'login'])->name('login');
@@ -110,11 +112,20 @@ Route::middleware(['auth:api'])->group(function () {
     Route::middleware('role:admin,comercial')->group(function () {
         Route::post('/factura/nuevaventa', [FacturaController::class, 'newventa']);
         Route::get('/facturas', [VentasController::class, 'listaFacturas']);
-        Route::post('/factura/pdf', [FacturaController::class, 'pdf']);
+        Route::match(['get', 'post'], '/factura/pdf/{id?}', [FacturaPdfController::class, 'show']);
 
         Route::apiResource('clientes', ClienteController::class);
         Route::apiResource('cotizaciones', CotizacionController::class);
         Route::apiResource('servicios', ServicioController::class);
         Route::apiResource('productos', ProductoController::class);
     });
+});
+
+Route::post('/NotasCredito/', [FacturaController::class, 'newNotas']);
+Route::get('/listaNotacredito', [VentasController::class, 'listaNotas']);
+Route::post('/NotasCredito/pdf', [FacturaController::class, 'pdf']);
+
+Route::prefix('facturacion')->group(function () {
+    Route::get('notas', [NotaCreditoController::class, 'index']);
+    Route::post('notas', [NotaCreditoController::class, 'store']);
 });

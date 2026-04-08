@@ -7,76 +7,57 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 use App\Services\SunatService;
 use App\Services\GuardarComprobantes;
-use App\Services\VentaService;
+use App\Models\VentasModel\Venta;
 use App\Models\ProductosModel\Producto;
 use Greenter\Report\XmlUtils;
 use Greenter\Model\Response\BillResult;
-
 
 class ProcesarFacturaJob implements ShouldQueue
 {
     use Queueable;
 
-    protected $data;
+    protected $ventaId;
 
-    public function __construct($data)
+    public $tries = 5;
+    public $backoff = [10, 30, 60];
+
+    public function __construct($ventaId)
     {
-        $this->data = $data;
+        $this->ventaId = $ventaId;
     }
 
     public function handle(): void
     {
-        DB::transaction(function () {
+        $venta = Venta::with('detalles')->findOrFail($this->ventaId);
 
-            $data = $this->data;
+        // 🔥 Evitar reprocesar
+        if ($venta->sunat_enviado) {
+            return;
+        }
 
-            /*
-            |-----------------------------------------
-            | CLIENTE BOLETA
-            |-----------------------------------------
-            */
-            if (
-                $data['tipo_documento'] == '03' &&
-                (!isset($data['cliente']) || empty($data['cliente']['num_doc']))
-            ) {
-                $data['cliente'] = [
-                    'tipo_doc' => '0',
-                    'num_doc' => '0',
-                    'razon_social' => 'CLIENTES VARIOS'
-                ];
-            }
+        // 🔥 Marcar como procesando
+        $venta->update([
+            'estado_envio' => 'procesando'
+        ]);
+
+        try {
 
             /*
             |-----------------------------------------
-            | PRODUCTOS
+            | MAPEAR DATA DESDE BD
             |-----------------------------------------
             */
-            $codigos = collect($data['items'])->pluck('codigo');
-
-            $productos = Producto::whereIn('codigo', $codigos)
-                ->get()
-                ->keyBy('codigo');
-
-            foreach ($data['items'] as &$item) {
-
-                $producto = $productos[$item['codigo']];
-
-                $item['descripcion'] = $producto->descripcion;
-                $item['unidad'] = $producto->unidad;
-                $item['valor_unitario'] = $producto->precio;
-                $item['precio_unitario'] = round($producto->precio * 1.18, 2);
-                $item['descuento'] = $item['descuento'] ?? 0;
-            }
+            $data = $this->mapearVenta($venta);
 
             /*
             |-----------------------------------------
             | SUNAT
             |-----------------------------------------
             */
-            $envioSunat = new SunatService();
+            $sunatService = new SunatService();
 
-            $see = $envioSunat->getSee();
-            $invoice = $envioSunat->getInvoice($data);
+            $see = $sunatService->getSee();
+            $invoice = $sunatService->getInvoice($data);
 
             $result = $see->send($invoice);
             /** @var BillResult $result */
@@ -106,23 +87,23 @@ class ProcesarFacturaJob implements ShouldQueue
             | RESPUESTA SUNAT
             |-----------------------------------------
             */
-            $sunatResponse = $envioSunat->sunatResponse($result);
+            $sunatResponse = $sunatService->sunatResponse($result);
 
             /*
             |-----------------------------------------
-            | STOCK
+            | STOCK (solo si aceptado)
             |-----------------------------------------
             */
             if ($sunatResponse['success']) {
-                foreach ($data['items'] as $item) {
-                    $producto = $productos[$item['codigo']];
-                    $producto->decrement('stock', $item['cantidad']);
+                foreach ($venta->detalles as $item) {
+                    Producto::where('codigo', $item->codigo_producto)
+                        ->decrement('stock', $item->cantidad);
                 }
             }
 
             /*
             |-----------------------------------------
-            | PDF
+            | PDF (solo si aceptado)
             |-----------------------------------------
             */
             $rutaPdf = null;
@@ -133,22 +114,76 @@ class ProcesarFacturaJob implements ShouldQueue
 
             /*
             |-----------------------------------------
-            | GUARDAR
+            | ACTUALIZAR VENTA
             |-----------------------------------------
             */
-            $ventaService = new VentaService();
+            $venta->update([
 
-            $ventaService->guardarVenta(
-                $data,
-                $invoice,
-                $envioSunat->calcularTotales($data['items']),
-                $hash,
-                $sunatResponse,
-                $rutaXml,
-                $rutaPdf,
-                $rutaCdr
-            );
+                'sunat_enviado' => true,
+                'fecha_envio_sunat' => now(),
 
-        });
+                'estado_envio' => $sunatResponse['success']
+                    ? 'aceptado'
+                    : 'rechazado',
+
+                'codigo_respuesta_sunat'
+                    => $sunatResponse['cdrRespuesta']['code'] ?? null,
+
+                'descripcion_respuesta_sunat'
+                    => $sunatResponse['cdrRespuesta']['description'] ?? null,
+
+                'hash_cpe' => $hash,
+
+                'archivo_xml' => $rutaXml,
+                'archivo_pdf' => $rutaPdf,
+                'archivo_cdr' => $rutaCdr
+            ]);
+
+        } catch (\Throwable $e) {
+
+            /*
+            |-----------------------------------------
+            | ERROR
+            |-----------------------------------------
+            */
+            $venta->update([
+                'estado_envio' => 'error',
+                'mensaje_error' => $e->getMessage()
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /*
+    |-----------------------------------------
+    | MAPEAR VENTA → SUNAT
+    |-----------------------------------------
+    */
+    private function mapearVenta($venta)
+    {
+        return [
+            'tipo_documento' => $venta->tipo_documento,
+            'serie' => $venta->serie,
+            'correlativo' => $venta->correlativo,
+            'fecha_emision' => $venta->fecha_emision,
+            'moneda' => $venta->moneda,
+
+            'cliente' => [
+                'tipo_doc' => $venta->tipo_documento_cliente,
+                'num_doc' => $venta->numero_documento_cliente,
+                'razon_social' => $venta->nombre_cliente
+            ],
+
+            'items' => $venta->detalles->map(function ($d) {
+                return [
+                    'codigo' => $d->codigo_producto,
+                    'descripcion' => $d->descripcion,
+                    'unidad' => $d->unidad,
+                    'cantidad' => $d->cantidad,
+                    'valor_unitario' => $d->valor_unitario
+                ];
+            })->toArray()
+        ];
     }
 }

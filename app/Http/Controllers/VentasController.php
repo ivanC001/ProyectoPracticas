@@ -49,7 +49,8 @@ class VentasController extends Controller
                 'fecha_emision',
                 'moneda',
                 'total_venta',
-                'estado_envio'
+                'estado_envio',
+                'archivo_pdf'
             )
             ->paginate(10);
 

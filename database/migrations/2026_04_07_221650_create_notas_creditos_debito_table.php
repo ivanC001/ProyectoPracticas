@@ -1,42 +1,44 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
-
-    /**
-     * Run the migrations.
-     */{
+{
     public function up(): void
     {
-        Schema::create('ventas', function (Blueprint $table) {
+        Schema::create('notasCredito', function (Blueprint $table) {
 
             $table->id();
 
-            // 📄 Documento
-            $table->string('tipo_documento', 2); // 01 | 03
-            $table->string('tipo_operacion', 4)->default('0101');
+            // 🔗 relación con venta
+            $table->foreignId('venta_id')
+                ->constrained('ventas')
+                ->cascadeOnDelete();
 
-            $table->string('serie', 4); // F001 | B001
+            // 📄 documento
+            $table->string('tipo_documento', 2); // 07 crédito | 08 débito
+            $table->string('serie', 4);
             $table->integer('correlativo');
 
-            $table->string('numero_comprobante'); // obligatorio
+            $table->string('numero_comprobante');
             $table->unique('numero_comprobante');
 
             $table->dateTime('fecha_emision');
-            $table->string('moneda', 3)->default('PEN');
 
-            // 👤 Cliente
-            $table->string('tipo_documento_cliente', 2)->nullable();
-            $table->string('numero_documento_cliente', 20)->nullable();
-            $table->string('nombre_cliente');
+            // 🧾 documento afectado
+            $table->string('tipDocAfectado', 2);
+            $table->string('numDocAfectado');
 
-            // 💰 Totales
-            $table->decimal('total_venta', 12, 2)->default(0);
-            $table->decimal('total_impuestos', 12, 2)->default(0);
+            // 📌 motivo SUNAT
+            $table->string('codMotivo', 2);
+            $table->string('desMotivo');
 
-            // 🚀 SUNAT CONTROL
+            // 💰 totales
+            $table->decimal('total', 12, 2)->default(0);
+
+            // 🚀 SUNAT
             $table->boolean('sunat_enviado')->default(false);
             $table->timestamp('fecha_envio_sunat')->nullable();
 
@@ -52,26 +54,23 @@ return new class extends Migration
             $table->text('descripcion_respuesta_sunat')->nullable();
             $table->text('mensaje_error')->nullable();
 
-            // 📂 Archivos
+            // 📂 archivos
             $table->string('hash_cpe')->nullable();
             $table->string('archivo_xml')->nullable();
             $table->string('archivo_pdf')->nullable();
             $table->string('archivo_cdr')->nullable();
 
-            // ⏱️ Control
             $table->timestamps();
-            $table->softDeletes();
 
-            // ⚡ Índices
+            // ⚡ índices
             $table->unique(['serie','correlativo']);
-            $table->index('numero_documento_cliente');
+            $table->index('venta_id');
             $table->index(['estado_envio','sunat_enviado']);
-            $table->index(['tipo_documento','serie']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('ventas');
+        Schema::dropIfExists('notasCredito');
     }
 };

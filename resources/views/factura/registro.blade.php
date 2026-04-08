@@ -108,6 +108,7 @@
 </div>
 
 </form>
+
 @push('scripts')
 <script>
 
@@ -116,31 +117,8 @@ let timeoutCliente = null;
 
 /* INIT */
 document.addEventListener('DOMContentLoaded', function(){
-
     setFechaActual();
-    fetchProductos();
-
-    document.getElementById('productos').addEventListener('change', function(){
-        let opt = this.options[this.selectedIndex];
-        if(!opt.value) return;
-        document.getElementById('precioUnitario').value = opt.dataset.precio;
-    });
-
-    document.getElementById('cliente_num_doc').addEventListener('keyup', function(){
-
-        let doc = this.value.trim();
-
-        clearTimeout(timeoutCliente);
-
-        if(doc.length < 8) return;
-
-        timeoutCliente = setTimeout(() => {
-            buscarCliente(doc);
-        }, 500);
-    });
-
 });
-
 
 /* FECHA */
 function setFechaActual(){
@@ -150,18 +128,18 @@ function setFechaActual(){
     document.getElementById('fecha_emision').value = local.toISOString().slice(0,16);
 }
 
-
 /* PRODUCTOS */
 function fetchProductos(){
 
-    fetch('/api/productos')
-    .then(r=>r.json())
+    apiFetch('/api/productos')
     .then(data=>{
+
+        let lista = data.data || data;
 
         let select = document.getElementById('productos');
         select.innerHTML = "<option value=''>Seleccione</option>";
 
-        data.data.forEach(p=>{
+        lista.forEach(p=>{
 
             let opt = document.createElement('option');
 
@@ -178,9 +156,20 @@ function fetchProductos(){
             select.appendChild(opt);
         });
 
+    })
+    .catch(err=>{
+        console.error("ERROR PRODUCTOS:", err);
     });
 }
 
+/* CHANGE PRODUCTO */
+document.addEventListener('change', function(e){
+    if(e.target.id === 'productos'){
+        let opt = e.target.options[e.target.selectedIndex];
+        if(!opt.value) return;
+        document.getElementById('precioUnitario').value = opt.dataset.precio;
+    }
+});
 
 /* AGREGAR PRODUCTO */
 function agregarProducto(){
@@ -218,15 +207,14 @@ function agregarProducto(){
             codigo: opt.value,
             descripcion: opt.dataset.descripcion,
             unidad: opt.dataset.unidad || 'NIU',
-            cantidad: cantidad,
+            cantidad,
             valor_unitario: precio,
-            descuento: descuento
+            descuento
         });
     }
 
     actualizarTabla();
 }
-
 
 /* TABLA */
 function actualizarTabla(){
@@ -258,39 +246,52 @@ function actualizarTabla(){
     document.getElementById('totalGeneral').innerText = "S/ " + total.toFixed(2);
 }
 
-
 /* ELIMINAR */
 function eliminarItem(i){
     productosSeleccionados.splice(i,1);
     actualizarTabla();
 }
 
-
-/* BUSCAR CLIENTE */
+/* CLIENTE */
 async function buscarCliente(doc){
 
     let estado = document.getElementById('clienteEstado');
     estado.innerHTML = 'Buscando...';
 
-    let r = await fetch(`/api/clientes?search=${doc}`);
-    let data = await r.json();
+    try{
+        let data = await apiFetch(`/api/clientes?search=${doc}`);
 
-    let cliente = data.data.find(c => c.num_doc === doc);
+        let cliente = (data.data || []).find(c => c.num_doc === doc);
 
-    if(cliente){
+        if(cliente){
+            document.getElementById('cliente_razon_social').value = cliente.razon_social || '';
+            document.getElementById('cliente_direccion').value = cliente.direccion || '';
+            document.getElementById('cliente_email').value = cliente.email || '';
+            document.getElementById('cliente_telefono').value = cliente.telefono || '';
+            estado.innerHTML = 'Cliente encontrado';
+        }else{
+            estado.innerHTML = 'Cliente nuevo';
+        }
 
-        document.getElementById('cliente_razon_social').value = cliente.razon_social || '';
-        document.getElementById('cliente_direccion').value = cliente.direccion || '';
-        document.getElementById('cliente_email').value = cliente.email || '';
-        document.getElementById('cliente_telefono').value = cliente.telefono || '';
-
-        estado.innerHTML = 'Cliente encontrado';
-
-    }else{
-        estado.innerHTML = 'Cliente nuevo';
+    }catch(e){
+        estado.innerHTML = 'Error';
     }
 }
 
+/* INPUT CLIENTE */
+document.addEventListener('keyup', function(e){
+    if(e.target.id === 'cliente_num_doc'){
+        let doc = e.target.value.trim();
+
+        clearTimeout(timeoutCliente);
+
+        if(doc.length < 8) return;
+
+        timeoutCliente = setTimeout(() => {
+            buscarCliente(doc);
+        }, 500);
+    }
+});
 
 /* PROCESAR */
 async function procesarFactura(){
@@ -309,24 +310,18 @@ async function procesarFactura(){
         items: productosSeleccionados
     };
 
-    let r = await fetch('/api/factura/nuevaventa',{
-        method:'POST',
-        headers:{
-            'Content-Type':'application/json',
-            'Accept':'application/json'
-        },
-        body: JSON.stringify(data)
-    });
+    try{
+        let resp = await apiFetch('/api/factura/nuevaventa',{
+            method:'POST',
+            body: JSON.stringify(data)
+        });
 
-    let resp = await r.json();
-
-    if(resp.success){
         Swal.fire('OK','Factura generada','success');
         $('#modalFactura').modal('hide');
-    }else{
-        Swal.fire('Error', resp.message || resp.sunat || 'Error','error');
-    }
 
+    }catch(err){
+        Swal.fire('Error', err.message || 'Error','error');
+    }
 }
 
 </script>

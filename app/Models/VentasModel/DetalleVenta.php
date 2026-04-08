@@ -1,13 +1,11 @@
 <?php
-
 namespace App\Models\VentasModel;
+
 use Illuminate\Database\Eloquent\Model;
 
 class DetalleVenta extends Model
 {
-
-    protected $table = 'venta_detalles';
-
+    protected $table = 'detalle_ventas';
 
     protected $fillable = [
 
@@ -15,23 +13,25 @@ class DetalleVenta extends Model
         'codigo_producto',
         'descripcion',
         'unidad',
+
         'cantidad',
         'valor_unitario',
+        'precio_unitario',
+
+        'descuento',
+        'subtotal',
         'igv',
         'total'
-
     ];
 
-
     /*
-    |--------------------------------------------------------------------------
-    | Relación con Venta
-    |--------------------------------------------------------------------------
+    |-----------------------------------------
+    | RELACIÓN
+    |-----------------------------------------
     */
 
     public function venta()
     {
-        return $this->belongsTo(Venta::class);
+        return $this->belongsTo(Venta::class, 'venta_id');
     }
-
 }

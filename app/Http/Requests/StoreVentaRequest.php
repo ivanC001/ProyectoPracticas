@@ -28,7 +28,10 @@ class StoreVentaRequest extends FormRequest
             // 🔥 ITEMS (CORREGIDO)
             'items' => 'required|array|min:1',
             'items.*.codigo' => 'required|string|max:50',
+            'items.*.descripcion' => 'required|string|max:500',
+            'items.*.unidad' => 'nullable|string|max:10',
             'items.*.cantidad' => 'required|numeric|min:0.01',
+            'items.*.valor_unitario' => 'required|numeric|min:0',
             'items.*.descuento' => 'nullable|numeric|min:0',
         ];
 
@@ -91,6 +94,13 @@ class StoreVentaRequest extends FormRequest
             'items.*.cantidad.required' => 'La cantidad es obligatoria',
             'items.*.cantidad.numeric' => 'La cantidad debe ser un número',
             'items.*.cantidad.min' => 'La cantidad debe ser mayor a 0',
+
+            'items.*.descripcion.required' => 'La descripción del producto es obligatoria',
+            'items.*.descripcion.max' => 'La descripción del producto es demasiado larga',
+
+            'items.*.valor_unitario.required' => 'El valor unitario es obligatorio',
+            'items.*.valor_unitario.numeric' => 'El valor unitario debe ser un número',
+            'items.*.valor_unitario.min' => 'El valor unitario no puede ser negativo',
 
             'items.*.descuento.numeric' => 'El descuento debe ser numérico',
             'items.*.descuento.min' => 'El descuento no puede ser negativo',
