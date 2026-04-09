@@ -5,6 +5,7 @@ namespace App\Jobs;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
+use App\Services\FacturaPdfRenderService;
 use App\Services\SunatService;
 use App\Services\GuardarComprobantes;
 use App\Models\VentasModel\Venta;
@@ -37,7 +38,8 @@ class ProcesarFacturaJob implements ShouldQueue
 
         // 🔥 Marcar como procesando
         $venta->update([
-            'estado_envio' => 'procesando'
+            'estado_envio' => 'procesando',
+            'mensaje_error' => null,
         ]);
 
         try {
@@ -96,6 +98,10 @@ class ProcesarFacturaJob implements ShouldQueue
             */
             if ($sunatResponse['success']) {
                 foreach ($venta->detalles as $item) {
+                    if (($item->tipo_item ?? 'producto') !== 'producto') {
+                        continue;
+                    }
+
                     Producto::where('codigo', $item->codigo_producto)
                         ->decrement('stock', $item->cantidad);
                 }
@@ -109,7 +115,9 @@ class ProcesarFacturaJob implements ShouldQueue
             $rutaPdf = null;
 
             if ($sunatResponse['success']) {
-                $rutaPdf = $archivos->generarPdf($invoice);
+                $venta->refresh()->load('detalles');
+                $pdfBinary = (new FacturaPdfRenderService())->render($venta);
+                $rutaPdf = $archivos->guardarPdfPorVenta($venta, $pdfBinary);
             }
 
             /*
@@ -127,10 +135,16 @@ class ProcesarFacturaJob implements ShouldQueue
                     : 'rechazado',
 
                 'codigo_respuesta_sunat'
-                    => $sunatResponse['cdrRespuesta']['code'] ?? null,
+                    => $sunatResponse['cdrRespuesta']['code']
+                    ?? data_get($sunatResponse, 'error.code'),
 
                 'descripcion_respuesta_sunat'
-                    => $sunatResponse['cdrRespuesta']['description'] ?? null,
+                    => $sunatResponse['cdrRespuesta']['description']
+                    ?? data_get($sunatResponse, 'error.message'),
+
+                'mensaje_error' => $sunatResponse['success']
+                    ? null
+                    : (data_get($sunatResponse, 'error.message') ?: 'SUNAT rechazo el comprobante'),
 
                 'hash_cpe' => $hash,
 
@@ -164,10 +178,26 @@ class ProcesarFacturaJob implements ShouldQueue
     {
         return [
             'tipo_documento' => $venta->tipo_documento,
+            'tipo_operacion' => $venta->tipo_operacion ?: '0101',
             'serie' => $venta->serie,
             'correlativo' => $venta->correlativo,
-            'fecha_emision' => $venta->fecha_emision,
+            'fecha_emision' => optional($venta->fecha_emision)->format('Y-m-d H:i:s'),
             'moneda' => $venta->moneda,
+            'forma_pago' => $venta->forma_pago,
+            'observacion' => $venta->observacion,
+            'credito' => [
+                'cuotas' => $venta->credito_total_cuotas,
+                'monto_pendiente' => (float) ($venta->credito_monto_pendiente ?? 0),
+                'fecha_vencimiento' => optional($venta->credito_fecha_vencimiento)->format('Y-m-d'),
+            ],
+            'detraccion' => [
+                'aplica' => (bool) ($venta->detraccion_aplica ?? false),
+                'codigo' => $venta->detraccion_codigo,
+                'porcentaje' => (float) ($venta->detraccion_porcentaje ?? 0),
+                'monto' => (float) ($venta->detraccion_monto ?? 0),
+                'cuenta' => $venta->detraccion_cuenta,
+                'medio_pago' => $venta->detraccion_medio_pago,
+            ],
 
             'cliente' => [
                 'tipo_doc' => $venta->tipo_documento_cliente,
@@ -178,10 +208,14 @@ class ProcesarFacturaJob implements ShouldQueue
             'items' => $venta->detalles->map(function ($d) {
                 return [
                     'codigo' => $d->codigo_producto,
+                    'tipo_item' => $d->tipo_item ?? 'producto',
+                    'item_id' => $d->item_id,
                     'descripcion' => $d->descripcion,
                     'unidad' => $d->unidad,
                     'cantidad' => $d->cantidad,
-                    'valor_unitario' => $d->valor_unitario
+                    'valor_unitario' => $d->valor_unitario,
+                    'descuento' => $d->descuento,
+                    'tip_afe_igv' => $d->tip_afe_igv,
                 ];
             })->toArray()
         ];

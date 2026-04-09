@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\ControladorCotizacion\CotizacionController;
 use App\Http\Controllers\Factura\Controllers\FacturaPdfController;
+use App\Http\Controllers\Factura\GuiaRemisionPdfController;
+use App\Http\Controllers\Factura\NotaCreditoController;
 use App\Http\Controllers\ReporteRutaController;
 use Illuminate\Support\Facades\Route;
 
@@ -38,6 +40,8 @@ Route::get('/venta', fn () => view('factura.index'));
 Route::get('/nueva-venta', fn () => view('factura.registro'))->name('nueva-venta');
 Route::get('/factura/pdf/{id}', [FacturaPdfController::class, 'show']);
 Route::get('/factura/pdf/{id}/descargar', [FacturaPdfController::class, 'download']);
+Route::get('/factura/xml/{id}', [FacturaPdfController::class, 'showXml']);
+Route::get('/factura/xml/{id}/descargar', [FacturaPdfController::class, 'downloadXml']);
 
 Route::get('/ruta/{id}/rutaviatico', fn ($id) => view('ruta.rutaviatico'));
 Route::get('/ruta/{id}/rutacombustible', fn ($id) => view('ruta.rutacombustible'));
@@ -52,3 +56,12 @@ Route::get('/cotizaciones/registro', fn () => view('vistaCotizacion.registro'));
 Route::get('/cotizaciones/pdf/{id}', [CotizacionController::class, 'pdf']);
 Route::get('/usuarios', fn () => view('usuarios.index'));
 Route::get('/notascredito', fn () => view('NotasCredito.index'));
+Route::get('/guias-remision', fn () => view('guias.index'));
+Route::get('/guias-remision/pdf/{id}', [GuiaRemisionPdfController::class, 'show']);
+Route::get('/guias-remision/pdf/{id}/descargar', [GuiaRemisionPdfController::class, 'download']);
+Route::get('/guias-remision/xml/{id}', [GuiaRemisionPdfController::class, 'showXml']);
+Route::get('/guias-remision/xml/{id}/descargar', [GuiaRemisionPdfController::class, 'downloadXml']);
+Route::get('/notas/pdf/{id}', [NotaCreditoController::class, 'showPdf']);
+Route::get('/notas/pdf/{id}/descargar', [NotaCreditoController::class, 'downloadPdf']);
+Route::get('/notas/xml/{id}', [NotaCreditoController::class, 'showXml']);
+Route::get('/notas/xml/{id}/descargar', [NotaCreditoController::class, 'downloadXml']);

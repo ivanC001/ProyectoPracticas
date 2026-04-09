@@ -3,143 +3,248 @@
 namespace App\Services;
 
 use DateTime;
-use Greenter\See;
-use Greenter\Ws\Services\SunatEndpoints;
-
+use Greenter\Model\Client\Client;
+use Greenter\Model\Company\Address;
+use Greenter\Model\Company\Company;
+use Greenter\Model\Despatch\AdditionalDoc;
+use Greenter\Model\Despatch\Despatch;
+use Greenter\Model\Despatch\DespatchDetail;
+use Greenter\Model\Despatch\Direction;
+use Greenter\Model\Despatch\Driver;
+use Greenter\Model\Despatch\Shipment;
+use Greenter\Model\Despatch\Transportist;
+use Greenter\Model\Despatch\Vehicle;
+use Greenter\Model\Sale\Cuota;
+use Greenter\Model\Sale\Detraction;
+use Greenter\Model\Sale\FormaPagos\FormaPagoContado;
+use Greenter\Model\Sale\FormaPagos\FormaPagoCredito;
 use Greenter\Model\Sale\Invoice;
+use Greenter\Model\Sale\Legend;
 use Greenter\Model\Sale\Note;
 use Greenter\Model\Sale\SaleDetail;
-use Greenter\Model\Sale\Legend;
-use Greenter\Model\Sale\FormaPagos\FormaPagoContado;
-
-use Greenter\Model\Client\Client;
-use Greenter\Model\Company\Company;
-use Greenter\Model\Company\Address;
-
-use Greenter\Report\HtmlReport;
-use Greenter\Report\Resolver\DefaultTemplateResolver;
-
+use Greenter\See;
+use Greenter\Ws\Services\SunatEndpoints;
 use Luecano\NumeroALetras\NumeroALetras;
 
 class SunatService
 {
-    /*
-    |-----------------------------------------
-    | CONEXIÓN SUNAT
-    |-----------------------------------------
-    */
     public function getSee()
     {
-        $certPath = config('empresa.sunat_cert_path');
-        $certificate = file_get_contents($certPath);
-
-        $see = new See();
-
-        $see->setCertificate($certificate);
-        $see->setService(SunatEndpoints::FE_BETA);
-
-        $see->setClaveSOL(
-            config('empresa.sunat_ruc'),
-            config('empresa.sunat_username'),
-            config('empresa.sunat_password')
+        return $this->buildSee(
+            $this->resolveEnv() === 'produccion'
+                ? SunatEndpoints::FE_PRODUCCION
+                : SunatEndpoints::FE_BETA
         );
-
-        return $see;
     }
 
-    /*
-    |-----------------------------------------
-    | FACTURA / BOLETA
-    |-----------------------------------------
-    */
+    public function getSeeGuia()
+    {
+        return $this->buildSee(
+            $this->resolveEnv() === 'produccion'
+                ? SunatEndpoints::GUIA_PRODUCCION
+                : SunatEndpoints::GUIA_BETA
+        );
+    }
+
     public function getInvoice($data)
     {
         if (!isset($data['serie']) || !isset($data['correlativo'])) {
-            throw new \Exception("Serie y correlativo son obligatorios");
+            throw new \Exception('Serie y correlativo son obligatorios');
         }
 
+        $igvCatalogService = new SunatIgvCatalogService();
         $details = $this->getDetails($data['items']);
-        $totales = $this->calcularTotales($data['items']);
+        $totales = $igvCatalogService->calculateTotals($data['items']);
 
-        return (new Invoice())
+        $invoice = (new Invoice())
             ->setUblVersion('2.1')
-            ->setTipoOperacion('0101')
+            ->setTipoOperacion((string) data_get($data, 'tipo_operacion', '0101'))
             ->setTipoDoc($data['tipo_documento'])
-
-            // 🔥 DESDE BD
             ->setSerie($data['serie'])
             ->setCorrelativo($data['correlativo'])
-
             ->setFechaEmision(new DateTime($data['fecha_emision']))
-            ->setFormaPago(new FormaPagoContado())
             ->setTipoMoneda($data['moneda'])
-
             ->setCompany($this->getCompany())
             ->setClient($this->getClient($data['cliente']))
-
             ->setMtoOperGravadas($totales['gravadas'])
+            ->setMtoOperExoneradas($totales['exoneradas'])
+            ->setMtoOperInafectas($totales['inafectas'])
+            ->setMtoOperExportacion($totales['exportacion'])
+            ->setMtoOperGratuitas($totales['gratuitas'])
+            ->setMtoIGVGratuitas($totales['igv_gratuitas'])
             ->setMtoIGV($totales['igv'])
-            ->setTotalImpuestos($totales['igv'])
-            ->setValorVenta($totales['gravadas'])
-            ->setSubTotal($totales['total'])
+            ->setTotalImpuestos($totales['total_impuestos'])
+            ->setValorVenta($totales['valor_venta'])
+            ->setSubTotal($totales['sub_total'])
             ->setMtoImpVenta($totales['total'])
-
             ->setDetails($details)
-            ->setLegends($this->getLegend($totales['total'], $data['moneda']));
+            ->setLegends($this->getLegend($totales, $data['moneda']))
+            ->setFormaPago($this->buildFormaPago($data, $totales));
+
+        $cuotas = $this->buildCuotas($data, $totales);
+        if (!empty($cuotas)) {
+            $invoice->setCuotas($cuotas);
+        }
+
+        $fechaVencimiento = data_get($data, 'credito.fecha_vencimiento');
+        if ($fechaVencimiento) {
+            $invoice->setFecVencimiento(new DateTime((string) $fechaVencimiento));
+        }
+
+        $detraccion = $this->buildDetraccion($data);
+        if ($detraccion) {
+            $invoice->setDetraccion($detraccion);
+        }
+
+        $observacion = trim((string) data_get($data, 'observacion', ''));
+        if ($observacion !== '') {
+            $invoice->setObservacion($observacion);
+        }
+
+        return $invoice;
     }
 
-    /*
-    |-----------------------------------------
-    | NOTA DE CRÉDITO / DÉBITO
-    |-----------------------------------------
-    */
+    public function getDespatch(array $data): Despatch
+    {
+        if (!isset($data['serie']) || !isset($data['correlativo'])) {
+            throw new \Exception('Serie y correlativo son obligatorios para guia de remision');
+        }
+
+        $shipment = (new Shipment())
+            ->setModTraslado((string) data_get($data, 'modalidad_transporte', '02'))
+            ->setCodTraslado((string) data_get($data, 'motivo_traslado_codigo', '01'))
+            ->setDesTraslado((string) data_get($data, 'motivo_traslado_descripcion', 'VENTA'))
+            ->setFecTraslado(new DateTime((string) data_get($data, 'fecha_traslado')))
+            ->setPesoTotal((float) data_get($data, 'peso_total', 0))
+            ->setUndPesoTotal((string) data_get($data, 'unidad_peso', 'KGM'))
+            ->setPartida(new Direction(
+                (string) data_get($data, 'partida.ubigeo', (string) config('empresa.ubigeo', '')),
+                (string) data_get($data, 'partida.direccion', (string) config('empresa.direccion', ''))
+            ))
+            ->setLlegada(new Direction(
+                (string) data_get($data, 'llegada.ubigeo', (string) config('empresa.ubigeo', '')),
+                (string) data_get($data, 'llegada.direccion', '')
+            ));
+
+        $numBultos = (int) data_get($data, 'numero_bultos', 0);
+        if ($numBultos > 0) {
+            $shipment->setNumBultos($numBultos);
+        }
+
+        if ((string) data_get($data, 'modalidad_transporte') === '01') {
+            $transportista = (new Transportist())
+                ->setTipoDoc((string) data_get($data, 'transportista.tipo_doc', '6'))
+                ->setNumDoc((string) data_get($data, 'transportista.num_doc', ''))
+                ->setRznSocial((string) data_get($data, 'transportista.razon_social', ''))
+                ->setNroMtc((string) data_get($data, 'transportista.reg_mtc', ''));
+
+            $shipment->setTransportista($transportista);
+        }
+
+        if ((string) data_get($data, 'modalidad_transporte') === '02') {
+            $nombresConductor = trim((string) data_get($data, 'conductor.nombres', ''));
+            [$nombres, $apellidos] = $this->splitDriverName($nombresConductor);
+
+            $driver = (new Driver())
+                ->setTipo('Principal')
+                ->setTipoDoc((string) data_get($data, 'conductor.tipo_doc', '1'))
+                ->setNroDoc((string) data_get($data, 'conductor.num_doc', ''))
+                ->setNombres($nombres)
+                ->setApellidos($apellidos)
+                ->setLicencia((string) data_get($data, 'conductor.licencia', ''));
+
+            $vehicle = (new Vehicle())
+                ->setPlaca((string) data_get($data, 'vehiculo.placa', ''));
+
+            $secondaryPlate = trim((string) data_get($data, 'vehiculo.secundario_placa', ''));
+            if ($secondaryPlate !== '') {
+                $vehicle->setSecundarios([
+                    (new Vehicle())->setPlaca($secondaryPlate),
+                ]);
+            }
+
+            $shipment->setChoferes([$driver])->setVehiculo($vehicle);
+        }
+
+        $despatch = (new Despatch())
+            ->setVersion('2022')
+            ->setTipoDoc((string) data_get($data, 'tipo_documento', '09'))
+            ->setSerie((string) data_get($data, 'serie'))
+            ->setCorrelativo((string) data_get($data, 'correlativo'))
+            ->setFechaEmision(new DateTime((string) data_get($data, 'fecha_emision')))
+            ->setCompany($this->getCompany())
+            ->setDestinatario($this->getClient((array) data_get($data, 'destinatario', [])))
+            ->setEnvio($shipment);
+
+        $observacion = trim((string) data_get($data, 'observacion', ''));
+        if ($observacion !== '') {
+            $despatch->setObservacion($observacion);
+        }
+
+        $tipoDocRelacionado = (string) data_get($data, 'documento_relacionado.tipo', '');
+        $nroDocRelacionado = trim((string) data_get($data, 'documento_relacionado.nro', ''));
+
+        if ($tipoDocRelacionado !== '' && $nroDocRelacionado !== '') {
+            $despatch->setAddDocs([
+                (new AdditionalDoc())
+                    ->setTipoDesc((string) data_get($data, 'documento_relacionado.tipo_desc', 'Comprobante'))
+                    ->setTipo($tipoDocRelacionado)
+                    ->setNro($nroDocRelacionado)
+                    ->setEmisor((string) data_get($data, 'documento_relacionado.emisor', (string) config('empresa.ruc', ''))),
+            ]);
+        }
+
+        $detalles = [];
+
+        foreach ((array) data_get($data, 'detalles', []) as $item) {
+            $detalles[] = (new DespatchDetail())
+                ->setCantidad((float) data_get($item, 'cantidad', 0))
+                ->setUnidad((string) data_get($item, 'unidad', 'NIU'))
+                ->setDescripcion((string) data_get($item, 'descripcion', ''))
+                ->setCodigo((string) data_get($item, 'codigo', ''));
+        }
+
+        return $despatch->setDetails($detalles);
+    }
+
     public function getNote($data)
     {
         if (!isset($data['serie']) || !isset($data['correlativo'])) {
-            throw new \Exception("Serie y correlativo son obligatorios");
+            throw new \Exception('Serie y correlativo son obligatorios');
         }
 
+        $igvCatalogService = new SunatIgvCatalogService();
         $details = $this->getDetails($data['items']);
-        $totales = $this->calcularTotales($data['items']);
+        $totales = $igvCatalogService->calculateTotals($data['items']);
 
         return (new Note())
             ->setUblVersion('2.1')
-            ->setTipoDoc($data['tipo_documento']) // 07 o 08
-
+            ->setTipoDoc($data['tipo_documento'])
             ->setSerie($data['serie'])
             ->setCorrelativo($data['correlativo'])
-
             ->setFechaEmision(new DateTime($data['fecha_emision']))
-
-            // documento afectado
             ->setTipDocAfectado($data['tipDocAfectado'])
             ->setNumDocfectado($data['numDocAfectado'])
-            // ✔ OK($data['numDocAfectado'])
-            // motivo
             ->setCodMotivo($data['codMotivo'])
             ->setDesMotivo($data['desMotivo'])
-
             ->setTipoMoneda($data['moneda'])
-
             ->setCompany($this->getCompany())
             ->setClient($this->getClient($data['cliente']))
-
             ->setMtoOperGravadas($totales['gravadas'])
+            ->setMtoOperExoneradas($totales['exoneradas'])
+            ->setMtoOperInafectas($totales['inafectas'])
+            ->setMtoOperExportacion($totales['exportacion'])
+            ->setMtoOperGratuitas($totales['gratuitas'])
+            ->setMtoIGVGratuitas($totales['igv_gratuitas'])
             ->setMtoIGV($totales['igv'])
-            ->setTotalImpuestos($totales['igv'])
-            ->setValorVenta($totales['gravadas'])
-            ->setSubTotal($totales['total'])
+            ->setTotalImpuestos($totales['total_impuestos'])
+            ->setValorVenta($totales['valor_venta'])
+            ->setSubTotal($totales['sub_total'])
             ->setMtoImpVenta($totales['total'])
-
             ->setDetails($details)
-            ->setLegends($this->getLegend($totales['total'], $data['moneda']));
+            ->setLegends($this->getLegend($totales, $data['moneda']));
     }
 
-    /*
-    |-----------------------------------------
-    | EMPRESA
-    |-----------------------------------------
-    */
     public function getCompany()
     {
         return (new Company())
@@ -149,11 +254,6 @@ class SunatService
             ->setAddress($this->getAddress());
     }
 
-    /*
-    |-----------------------------------------
-    | CLIENTE
-    |-----------------------------------------
-    */
     public function getClient($cliente)
     {
         return (new Client())
@@ -162,11 +262,6 @@ class SunatService
             ->setRznSocial($cliente['razon_social'] ?? null);
     }
 
-    /*
-    |-----------------------------------------
-    | DIRECCIÓN
-    |-----------------------------------------
-    */
     public function getAddress()
     {
         return (new Address())
@@ -179,91 +274,64 @@ class SunatService
             ->setCodLocal(config('empresa.cod_local'));
     }
 
-    /*
-    |-----------------------------------------
-    | DETALLES
-    |-----------------------------------------
-    */
     public function getDetails($items)
     {
         $details = [];
+        $igvCatalogService = new SunatIgvCatalogService();
 
         foreach ($items as $item) {
+            $line = $igvCatalogService->calculateLine($item);
 
-            $valorVenta = round($item['cantidad'] * $item['valor_unitario'], 2);
-            $igv = round($valorVenta * 0.18, 2);
-            $precioUnitario = round(($valorVenta + $igv) / $item['cantidad'], 2);
-
-            $details[] = (new SaleDetail())
+            $detail = (new SaleDetail())
                 ->setCodProducto($item['codigo'])
                 ->setUnidad($item['unidad'] ?? 'NIU')
                 ->setCantidad($item['cantidad'])
-                ->setMtoValorUnitario($item['valor_unitario'])
+                ->setMtoValorUnitario($line['mto_valor_unitario_sunat'])
                 ->setDescripcion($item['descripcion'])
+                ->setMtoBaseIgv($line['es_gratuita'] ? 0 : $line['base'])
+                ->setPorcentajeIgv($line['porcentaje_igv'])
+                ->setIgv($line['igv'])
+                ->setTipAfeIgv($line['tip_afe_igv'])
+                ->setTotalImpuestos($line['igv'])
+                ->setMtoValorVenta($line['subtotal'])
+                ->setMtoPrecioUnitario($line['mto_precio_unitario_sunat']);
 
-                ->setMtoBaseIgv($valorVenta)
-                ->setPorcentajeIgv(18)
-                ->setIgv($igv)
+            if ($line['es_gratuita']) {
+                $detail->setMtoValorGratuito($line['mto_valor_gratuito']);
+            }
 
-                ->setTipAfeIgv('10')
-                ->setTotalImpuestos($igv)
-
-                ->setMtoValorVenta($valorVenta)
-                ->setMtoPrecioUnitario($precioUnitario);
+            $details[] = $detail;
         }
 
         return $details;
     }
 
-    /*
-    |-----------------------------------------
-    | TOTALES
-    |-----------------------------------------
-    */
     public function calcularTotales($items)
     {
-        $gravadas = 0;
-        $igv = 0;
-
-        foreach ($items as $item) {
-
-            $monto = $item['cantidad'] * $item['valor_unitario'];
-            $gravadas += $monto;
-            $igv += $monto * 0.18;
-        }
-
-        return [
-            'gravadas' => round($gravadas, 2),
-            'igv' => round($igv, 2),
-            'total' => round($gravadas + $igv, 2)
-        ];
+        $igvCatalogService = new SunatIgvCatalogService();
+        return $igvCatalogService->calculateTotals($items);
     }
 
-    /*
-    |-----------------------------------------
-    | LEYENDA
-    |-----------------------------------------
-    */
-    public function getLegend($total, $moneda)
+    public function getLegend(array $totales, string $moneda)
     {
         $formatter = new NumeroALetras();
+        $monedaTexto = $moneda === 'USD' ? 'DOLARES AMERICANOS' : 'SOLES';
 
-        $monedaTexto = $moneda === 'USD'
-            ? 'DOLARES AMERICANOS'
-            : 'SOLES';
-
-        return [
+        $legends = [
             (new Legend())
                 ->setCode('1000')
-                ->setValue('SON ' . $formatter->toInvoice($total, 2, $monedaTexto))
+                ->setValue('SON ' . $formatter->toInvoice((float) $totales['total'], 2, $monedaTexto)),
         ];
+
+        if (($totales['gratuitas'] ?? 0) > 0) {
+            $legends[] = (new Legend())
+                ->setCode('1002')
+                ->setValue('TRANSFERENCIA GRATUITA DE BIENES Y/O SERVICIOS');
+        }
+
+        return $legends;
     }
 
-    /*
-    |-----------------------------------------
-    | RESPUESTA SUNAT
-    |-----------------------------------------
-    */
     public function sunatResponse($result)
     {
         if (!$result->isSuccess()) {
@@ -271,8 +339,8 @@ class SunatService
                 'success' => false,
                 'error' => [
                     'code' => $result->getError()->getCode(),
-                    'message' => $result->getError()->getMessage()
-                ]
+                    'message' => $result->getError()->getMessage(),
+                ],
             ];
         }
 
@@ -283,30 +351,120 @@ class SunatService
             'cdrRespuesta' => [
                 'code' => (int) $cdr->getCode(),
                 'description' => $cdr->getDescription(),
-                'notes' => $cdr->getNotes()
-            ]
+                'notes' => $cdr->getNotes(),
+            ],
         ];
     }
 
-    /*
-    |-----------------------------------------
-    | HTML PDF
-    |-----------------------------------------
-    */
-    public function getHtmlreport($invoice)
+    protected function buildFormaPago(array $data, array $totales)
     {
-        $report = new HtmlReport();
-        $resolver = new DefaultTemplateResolver();
+        $formaPago = strtolower((string) data_get($data, 'forma_pago', 'contado'));
+        if ($formaPago !== 'credito') {
+            return new FormaPagoContado();
+        }
 
-        $report->setTemplate($resolver->getTemplate($invoice));
+        $montoPendiente = (float) data_get($data, 'credito.monto_pendiente', $totales['total'] ?? 0);
 
-        $params = [
-            'system' => [
-                'logo' => file_get_contents(public_path('assets/dist/img/AdminLTELogo.png')),
-                'hash' => 'HASH_PLACEHOLDER',
-            ],
-        ];
+        return new FormaPagoCredito($montoPendiente, (string) data_get($data, 'moneda', 'PEN'));
+    }
 
-        return $report->render($invoice, $params);
+    protected function buildCuotas(array $data, array $totales): array
+    {
+        $formaPago = strtolower((string) data_get($data, 'forma_pago', 'contado'));
+        if ($formaPago !== 'credito') {
+            return [];
+        }
+
+        $totalPendiente = (float) data_get($data, 'credito.monto_pendiente', $totales['total'] ?? 0);
+        $totalCuotas = max((int) data_get($data, 'credito.cuotas', 1), 1);
+        $moneda = (string) data_get($data, 'moneda', 'PEN');
+        $fechaBase = data_get($data, 'credito.fecha_vencimiento');
+        $fecha = new DateTime($fechaBase ?: 'now');
+
+        $montoCuotaBase = round($totalPendiente / $totalCuotas, 2);
+        $acumulado = 0.0;
+        $cuotas = [];
+
+        for ($i = 1; $i <= $totalCuotas; $i++) {
+            $monto = $i === $totalCuotas
+                ? round($totalPendiente - $acumulado, 2)
+                : $montoCuotaBase;
+
+            $acumulado += $monto;
+
+            $cuotas[] = (new Cuota())
+                ->setMoneda($moneda)
+                ->setMonto($monto)
+                ->setFechaPago((clone $fecha)->modify('+' . ($i - 1) . ' month'));
+        }
+
+        return $cuotas;
+    }
+
+    protected function buildDetraccion(array $data): ?Detraction
+    {
+        $aplica = in_array(data_get($data, 'detraccion.aplica', false), [true, 1, '1', 'true', 'on', 'yes'], true);
+        if (!$aplica) {
+            return null;
+        }
+
+        $codigo = (string) data_get($data, 'detraccion.codigo', '');
+        $porcentaje = (float) data_get($data, 'detraccion.porcentaje', 0);
+        $monto = (float) data_get($data, 'detraccion.monto', 0);
+        $cuenta = preg_replace('/\D+/', '', (string) data_get($data, 'detraccion.cuenta', '')) ?? '';
+        $medioPago = (string) data_get($data, 'detraccion.medio_pago', config('sunat_detraccion.medio_pago_default', '001'));
+
+        if ($codigo === '' || $porcentaje <= 0 || $monto <= 0 || $cuenta === '') {
+            return null;
+        }
+
+        return (new Detraction())
+            ->setCodBienDetraccion($codigo)
+            ->setPercent($porcentaje)
+            ->setMount($monto)
+            ->setCtaBanco($cuenta)
+            ->setCodMedioPago($medioPago);
+    }
+
+    protected function splitDriverName(string $fullName): array
+    {
+        $parts = preg_split('/\s+/', trim($fullName)) ?: [];
+
+        if (count($parts) <= 1) {
+            return [$fullName !== '' ? $fullName : '-', '-'];
+        }
+
+        $nombres = implode(' ', array_slice($parts, 0, -2));
+        $apellidos = implode(' ', array_slice($parts, -2));
+
+        if ($nombres === '') {
+            $nombres = $parts[0] ?? '-';
+        }
+
+        return [$nombres, $apellidos !== '' ? $apellidos : '-'];
+    }
+
+    protected function resolveEnv(): string
+    {
+        return strtolower((string) config('empresa.sunat_env', 'beta')) === 'produccion'
+            ? 'produccion'
+            : 'beta';
+    }
+
+    protected function buildSee(string $endpoint): See
+    {
+        $certPath = (string) config('empresa.sunat_cert_path');
+        $certificate = file_get_contents($certPath);
+
+        $see = new See();
+        $see->setCertificate($certificate);
+        $see->setService($endpoint);
+        $see->setClaveSOL(
+            (string) config('empresa.sunat_ruc'),
+            (string) config('empresa.sunat_username'),
+            (string) config('empresa.sunat_password')
+        );
+
+        return $see;
     }
 }

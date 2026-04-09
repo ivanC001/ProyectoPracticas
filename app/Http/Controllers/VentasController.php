@@ -50,7 +50,8 @@ class VentasController extends Controller
                 'moneda',
                 'total_venta',
                 'estado_envio',
-                'archivo_pdf'
+                'archivo_pdf',
+                'archivo_xml'
             )
             ->paginate(10);
 

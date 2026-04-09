@@ -21,6 +21,8 @@ return [
                 '/servicios',
                 '/venta',
                 '/nueva-venta',
+                '/notascredito',
+                '/guias-remision',
             ],
         ],
         'operaciones' => [
@@ -35,6 +37,7 @@ return [
                 '/viaticos',
                 '/combustible',
                 '/reporte-ruta',
+                '/guias-remision',
             ],
         ],
     ],

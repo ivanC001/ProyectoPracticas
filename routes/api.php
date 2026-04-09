@@ -10,6 +10,7 @@ use App\Http\Controllers\ControladorClientes\ClienteController;
 use App\Http\Controllers\ControladorCotizacion\CotizacionController;
 use App\Http\Controllers\Factura\Controllers\FacturaController;
 use App\Http\Controllers\Factura\Controllers\FacturaPdfController;
+use App\Http\Controllers\Factura\GuiaRemisionController;
 use App\Http\Controllers\ProductosController\ProductoController;
 use App\Http\Controllers\ProductosController\ServicioController;
 use App\Http\Controllers\ReporteRutaController;
@@ -113,19 +114,34 @@ Route::middleware(['auth:api'])->group(function () {
         Route::post('/factura/nuevaventa', [FacturaController::class, 'newventa']);
         Route::get('/facturas', [VentasController::class, 'listaFacturas']);
         Route::match(['get', 'post'], '/factura/pdf/{id?}', [FacturaPdfController::class, 'show']);
+        Route::get('/factura/xml/{id?}', [FacturaPdfController::class, 'showXml']);
+        Route::prefix('facturacion')->group(function () {
+            Route::get('notas', [NotaCreditoController::class, 'index']);
+            Route::post('notas', [NotaCreditoController::class, 'store']);
+            Route::get('facturas-emitidas', [NotaCreditoController::class, 'facturasEmitidas']);
+            Route::get('notas/pdf/{id?}', [NotaCreditoController::class, 'showPdf']);
+            Route::get('notas/xml/{id?}', [NotaCreditoController::class, 'showXml']);
+        });
 
         Route::apiResource('clientes', ClienteController::class);
         Route::apiResource('cotizaciones', CotizacionController::class);
         Route::apiResource('servicios', ServicioController::class);
         Route::apiResource('productos', ProductoController::class);
     });
+
+    Route::middleware('role:admin,comercial,operaciones')->group(function () {
+        Route::prefix('guias-remision')->group(function () {
+            Route::get('/', [GuiaRemisionController::class, 'index']);
+            Route::post('/', [GuiaRemisionController::class, 'store']);
+            Route::get('/facturas', [GuiaRemisionController::class, 'facturasRelacionadas']);
+            Route::get('/facturas/{id}', [GuiaRemisionController::class, 'facturaRelacionada']);
+            Route::get('/{id}', [GuiaRemisionController::class, 'show']);
+            Route::put('/{id}', [GuiaRemisionController::class, 'update']);
+            Route::delete('/{id}', [GuiaRemisionController::class, 'destroy']);
+        });
+    });
 });
 
 Route::post('/NotasCredito/', [FacturaController::class, 'newNotas']);
 Route::get('/listaNotacredito', [VentasController::class, 'listaNotas']);
 Route::post('/NotasCredito/pdf', [FacturaController::class, 'pdf']);
-
-Route::prefix('facturacion')->group(function () {
-    Route::get('notas', [NotaCreditoController::class, 'index']);
-    Route::post('notas', [NotaCreditoController::class, 'store']);
-});

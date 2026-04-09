@@ -246,6 +246,7 @@
                 ['href' => '/cotizaciones', 'icon' => 'fas fa-file-signature', 'text' => 'Cotizaciones', 'match' => 'cotizaciones*', 'roles' => ['admin', 'comercial']],
                 ['href' => '/venta', 'icon' => 'fas fa-cash-register', 'text' => 'Ventas', 'match' => 'venta*', 'roles' => ['admin', 'comercial']],
                 ['href' => '/nueva-venta', 'icon' => 'fas fa-plus-circle', 'text' => 'Nueva venta', 'match' => 'nueva-venta*', 'roles' => ['admin', 'comercial']],
+                ['href' => '/notascredito', 'icon' => 'fas fa-file-invoice-dollar', 'text' => 'Notas Cred/Deb', 'match' => 'notascredito*', 'roles' => ['admin', 'comercial']],
             ],
         ],
         [
@@ -263,6 +264,7 @@
                 ['href' => '/conductor', 'icon' => 'fas fa-id-card-alt', 'text' => 'Conductores', 'match' => 'conductor*', 'roles' => ['admin', 'operaciones']],
                 ['href' => '/camion', 'icon' => 'fas fa-truck-moving', 'text' => 'Tractos y trailers', 'match' => 'camion*', 'roles' => ['admin', 'operaciones']],
                 ['href' => '/rutas', 'icon' => 'fas fa-route', 'text' => 'Rutas', 'match' => 'rutas*', 'roles' => ['admin', 'operaciones']],
+                ['href' => '/guias-remision', 'icon' => 'fas fa-truck-loading', 'text' => 'Guias de remision', 'match' => 'guias-remision*', 'roles' => ['admin', 'comercial', 'operaciones']],
                 ['href' => '/viaticos', 'icon' => 'fas fa-wallet', 'text' => 'Viaticos', 'match' => 'viaticos*', 'roles' => ['admin', 'operaciones']],
                 ['href' => '/combustible', 'icon' => 'fas fa-gas-pump', 'text' => 'Combustible', 'match' => 'combustible*', 'roles' => ['admin', 'operaciones']],
             ],

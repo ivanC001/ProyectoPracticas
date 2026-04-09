@@ -44,7 +44,7 @@
                     <th>Moneda</th>
                     <th>Total</th>
                     <th>Estado</th>
-                    <th width="120">Opciones</th>
+                    <th width="220">Opciones</th>
                 </tr>
             </thead>
 
@@ -176,6 +176,16 @@ function cargarFacturas(page = 1) {
             else if (f.estado_envio === 'rechazado') {
                 estado = `<span class="badge badge-danger">Rechazado</span>`;
             }
+            else if (f.estado_envio === 'procesando') {
+                estado = `<span class="badge badge-info">Procesando</span>`;
+            }
+            else if (f.estado_envio === 'error') {
+                estado = `<span class="badge badge-dark">Error</span>`;
+            }
+
+            const numeroComprobante = (f.numero_comprobante || '').replace(/'/g, "\\'");
+            const canUsePdf = f.estado_envio === 'aceptado' && !!f.archivo_pdf;
+            const canUseXml = !!f.archivo_xml;
 
             tbody.innerHTML += `
                 <tr>
@@ -185,14 +195,28 @@ function cargarFacturas(page = 1) {
                     <td>${f.numero_documento_cliente}</td>
                     <td>${formatearFecha(f.fecha_emision)}</td>
                     <td>${f.moneda}</td>
-                    <td>S/ ${parseFloat(f.total_venta).toFixed(2)}</td>
+                    <td>${f.moneda === 'USD' ? 'US$' : 'S/'} ${parseFloat(f.total_venta).toFixed(2)}</td>
                     <td>${estado}</td>
-                    <td>
-                        <button class="btn btn-sm btn-info" onclick="mostrarPdf(${f.id}, '${(f.numero_comprobante || '').replace(/'/g, "\\'")}')">
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-info" title="Ver PDF"
+                            ${canUsePdf ? '' : 'disabled'}
+                            onclick="${canUsePdf ? `mostrarPdf(${f.id}, '${numeroComprobante}')` : 'return false;'}">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn btn-sm btn-danger" onclick="descargarPdf(${f.id})">
+                        <button class="btn btn-sm btn-danger" title="Descargar PDF"
+                            ${canUsePdf ? '' : 'disabled'}
+                            onclick="${canUsePdf ? `descargarPdf(${f.id})` : 'return false;'}">
                             <i class="fas fa-download"></i>
+                        </button>
+                        <button class="btn btn-sm btn-secondary" title="Ver XML"
+                            ${canUseXml ? '' : 'disabled'}
+                            onclick="${canUseXml ? `verXml(${f.id})` : 'return false;'}">
+                            <i class="fas fa-code"></i>
+                        </button>
+                        <button class="btn btn-sm btn-dark" title="Descargar XML"
+                            ${canUseXml ? '' : 'disabled'}
+                            onclick="${canUseXml ? `descargarXml(${f.id})` : 'return false;'}">
+                            <i class="fas fa-file-download"></i>
                         </button>
                     </td>
                 </tr>
@@ -232,11 +256,19 @@ function formatearFecha(fecha) {
 
 /* ACCIONES */
 function getPdfUrl(id) {
-    return `/factura/pdf/${id}`;
+    return `/factura/pdf/${id}?_t=${Date.now()}`;
 }
 
 function getPdfDownloadUrl(id) {
-    return `/factura/pdf/${id}/descargar`;
+    return `/factura/pdf/${id}/descargar?_t=${Date.now()}`;
+}
+
+function getXmlUrl(id) {
+    return `/factura/xml/${id}`;
+}
+
+function getXmlDownloadUrl(id) {
+    return `/factura/xml/${id}/descargar`;
 }
 
 function mostrarPdf(id, numeroComprobante = '') {
@@ -255,6 +287,14 @@ function descargarPdf(id) {
     window.open(getPdfDownloadUrl(id), '_blank');
 }
 
+function verXml(id) {
+    window.open(getXmlUrl(id), '_blank');
+}
+
+function descargarXml(id) {
+    window.open(getXmlDownloadUrl(id), '_blank');
+}
+
 /* MODAL */
 $(document).ready(function(){
 
@@ -264,6 +304,9 @@ $(document).ready(function(){
     });
 
     $('#modalFactura').on('hidden.bs.modal', function () {
+        if (typeof limpiarFormularioFactura === 'function') {
+            limpiarFormularioFactura();
+        }
         cargarFacturas();
     });
 

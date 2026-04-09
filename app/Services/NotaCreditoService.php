@@ -1,49 +1,49 @@
 <?php
+
 namespace App\Services;
 
-use Illuminate\Support\Facades\DB;
 use App\Models\NotasCreditoModel\Nota;
 use App\Models\VentasModel\SerieCorrelativo;
 use App\Models\VentasModel\Venta;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class NotaCreditoService
 {
-    public function guardarNotaPendiente($data)
+    public function guardarNotaPendiente(array $data): Nota
     {
         return DB::transaction(function () use ($data) {
+            $venta = Venta::query()->findOrFail($data['venta_id']);
 
-            // 🔥 obtener venta original
-            $venta = Venta::findOrFail($data['venta_id']);
+            if ($venta->estado_envio !== 'aceptado') {
+                throw ValidationException::withMessages([
+                    'venta_id' => ['Solo se puede generar notas sobre comprobantes aceptados por SUNAT.'],
+                ]);
+            }
 
-            // 🔥 correlativo seguro (07 crédito | 08 débito)
+            if (!in_array((string) $venta->tipo_documento, ['01', '03'], true)) {
+                throw ValidationException::withMessages([
+                    'venta_id' => ['El comprobante seleccionado no admite nota de credito/debito.'],
+                ]);
+            }
+
             $correlativo = SerieCorrelativo::obtenerSiguienteCorrelativo(
-                $data['tipo_documento']
+                (string) $data['tipo_documento']
             );
 
-            return Nota::create([
-
+            return Nota::query()->create([
                 'venta_id' => $venta->id,
-
-                'tipo_documento' => $data['tipo_documento'], // 07 o 08
-
+                'tipo_documento' => $data['tipo_documento'],
                 'serie' => $correlativo['serie'],
                 'correlativo' => $correlativo['correlativo'],
                 'numero_comprobante' => $correlativo['numero_comprobante'],
-
                 'fecha_emision' => now(),
-
-                // documento afectado
                 'tipDocAfectado' => $venta->tipo_documento,
                 'numDocAfectado' => $venta->numero_comprobante,
-
-                // motivo
                 'codMotivo' => $data['codMotivo'],
                 'desMotivo' => $data['desMotivo'],
-
-                // total (puedes mejorar luego)
                 'total' => $venta->total_venta,
-
-                'estado_envio' => 'pendiente'
+                'estado_envio' => 'pendiente',
             ]);
         });
     }

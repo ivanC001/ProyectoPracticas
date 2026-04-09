@@ -1,328 +1,174 @@
-<form id="formRegistroFactura">
+@php
+    $igvCatalog = config('sunat_igv.catalog', []);
+    $igvGroups = [
+        'gravada' => 'Gravadas',
+        'exonerada' => 'Exoneradas',
+        'inafecta' => 'Inafectas',
+        'gratuita' => 'Gratuitas',
+        'exportacion' => 'Exportacion',
+    ];
+    $detraccionCatalog = config('sunat_detraccion.servicios', []);
+@endphp
 
+<style>
+.factura-form .section-title { font-weight: 700; color: #0b3b78; margin-bottom: 10px; }
+.factura-form .summary-card { max-height: 240px; overflow-y: auto; }
+.factura-form .igv-info { border: 1px solid #d7e1ee; border-radius: 6px; background: #f8fbff; padding: 8px 10px; font-size: 12px; }
+.factura-form .chip { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px; margin-right: 6px; background: #dbeafe; color: #1e3a8a; }
+.factura-form .box-soft { border: 1px solid #d6e0ec; border-radius: 8px; background: #f8fbff; padding: 10px; }
+.factura-form .rules-box { border-radius: 8px; padding: 10px 12px; font-size: 12px; border: 1px dashed #cbd5e1; background: #f8fafc; color: #334155; }
+.factura-form .rules-box strong { color: #0f172a; }
+</style>
+
+<form id="formRegistroFactura" class="factura-form">
 @csrf
+<div id="backendValidationBox" class="alert alert-danger d-none"></div>
 
-<!-- DATOS -->
-<div class="row">
-    <div class="col-md-4">
-        <label>Tipo</label>
-        <select class="form-control" id="tipo_documento">
-            <option value="01">Factura</option>
-            <option value="03">Boleta</option>
-        </select>
-    </div>
-
-    <div class="col-md-4">
-        <label>Fecha</label>
-        <input type="datetime-local" class="form-control" id="fecha_emision">
-    </div>
-
-    <div class="col-md-4">
-        <label>Moneda</label>
-        <select class="form-control" id="moneda">
-            <option value="PEN">Soles</option>
-            <option value="USD">Dólares</option>
-        </select>
-    </div>
+<div class="alert alert-info py-2">
+    Factura: RUC obligatorio. Boleta: puede emitirse con DNI o RUC; si supera S/ 500 se exige DNI.
 </div>
-
-<!-- CLIENTE -->
-<hr>
-<h6 class="text-primary">Datos del Cliente</h6>
+<div id="reglasOperacionHint" class="rules-box mb-2"></div>
 
 <div class="row">
-    <div class="col-md-2">
-        <select class="form-control" id="cliente_tipo_doc">
-            <option value="1">DNI</option>
-            <option value="6">RUC</option>
-        </select>
-    </div>
-
     <div class="col-md-3">
-        <input type="text" class="form-control" id="cliente_num_doc" placeholder="Documento">
-        <small id="clienteEstado"></small>
+        <label for="tipo_documento">Tipo comprobante</label>
+        <select class="form-control" id="tipo_documento"><option value="01">Factura</option><option value="03">Boleta</option></select>
+        <small id="tipoComprobanteHelper" class="form-text text-muted"></small>
     </div>
-
-    <div class="col-md-7">
-        <input type="text" class="form-control" id="cliente_razon_social" placeholder="Nombre / Razón Social">
+    <div class="col-md-3">
+        <label for="fecha_emision">Fecha emision</label>
+        <input type="datetime-local" class="form-control" id="fecha_emision">
+        <small class="form-text text-muted">Maximo 2 dias anteriores.</small>
+    </div>
+    <div class="col-md-2">
+        <label for="moneda">Moneda</label>
+        <select class="form-control" id="moneda"><option value="PEN">Soles</option><option value="USD">Dolares</option></select>
+    </div>
+    <div class="col-md-2">
+        <label for="forma_pago">Forma pago</label>
+        <select class="form-control" id="forma_pago"><option value="contado">Contado</option><option value="credito">Credito</option></select>
+    </div>
+    <div class="col-md-2">
+        <label for="observacion">Observacion</label>
+        <input type="text" class="form-control" id="observacion" placeholder="Opcional">
     </div>
 </div>
 
-<br>
-
-<div class="row">
-    <div class="col-md-4">
-        <input type="text" class="form-control" id="cliente_direccion" placeholder="Dirección">
-    </div>
-    <div class="col-md-4">
-        <input type="email" class="form-control" id="cliente_email" placeholder="Email">
-    </div>
-    <div class="col-md-4">
-        <input type="text" class="form-control" id="cliente_telefono" placeholder="Teléfono">
+<div id="creditoPanel" class="box-soft mt-2 d-none">
+    <div class="row">
+        <div class="col-md-4"><label for="credito_cuotas">Cuotas</label><input type="number" min="1" max="36" value="1" class="form-control" id="credito_cuotas"></div>
+        <div class="col-md-4"><label for="credito_fecha_vencimiento">Fec. vencimiento</label><input type="date" class="form-control" id="credito_fecha_vencimiento"></div>
+        <div class="col-md-4"><label for="credito_monto_pendiente">Monto pendiente</label><input type="number" step="0.01" min="0" class="form-control" id="credito_monto_pendiente" placeholder="Auto"></div>
     </div>
 </div>
 
 <hr>
-
-<!-- PRODUCTO -->
+<h6 class="section-title">Cliente</h6>
 <div class="row">
-    <div class="col-md-4">
-        <select class="form-control" id="productos"></select>
-    </div>
+    <div class="col-md-2"><label for="cliente_tipo_doc">Tipo doc</label><select class="form-control" id="cliente_tipo_doc"><option value="1">DNI</option><option value="0">Sin documento</option><option value="6">RUC</option></select></div>
+    <div class="col-md-3"><label for="cliente_num_doc">Numero doc</label><input type="text" class="form-control" id="cliente_num_doc"><small id="clienteEstado" class="form-text text-muted"></small></div>
+    <div class="col-md-7"><label for="cliente_razon_social">Nombre / Razon social</label><input type="text" class="form-control" id="cliente_razon_social"></div>
+</div>
+<div class="row mt-2">
+    <div class="col-md-4"><input type="text" class="form-control" id="cliente_direccion" placeholder="Direccion"></div>
+    <div class="col-md-4"><input type="email" class="form-control" id="cliente_email" placeholder="Email"></div>
+    <div class="col-md-4"><input type="text" class="form-control" id="cliente_telefono" placeholder="Telefono"></div>
+</div>
 
+<hr>
+<h6 class="section-title">Items</h6>
+<div class="row">
+    <div class="col-md-2"><label for="tipoItemSelector">Tipo item</label><select class="form-control" id="tipoItemSelector"><option value="producto">Producto</option><option value="servicio">Servicio</option></select></div>
+    <div class="col-md-3"><label for="catalogoItems">Item</label><select class="form-control" id="catalogoItems"></select></div>
+    <div class="col-md-1"><label for="cantidadItem">Cant.</label><input type="number" class="form-control" id="cantidadItem" value="1" min="0.01" step="0.01"></div>
+    <div class="col-md-1"><label for="descuentoItem">Desc.</label><input type="number" class="form-control" id="descuentoItem" value="0" min="0" step="0.01"></div>
+    <div class="col-md-2"><label for="precioUnitario">V. unitario</label><input type="number" class="form-control" id="precioUnitario" step="0.01" min="0"></div>
     <div class="col-md-2">
-        <input type="number" class="form-control" id="cantidadProducto" placeholder="Cantidad">
+        <label for="tipoAfectacionIgv">Afect. IGV</label>
+        <select class="form-control" id="tipoAfectacionIgv">
+            @foreach($igvGroups as $groupKey => $groupLabel)
+                @php $opts = collect($igvCatalog)->filter(fn($item) => ($item['group'] ?? null) === $groupKey); @endphp
+                @if($opts->isNotEmpty())
+                    <optgroup label="{{ $groupLabel }}">
+                        @foreach($opts as $code => $item)
+                            <option value="{{ $code }}" @selected($code === '10')>{{ $code }} - {{ $item['label'] }}</option>
+                        @endforeach
+                    </optgroup>
+                @endif
+            @endforeach
+        </select>
     </div>
+    <div class="col-md-1 d-flex align-items-end"><button type="button" class="btn btn-success btn-block" onclick="agregarItem()"><i class="fas fa-plus"></i></button></div>
+</div>
 
-    <div class="col-md-2">
-        <input type="number" class="form-control" id="descuentoProducto" value="0">
+<div class="row mt-2"><div class="col-md-12"><div class="igv-info" id="tipoAfectacionInfo"></div></div></div>
+
+<div class="table-responsive mt-3">
+    <table class="table table-bordered table-sm">
+        <thead class="thead-dark"><tr><th>Tipo</th><th>Item</th><th>IGV</th><th>Cant</th><th>Precio</th><th>Desc</th><th>Subtotal</th><th>IGV</th><th>Total</th><th></th></tr></thead>
+        <tbody id="tablaItems"></tbody>
+    </table>
+</div>
+
+<div id="detraccionPanel" class="box-soft mt-2 d-none">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <strong>Detraccion SUNAT</strong>
+        <div class="custom-control custom-switch"><input type="checkbox" class="custom-control-input" id="detraccion_aplica"><label class="custom-control-label" for="detraccion_aplica">Aplicar</label></div>
     </div>
-
-    <div class="col-md-2">
-        <input type="text" class="form-control" id="precioUnitario" readonly>
+    <div id="detraccionHint" class="alert alert-secondary py-2 mb-2"></div>
+    <div class="row">
+        <div class="col-md-5">
+            <label for="detraccion_codigo">Codigo</label>
+            <select class="form-control" id="detraccion_codigo">
+                @foreach($detraccionCatalog as $code => $meta)
+                    <option value="{{ $code }}">{{ $code }} - {{ $meta['descripcion'] }} ({{ number_format((float) $meta['porcentaje'], 2) }}%)</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-2"><label for="detraccion_porcentaje">%</label><input type="number" class="form-control" id="detraccion_porcentaje" readonly></div>
+        <div class="col-md-2"><label for="detraccion_base">Base serv.</label><input type="number" class="form-control" id="detraccion_base" readonly></div>
+        <div class="col-md-3"><label for="detraccion_cuenta">Cuenta BN</label><input type="text" class="form-control" id="detraccion_cuenta" value="{{ config('sunat_detraccion.cuenta_bn_default', '') }}"></div>
     </div>
-
-    <div class="col-md-2">
-        <button type="button" class="btn btn-success btn-block" onclick="agregarProducto()">+</button>
+    <div class="row mt-2">
+        <div class="col-md-3">
+            <label for="detraccion_monto">Monto detraccion</label>
+            <input type="number" class="form-control" id="detraccion_monto" min="0" step="0.01">
+        </div>
+        <div class="col-md-9 d-flex align-items-end">
+            <small class="text-muted">Puedes ajustar el monto manualmente si lo requieres.</small>
+        </div>
     </div>
 </div>
 
-<br>
-
-<table class="table table-bordered table-sm">
-    <thead class="thead-dark">
-        <tr>
-            <th>Producto</th>
-            <th>Cant</th>
-            <th>Precio</th>
-            <th>Desc</th>
-            <th>Subtotal</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody id="tablaProductos"></tbody>
-</table>
-
-<div class="text-right">
-    <h5>Total: <span id="totalGeneral">S/ 0.00</span></h5>
+<div class="row justify-content-end mt-2">
+    <div class="col-md-6">
+        <div class="summary-card border rounded p-2">
+            <table class="table table-sm table-bordered mb-0">
+                <tbody>
+                    <tr><th>Op. Gravadas</th><td class="text-right" id="resumenGravadas">S/ 0.00</td></tr>
+                    <tr><th>Op. Exoneradas</th><td class="text-right" id="resumenExoneradas">S/ 0.00</td></tr>
+                    <tr><th>Op. Inafectas</th><td class="text-right" id="resumenInafectas">S/ 0.00</td></tr>
+                    <tr><th>Op. Exportacion</th><td class="text-right" id="resumenExportacion">S/ 0.00</td></tr>
+                    <tr><th>Op. Gratuitas</th><td class="text-right" id="resumenGratuitas">S/ 0.00</td></tr>
+                    <tr><th>Total servicios</th><td class="text-right" id="resumenServicios">S/ 0.00</td></tr>
+                    <tr><th>IGV</th><td class="text-right" id="resumenIgv">S/ 0.00</td></tr>
+                    <tr class="table-primary"><th>Total</th><td class="text-right font-weight-bold" id="totalGeneral">S/ 0.00</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 </form>
 
 @push('scripts')
 <script>
-
-let productosSeleccionados = [];
-let timeoutCliente = null;
-
-/* INIT */
-document.addEventListener('DOMContentLoaded', function(){
-    setFechaActual();
-});
-
-/* FECHA */
-function setFechaActual(){
-    let now = new Date();
-    let offset = now.getTimezoneOffset();
-    let local = new Date(now.getTime() - offset*60000);
-    document.getElementById('fecha_emision').value = local.toISOString().slice(0,16);
-}
-
-/* PRODUCTOS */
-function fetchProductos(){
-
-    apiFetch('/api/productos')
-    .then(data=>{
-
-        let lista = data.data || data;
-
-        let select = document.getElementById('productos');
-        select.innerHTML = "<option value=''>Seleccione</option>";
-
-        lista.forEach(p=>{
-
-            let opt = document.createElement('option');
-
-            opt.value = p.codigo;
-            opt.text = `${p.descripcion} (Stock: ${p.stock})`;
-
-            opt.dataset.precio = p.precio;
-            opt.dataset.stock = p.stock;
-            opt.dataset.descripcion = p.descripcion;
-            opt.dataset.unidad = p.unidad;
-
-            if(p.stock <= 0) opt.disabled = true;
-
-            select.appendChild(opt);
-        });
-
-    })
-    .catch(err=>{
-        console.error("ERROR PRODUCTOS:", err);
-    });
-}
-
-/* CHANGE PRODUCTO */
-document.addEventListener('change', function(e){
-    if(e.target.id === 'productos'){
-        let opt = e.target.options[e.target.selectedIndex];
-        if(!opt.value) return;
-        document.getElementById('precioUnitario').value = opt.dataset.precio;
-    }
-});
-
-/* AGREGAR PRODUCTO */
-function agregarProducto(){
-
-    let select = document.getElementById('productos');
-    let opt = select.options[select.selectedIndex];
-
-    if(!opt.value){
-        Swal.fire('Error','Seleccione producto','error');
-        return;
-    }
-
-    let cantidad = parseFloat(document.getElementById('cantidadProducto').value);
-    let descuento = parseFloat(document.getElementById('descuentoProducto').value) || 0;
-    let precio = parseFloat(opt.dataset.precio);
-    let stock = parseFloat(opt.dataset.stock);
-
-    if(!cantidad || cantidad <= 0){
-        Swal.fire('Error','Cantidad inválida','error');
-        return;
-    }
-
-    if(cantidad > stock){
-        Swal.fire('Error','Stock insuficiente','error');
-        return;
-    }
-
-    let existente = productosSeleccionados.find(p => p.codigo === opt.value);
-
-    if(existente){
-        existente.cantidad += cantidad;
-        existente.descuento += descuento;
-    }else{
-        productosSeleccionados.push({
-            codigo: opt.value,
-            descripcion: opt.dataset.descripcion,
-            unidad: opt.dataset.unidad || 'NIU',
-            cantidad,
-            valor_unitario: precio,
-            descuento
-        });
-    }
-
-    actualizarTabla();
-}
-
-/* TABLA */
-function actualizarTabla(){
-
-    let tbody = document.getElementById('tablaProductos');
-    let total = 0;
-
-    tbody.innerHTML = '';
-
-    productosSeleccionados.forEach((p,index)=>{
-
-        let subtotal = (p.cantidad * p.valor_unitario) - p.descuento;
-        total += subtotal;
-
-        tbody.innerHTML += `
-            <tr>
-                <td>${p.descripcion}</td>
-                <td>${p.cantidad}</td>
-                <td>S/ ${p.valor_unitario}</td>
-                <td>S/ ${p.descuento}</td>
-                <td>S/ ${subtotal.toFixed(2)}</td>
-                <td>
-                    <button class="btn btn-danger btn-sm" onclick="eliminarItem(${index})">X</button>
-                </td>
-            </tr>
-        `;
-    });
-
-    document.getElementById('totalGeneral').innerText = "S/ " + total.toFixed(2);
-}
-
-/* ELIMINAR */
-function eliminarItem(i){
-    productosSeleccionados.splice(i,1);
-    actualizarTabla();
-}
-
-/* CLIENTE */
-async function buscarCliente(doc){
-
-    let estado = document.getElementById('clienteEstado');
-    estado.innerHTML = 'Buscando...';
-
-    try{
-        let data = await apiFetch(`/api/clientes?search=${doc}`);
-
-        let cliente = (data.data || []).find(c => c.num_doc === doc);
-
-        if(cliente){
-            document.getElementById('cliente_razon_social').value = cliente.razon_social || '';
-            document.getElementById('cliente_direccion').value = cliente.direccion || '';
-            document.getElementById('cliente_email').value = cliente.email || '';
-            document.getElementById('cliente_telefono').value = cliente.telefono || '';
-            estado.innerHTML = 'Cliente encontrado';
-        }else{
-            estado.innerHTML = 'Cliente nuevo';
-        }
-
-    }catch(e){
-        estado.innerHTML = 'Error';
-    }
-}
-
-/* INPUT CLIENTE */
-document.addEventListener('keyup', function(e){
-    if(e.target.id === 'cliente_num_doc'){
-        let doc = e.target.value.trim();
-
-        clearTimeout(timeoutCliente);
-
-        if(doc.length < 8) return;
-
-        timeoutCliente = setTimeout(() => {
-            buscarCliente(doc);
-        }, 500);
-    }
-});
-
-/* PROCESAR */
-async function procesarFactura(){
-
-    let fecha = document.getElementById('fecha_emision').value.replace('T',' ') + ":00";
-
-    let data = {
-        tipo_documento: document.getElementById('tipo_documento').value,
-        fecha_emision: fecha,
-        moneda: document.getElementById('moneda').value,
-        cliente:{
-            tipo_doc: document.getElementById('cliente_tipo_doc').value,
-            num_doc: document.getElementById('cliente_num_doc').value,
-            razon_social: document.getElementById('cliente_razon_social').value
-        },
-        items: productosSeleccionados
-    };
-
-    try{
-        let resp = await apiFetch('/api/factura/nuevaventa',{
-            method:'POST',
-            body: JSON.stringify(data)
-        });
-
-        Swal.fire('OK','Factura generada','success');
-        $('#modalFactura').modal('hide');
-
-    }catch(err){
-        Swal.fire('Error', err.message || 'Error','error');
-    }
-}
-
+window.__FACTURA_REGISTRO_CONFIG__ = {
+    igvCatalog: @json(config('sunat_igv.catalog', [])),
+    detraccionCatalog: @json(config('sunat_detraccion.servicios', [])),
+    detraccionMedioPago: @json(config('sunat_detraccion.medio_pago_default', '001')),
+    detraccionMinimoServicios: @json(config('sunat_detraccion.monto_minimo_servicios', 700))
+};
 </script>
+<script src="{{ asset('assets/js/factura-registro.js') }}"></script>
 @endpush

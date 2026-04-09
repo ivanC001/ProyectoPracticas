@@ -20,6 +20,17 @@ class Venta extends Model
         'numero_comprobante',
         'fecha_emision',
         'moneda',
+        'forma_pago',
+        'credito_total_cuotas',
+        'credito_monto_pendiente',
+        'credito_fecha_vencimiento',
+        'detraccion_aplica',
+        'detraccion_codigo',
+        'detraccion_porcentaje',
+        'detraccion_monto',
+        'detraccion_cuenta',
+        'detraccion_medio_pago',
+        'observacion',
 
         // 👤 Cliente
         'tipo_documento_cliente',
@@ -47,9 +58,14 @@ class Venta extends Model
 
     protected $casts = [
         'fecha_emision' => 'datetime',
+        'credito_fecha_vencimiento' => 'date',
         'sunat_enviado' => 'boolean',
+        'detraccion_aplica' => 'boolean',
         'total_venta' => 'decimal:2',
         'total_impuestos' => 'decimal:2',
+        'credito_monto_pendiente' => 'decimal:2',
+        'detraccion_porcentaje' => 'decimal:2',
+        'detraccion_monto' => 'decimal:2',
     ];
 
     /*

@@ -1,27 +1,26 @@
 <?php
 
-namespace App\Http\Controllers\Factura\Controllers;
+namespace App\Http\Controllers\Factura;
 
 use App\Http\Controllers\Controller;
-use App\Models\VentasModel\Venta;
-use App\Services\FacturaPdfRenderService;
+use App\Models\GuiasModel\GuiaRemision;
 use App\Services\GuardarComprobantes;
+use App\Services\GuiaRemisionPdfRenderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
-class FacturaPdfController extends Controller
+class GuiaRemisionPdfController extends Controller
 {
     public function show(Request $request, ?int $id = null)
     {
-        $venta = $this->resolveVenta($id ?? $request->integer('venta_id') ?? $request->integer('id'));
-        $this->ensureAcceptedVenta($venta);
+        $guia = $this->resolveGuia($id ?? $request->integer('guia_id') ?? $request->integer('id'));
+        $this->ensureAcceptedGuia($guia);
 
-        $pdfPath = $this->ensurePdfPath($venta);
-
+        $pdfPath = $this->ensurePdfPath($guia);
         if (!$pdfPath) {
             throw ValidationException::withMessages([
-                'pdf' => ['El PDF aun no esta disponible para esta factura.'],
+                'pdf' => ['El PDF aun no esta disponible para esta guia.'],
             ]);
         }
 
@@ -36,14 +35,13 @@ class FacturaPdfController extends Controller
 
     public function download(int $id)
     {
-        $venta = $this->resolveVenta($id);
-        $this->ensureAcceptedVenta($venta);
+        $guia = $this->resolveGuia($id);
+        $this->ensureAcceptedGuia($guia);
 
-        $pdfPath = $this->ensurePdfPath($venta);
-
+        $pdfPath = $this->ensurePdfPath($guia);
         if (!$pdfPath) {
             throw ValidationException::withMessages([
-                'pdf' => ['El PDF aun no esta disponible para esta factura.'],
+                'pdf' => ['El PDF aun no esta disponible para esta guia.'],
             ]);
         }
 
@@ -57,12 +55,12 @@ class FacturaPdfController extends Controller
 
     public function showXml(Request $request, ?int $id = null)
     {
-        $venta = $this->resolveVenta($id ?? $request->integer('venta_id') ?? $request->integer('id'));
-        $xmlPath = $this->resolveXmlPath($venta);
+        $guia = $this->resolveGuia($id ?? $request->integer('guia_id') ?? $request->integer('id'));
+        $xmlPath = $this->resolveXmlPath($guia);
 
         if (!$xmlPath) {
             throw ValidationException::withMessages([
-                'xml' => ['El XML aun no esta disponible para esta factura.'],
+                'xml' => ['El XML aun no esta disponible para esta guia.'],
             ]);
         }
 
@@ -74,12 +72,12 @@ class FacturaPdfController extends Controller
 
     public function downloadXml(int $id)
     {
-        $venta = $this->resolveVenta($id);
-        $xmlPath = $this->resolveXmlPath($venta);
+        $guia = $this->resolveGuia($id);
+        $xmlPath = $this->resolveXmlPath($guia);
 
         if (!$xmlPath) {
             throw ValidationException::withMessages([
-                'xml' => ['El XML aun no esta disponible para esta factura.'],
+                'xml' => ['El XML aun no esta disponible para esta guia.'],
             ]);
         }
 
@@ -88,43 +86,42 @@ class FacturaPdfController extends Controller
         ]);
     }
 
-    protected function resolveVenta(?int $id): Venta
+    protected function resolveGuia(?int $id): GuiaRemision
     {
         if (!$id) {
             throw ValidationException::withMessages([
-                'venta' => ['Debe indicar la factura que desea visualizar.'],
+                'guia' => ['Debe indicar la guia que desea visualizar.'],
             ]);
         }
 
-        $venta = Venta::find($id);
-
-        if (!$venta) {
+        $guia = GuiaRemision::query()->find($id);
+        if (!$guia) {
             throw ValidationException::withMessages([
-                'venta' => ['Factura no encontrada.'],
+                'guia' => ['Guia no encontrada.'],
             ]);
         }
 
-        return $venta;
+        return $guia;
     }
 
-    protected function ensureAcceptedVenta(Venta $venta): void
+    protected function ensureAcceptedGuia(GuiaRemision $guia): void
     {
-        if ($venta->estado_envio !== 'aceptado') {
+        if ($guia->estado_envio !== 'aceptado') {
             throw ValidationException::withMessages([
-                'pdf' => ['El PDF solo esta disponible cuando SUNAT acepta la factura.'],
+                'pdf' => ['El PDF solo esta disponible cuando SUNAT acepta la guia.'],
             ]);
         }
     }
 
-    protected function ensurePdfPath(Venta $venta): ?string
+    protected function ensurePdfPath(GuiaRemision $guia): ?string
     {
         try {
-            $venta->loadMissing('detalles');
-            $pdfBinary = (new FacturaPdfRenderService())->render($venta);
-            $pdfPath = (new GuardarComprobantes())->guardarPdfPorVenta($venta, $pdfBinary);
+            $guia->loadMissing(['detalles', 'venta']);
+            $pdfBinary = (new GuiaRemisionPdfRenderService())->render($guia);
+            $pdfPath = (new GuardarComprobantes())->guardarPdfPorGuia($guia, $pdfBinary);
 
-            if ($venta->archivo_pdf !== $pdfPath) {
-                $venta->update([
+            if ($guia->archivo_pdf !== $pdfPath) {
+                $guia->update([
                     'archivo_pdf' => $pdfPath,
                 ]);
             }
@@ -132,7 +129,7 @@ class FacturaPdfController extends Controller
             return $pdfPath;
         } catch (\Throwable $e) {
             report($e);
-            $path = $venta->archivo_pdf;
+            $path = $guia->archivo_pdf;
             $disk = Storage::disk('local');
 
             if ($path && strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'pdf' && $disk->exists($path)) {
@@ -143,9 +140,9 @@ class FacturaPdfController extends Controller
         }
     }
 
-    protected function resolveXmlPath(Venta $venta): ?string
+    protected function resolveXmlPath(GuiaRemision $guia): ?string
     {
-        $path = $venta->archivo_xml;
+        $path = $guia->archivo_xml;
 
         if (!$path) {
             return null;
@@ -154,3 +151,4 @@ class FacturaPdfController extends Controller
         return Storage::disk('local')->exists($path) ? $path : null;
     }
 }
+

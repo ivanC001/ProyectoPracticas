@@ -37,6 +37,7 @@ class SerieCorrelativo extends Model
                     case '07': $serieNombre = 'FC01'; break;
                     case '08': $serieNombre = 'FD01'; break;
                     case '09': $serieNombre = 'T001'; break;
+                    case '31': $serieNombre = 'V001'; break;
                     default:
                         throw new \Exception("Tipo de documento no soportado");
                 }

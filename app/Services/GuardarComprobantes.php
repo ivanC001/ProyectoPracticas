@@ -2,10 +2,9 @@
 
 namespace App\Services;
 
-use Dompdf\Dompdf;
-use Dompdf\Options;
+use App\Models\GuiasModel\GuiaRemision;
+use App\Models\VentasModel\Venta;
 use Illuminate\Support\Facades\Storage;
-use App\Services\SunatService;
 
 class GuardarComprobantes
 {
@@ -59,61 +58,49 @@ class GuardarComprobantes
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Generar PDF (HTML de Greenter)
-    |--------------------------------------------------------------------------
-    */
-
-    public function generarPdf($invoice)
+    public function guardarPdfEmitido($invoice, string $pdfBinary): string
     {
-
-        $sunatService = new SunatService();
-
-        $html = $sunatService->getHtmlreport($invoice);
-
-        $ruc = config('empresa.ruc');
-
-        $nombreArchivo = $ruc . '-' .
-            $invoice->getTipoDoc() . '-' .
-            $invoice->getSerie() . '-' .
-            $invoice->getCorrelativo() . '.pdf';
-
-        $ruta = 'comprobantes/pdf/' . $nombreArchivo;
-
-        $pdfBinary = $this->renderPdf($html);
+        $ruta = $this->buildPdfPath(
+            (string) $invoice->getTipoDoc(),
+            (string) $invoice->getSerie(),
+            (string) $invoice->getCorrelativo()
+        );
 
         Storage::disk('local')->put($ruta, $pdfBinary);
 
         return $ruta;
     }
 
-    public function guardarPdfDesdeHtml(string $sourcePath, string $html): string
+    public function guardarPdfPorVenta(Venta $venta, string $pdfBinary): string
     {
-        $pdfPath = preg_replace('/\.html?$/i', '.pdf', $sourcePath);
+        $serie = (string) ($venta->serie ?? 'S001');
+        $correlativo = (string) ($venta->correlativo ?? '1');
+        $tipoDocumento = (string) ($venta->tipo_documento ?? '01');
+        $ruta = $this->buildPdfPath($tipoDocumento, $serie, $correlativo);
 
-        if (!$pdfPath) {
-            $pdfPath = $sourcePath . '.pdf';
-        }
+        Storage::disk('local')->put($ruta, $pdfBinary);
 
-        $pdfBinary = $this->renderPdf($html);
-
-        Storage::disk('local')->put($pdfPath, $pdfBinary);
-
-        return $pdfPath;
+        return $ruta;
     }
 
-    protected function renderPdf(string $html): string
+    public function guardarPdfPorGuia(GuiaRemision $guia, string $pdfBinary): string
     {
-        $options = new Options();
-        $options->set('isRemoteEnabled', true);
+        $serie = (string) ($guia->serie ?? 'T001');
+        $correlativo = (string) ($guia->correlativo ?? '1');
+        $tipoDocumento = (string) ($guia->tipo_documento ?? '09');
+        $ruta = $this->buildPdfPath($tipoDocumento, $serie, $correlativo);
 
-        $dompdf = new Dompdf($options);
-        $dompdf->loadHtml($html, 'UTF-8');
-        $dompdf->setPaper('A4');
-        $dompdf->render();
+        Storage::disk('local')->put($ruta, $pdfBinary);
 
-        return $dompdf->output();
+        return $ruta;
+    }
+
+    protected function buildPdfPath(string $tipoDocumento, string $serie, string $correlativo): string
+    {
+        $ruc = config('empresa.ruc');
+        $nombreArchivo = $ruc . '-' . $tipoDocumento . '-' . $serie . '-' . $correlativo . '.pdf';
+
+        return 'comprobantes/pdf/' . $nombreArchivo;
     }
 
 }
