@@ -44,6 +44,10 @@ class GuiaRemision extends Model
         'vehiculo_placa',
         'vehiculo_secundario_placa',
         'venta_id',
+        'guia_remitente_id',
+        'documento_rel_tipo',
+        'documento_rel_numero',
+        'documento_rel_emisor',
         'sunat_enviado',
         'fecha_envio_sunat',
         'estado_envio',
@@ -73,5 +77,9 @@ class GuiaRemision extends Model
     {
         return $this->belongsTo(Venta::class, 'venta_id');
     }
-}
 
+    public function guiaRemitente()
+    {
+        return $this->belongsTo(self::class, 'guia_remitente_id');
+    }
+}

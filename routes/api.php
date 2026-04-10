@@ -135,6 +135,11 @@ Route::middleware(['auth:api'])->group(function () {
             Route::post('/', [GuiaRemisionController::class, 'store']);
             Route::get('/facturas', [GuiaRemisionController::class, 'facturasRelacionadas']);
             Route::get('/facturas/{id}', [GuiaRemisionController::class, 'facturaRelacionada']);
+            Route::get('/remitentes', [GuiaRemisionController::class, 'remitentesRelacionados']);
+            Route::get('/remitentes/{id}', [GuiaRemisionController::class, 'remitenteRelacionado']);
+            Route::get('/clientes', [GuiaRemisionController::class, 'clientesRelacionados']);
+            Route::get('/clientes/{id}', [GuiaRemisionController::class, 'clienteRelacionado']);
+            Route::post('/clientes', [GuiaRemisionController::class, 'registrarClienteRelacionado']);
             Route::get('/{id}', [GuiaRemisionController::class, 'show']);
             Route::put('/{id}', [GuiaRemisionController::class, 'update']);
             Route::delete('/{id}', [GuiaRemisionController::class, 'destroy']);

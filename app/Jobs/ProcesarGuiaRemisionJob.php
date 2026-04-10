@@ -27,7 +27,7 @@ class ProcesarGuiaRemisionJob implements ShouldQueue
 
     public function handle(): void
     {
-        $guia = GuiaRemision::with(['detalles', 'venta'])->findOrFail($this->guiaId);
+        $guia = GuiaRemision::with(['detalles', 'venta', 'guiaRemitente'])->findOrFail($this->guiaId);
 
         if ($guia->sunat_enviado) {
             return;
@@ -59,7 +59,7 @@ class ProcesarGuiaRemisionJob implements ShouldQueue
 
             $rutaPdf = null;
             if ($sunatResponse['success']) {
-                $guia->refresh()->loadMissing(['detalles', 'venta']);
+                $guia->refresh()->loadMissing(['detalles', 'venta', 'guiaRemitente']);
                 $pdfBinary = (new GuiaRemisionPdfRenderService())->render($guia);
                 $rutaPdf = $archivos->guardarPdfPorGuia($guia, $pdfBinary);
             }
@@ -146,25 +146,62 @@ class ProcesarGuiaRemisionJob implements ShouldQueue
             })->toArray(),
         ];
 
-        if ($guia->venta) {
-            $data['documento_relacionado'] = [
-                'tipo' => (string) $guia->venta->tipo_documento,
-                'nro' => (string) $guia->venta->numero_comprobante,
-                'tipo_desc' => (string) $this->descripcionDoc((string) $guia->venta->tipo_documento),
-                'emisor' => (string) config('empresa.ruc'),
-            ];
+        $documentoRelacionado = $this->resolverDocumentoRelacionado($guia);
+        if ($documentoRelacionado) {
+            $data['documento_relacionado'] = $documentoRelacionado;
         }
 
         return $data;
     }
 
+    protected function resolverDocumentoRelacionado(GuiaRemision $guia): ?array
+    {
+        if ($guia->venta) {
+            $tipo = (string) $guia->venta->tipo_documento;
+            return [
+                'tipo' => $tipo,
+                'nro' => (string) $guia->venta->numero_comprobante,
+                'tipo_desc' => $this->descripcionDoc($tipo),
+                'emisor' => (string) ($guia->documento_rel_emisor ?: config('empresa.ruc', '')),
+            ];
+        }
+
+        if ($guia->guiaRemitente) {
+            return [
+                'tipo' => '09',
+                'nro' => (string) $guia->guiaRemitente->numero_guia,
+                'tipo_desc' => $this->descripcionDoc('09'),
+                'emisor' => (string) ($guia->documento_rel_emisor ?: config('empresa.ruc', '')),
+            ];
+        }
+
+        if ($guia->documento_rel_tipo && $guia->documento_rel_numero) {
+            $tipo = (string) $guia->documento_rel_tipo;
+            return [
+                'tipo' => $tipo,
+                'nro' => (string) $guia->documento_rel_numero,
+                'tipo_desc' => $this->descripcionDoc($tipo),
+                'emisor' => (string) ($guia->documento_rel_emisor ?: config('empresa.ruc', '')),
+            ];
+        }
+
+        return null;
+    }
+
     protected function descripcionDoc(string $tipoDocumento): string
     {
+        $catalogo = collect(config('sunat_guia.documentos_relacionados', []))
+            ->firstWhere('codigo', $tipoDocumento);
+
+        if ($catalogo) {
+            return (string) data_get($catalogo, 'descripcion', 'Comprobante');
+        }
+
         return match ($tipoDocumento) {
             '01' => 'Factura',
-            '03' => 'Boleta',
+            '03' => 'Boleta de Venta',
+            '09' => 'Guia de Remision Remitente',
             default => 'Comprobante',
         };
     }
 }
-

@@ -110,6 +110,18 @@ class SunatService
             throw new \Exception('Serie y correlativo son obligatorios para guia de remision');
         }
 
+        $partida = (new Direction(
+            (string) data_get($data, 'partida.ubigeo', (string) config('empresa.ubigeo', '')),
+            (string) data_get($data, 'partida.direccion', (string) config('empresa.direccion', ''))
+        ))
+            ->setCodLocal((string) config('empresa.cod_local', '0000'))
+            ->setRuc((string) config('empresa.ruc', ''));
+
+        $llegada = new Direction(
+            (string) data_get($data, 'llegada.ubigeo', (string) config('empresa.ubigeo', '')),
+            (string) data_get($data, 'llegada.direccion', '')
+        );
+
         $shipment = (new Shipment())
             ->setModTraslado((string) data_get($data, 'modalidad_transporte', '02'))
             ->setCodTraslado((string) data_get($data, 'motivo_traslado_codigo', '01'))
@@ -117,14 +129,8 @@ class SunatService
             ->setFecTraslado(new DateTime((string) data_get($data, 'fecha_traslado')))
             ->setPesoTotal((float) data_get($data, 'peso_total', 0))
             ->setUndPesoTotal((string) data_get($data, 'unidad_peso', 'KGM'))
-            ->setPartida(new Direction(
-                (string) data_get($data, 'partida.ubigeo', (string) config('empresa.ubigeo', '')),
-                (string) data_get($data, 'partida.direccion', (string) config('empresa.direccion', ''))
-            ))
-            ->setLlegada(new Direction(
-                (string) data_get($data, 'llegada.ubigeo', (string) config('empresa.ubigeo', '')),
-                (string) data_get($data, 'llegada.direccion', '')
-            ));
+            ->setPartida($partida)
+            ->setLlegada($llegada);
 
         $numBultos = (int) data_get($data, 'numero_bultos', 0);
         if ($numBultos > 0) {

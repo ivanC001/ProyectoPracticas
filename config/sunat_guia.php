@@ -17,5 +17,12 @@ return [
         ['codigo' => '09', 'descripcion' => 'Guia de remision remitente'],
         ['codigo' => '31', 'descripcion' => 'Guia de remision transportista'],
     ],
+    'documentos_relacionados' => [
+        ['codigo' => '01', 'descripcion' => 'Factura'],
+        ['codigo' => '03', 'descripcion' => 'Boleta de Venta'],
+        ['codigo' => '09', 'descripcion' => 'Guia de Remision Remitente'],
+        ['codigo' => '12', 'descripcion' => 'Constancia de Deposito - Detraccion'],
+        ['codigo' => '00', 'descripcion' => 'Ticket o cinta emitido por maquina registradora'],
+        ['codigo' => '04', 'descripcion' => 'Liquidacion de Compra'],
+    ],
 ];
-

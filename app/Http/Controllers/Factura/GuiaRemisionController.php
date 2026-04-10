@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Factura;
 use App\Jobs\ProcesarGuiaRemisionJob;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreGuiaRemisionRequest;
+use App\Models\ClientesModel\Cliente;
 use App\Models\GuiasModel\GuiaRemision;
 use App\Models\VentasModel\SerieCorrelativo;
 use App\Models\VentasModel\Venta;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -19,6 +21,7 @@ class GuiaRemisionController extends Controller
         $query = GuiaRemision::query()->with([
             'detalles',
             'venta:id,numero_comprobante,nombre_cliente,numero_documento_cliente,tipo_documento_cliente,fecha_emision,moneda,total_venta',
+            'guiaRemitente:id,numero_guia,tipo_documento,estado_envio,fecha_traslado,destinatario_razon_social,destinatario_num_doc',
         ]);
 
         if ($request->filled('search')) {
@@ -28,7 +31,8 @@ class GuiaRemisionController extends Controller
                     ->orWhere('destinatario_razon_social', 'like', '%' . $search . '%')
                     ->orWhere('destinatario_num_doc', 'like', '%' . $search . '%')
                     ->orWhere('transportista_razon_social', 'like', '%' . $search . '%')
-                    ->orWhere('vehiculo_placa', 'like', '%' . $search . '%');
+                    ->orWhere('vehiculo_placa', 'like', '%' . $search . '%')
+                    ->orWhere('documento_rel_numero', 'like', '%' . $search . '%');
             });
         }
 
@@ -56,8 +60,9 @@ class GuiaRemisionController extends Controller
     {
         $payload = $request->validated();
         $detalles = $this->resolveDetallesPayload($payload);
+        $documentoRelacionado = $this->resolveDocumentoRelacionadoPayload($payload);
 
-        $guia = DB::transaction(function () use ($payload, $detalles) {
+        $guia = DB::transaction(function () use ($payload, $detalles, $documentoRelacionado) {
             $correlativo = SerieCorrelativo::obtenerSiguienteCorrelativo($payload['tipo_documento']);
 
             $guia = GuiaRemision::create([
@@ -92,6 +97,10 @@ class GuiaRemisionController extends Controller
                 'vehiculo_placa' => data_get($payload, 'vehiculo.placa'),
                 'vehiculo_secundario_placa' => data_get($payload, 'vehiculo.secundario_placa'),
                 'venta_id' => $payload['venta_id'] ?? null,
+                'guia_remitente_id' => $payload['guia_remitente_id'] ?? null,
+                'documento_rel_tipo' => $documentoRelacionado['tipo'],
+                'documento_rel_numero' => $documentoRelacionado['numero'],
+                'documento_rel_emisor' => $documentoRelacionado['emisor'],
                 'estado_envio' => 'pendiente',
             ]);
 
@@ -106,7 +115,7 @@ class GuiaRemisionController extends Controller
                 ]);
             }
 
-            return $guia->fresh('detalles');
+            return $guia->fresh(['detalles', 'venta', 'guiaRemitente']);
         });
 
         ProcesarGuiaRemisionJob::dispatch((int) $guia->id);
@@ -124,6 +133,8 @@ class GuiaRemisionController extends Controller
             'detalles',
             'venta:id,numero_comprobante,nombre_cliente,numero_documento_cliente,tipo_documento_cliente,fecha_emision,moneda,total_venta',
             'venta.detalles:id,venta_id,tipo_item,item_id,codigo_producto,descripcion,unidad,cantidad',
+            'guiaRemitente:id,numero_guia,tipo_documento,estado_envio,fecha_traslado,destinatario_razon_social,destinatario_num_doc',
+            'guiaRemitente.detalles:id,guia_remision_id,tipo_item,item_id,codigo,descripcion,unidad,cantidad',
         ])->find($id);
 
         if (!$guia) {
@@ -195,13 +206,13 @@ class GuiaRemisionController extends Controller
 
         if (!$venta) {
             throw ValidationException::withMessages([
-                'venta_id' => ['La factura relacionada no existe.'],
+                'venta_id' => ['El comprobante relacionado no existe.'],
             ]);
         }
 
         if ($venta->estado_envio !== 'aceptado') {
             throw ValidationException::withMessages([
-                'venta_id' => ['Solo puedes relacionar facturas aceptadas por SUNAT.'],
+                'venta_id' => ['Solo puedes relacionar comprobantes aceptados por SUNAT.'],
             ]);
         }
 
@@ -215,6 +226,173 @@ class GuiaRemisionController extends Controller
             'success' => true,
             'data' => $venta,
         ]);
+    }
+
+    public function remitentesRelacionados(Request $request)
+    {
+        $search = trim((string) $request->query('search', ''));
+
+        $query = GuiaRemision::query()
+            ->where('tipo_documento', '09')
+            ->orderByDesc('id')
+            ->select([
+                'id',
+                'numero_guia',
+                'fecha_emision',
+                'fecha_traslado',
+                'destinatario_razon_social',
+                'destinatario_num_doc',
+                'estado_envio',
+            ]);
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('numero_guia', 'like', "%{$search}%")
+                    ->orWhere('destinatario_razon_social', 'like', "%{$search}%")
+                    ->orWhere('destinatario_num_doc', 'like', "%{$search}%");
+            });
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $query->limit(20)->get(),
+        ]);
+    }
+
+    public function remitenteRelacionado(int $id)
+    {
+        $guia = GuiaRemision::query()
+            ->with([
+                'detalles:id,guia_remision_id,tipo_item,item_id,codigo,descripcion,unidad,cantidad',
+            ])
+            ->select([
+                'id',
+                'tipo_documento',
+                'numero_guia',
+                'fecha_emision',
+                'fecha_traslado',
+                'destinatario_razon_social',
+                'destinatario_num_doc',
+                'estado_envio',
+            ])
+            ->find($id);
+
+        if (!$guia) {
+            throw ValidationException::withMessages([
+                'guia_remitente_id' => ['La guia remitente no existe.'],
+            ]);
+        }
+
+        if ((string) $guia->tipo_documento !== '09') {
+            throw ValidationException::withMessages([
+                'guia_remitente_id' => ['La guia relacionada debe ser tipo 09 (remitente).'],
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $guia,
+        ]);
+    }
+
+    public function clientesRelacionados(Request $request)
+    {
+        $search = trim((string) $request->query('search', ''));
+
+        $query = Cliente::query()
+            ->where('estado', true)
+            ->orderByDesc('id')
+            ->select([
+                'id',
+                'tipo_doc',
+                'num_doc',
+                'razon_social',
+                'direccion',
+                'email',
+                'telefono',
+            ]);
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('num_doc', 'like', "%{$search}%")
+                    ->orWhere('razon_social', 'like', "%{$search}%");
+            });
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $query->limit(20)->get(),
+        ]);
+    }
+
+    public function clienteRelacionado(int $id)
+    {
+        $cliente = Cliente::query()
+            ->where('estado', true)
+            ->find($id);
+
+        if (!$cliente) {
+            throw ValidationException::withMessages([
+                'cliente' => ['Cliente no encontrado.'],
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $cliente,
+        ]);
+    }
+
+    public function registrarClienteRelacionado(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'tipo_doc' => 'required|in:1,6',
+            'num_doc' => 'required|numeric|unique:clientes,num_doc',
+            'razon_social' => 'required|string|max:255',
+            'direccion' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'telefono' => 'nullable|string|max:20',
+        ], [
+            'tipo_doc.required' => 'El tipo de documento del cliente es obligatorio.',
+            'tipo_doc.in' => 'Para registro rapido solo se permite DNI o RUC.',
+            'num_doc.required' => 'El numero de documento es obligatorio.',
+            'num_doc.numeric' => 'El numero de documento debe ser numerico.',
+            'num_doc.unique' => 'El numero de documento ya esta registrado.',
+            'razon_social.required' => 'La razon social es obligatoria.',
+        ]);
+
+        $validator->after(function ($validator) use ($request) {
+            $tipo = (string) $request->input('tipo_doc');
+            $num = preg_replace('/\D+/', '', (string) $request->input('num_doc')) ?? '';
+
+            if ($tipo === '1' && strlen($num) !== 8) {
+                $validator->errors()->add('num_doc', 'El DNI debe tener 8 digitos.');
+            }
+
+            if ($tipo === '6' && strlen($num) !== 11) {
+                $validator->errors()->add('num_doc', 'El RUC debe tener 11 digitos.');
+            }
+        });
+
+        if ($validator->fails()) {
+            throw ValidationException::withMessages($validator->errors()->toArray());
+        }
+
+        $cliente = Cliente::create([
+            'tipo_doc' => $request->input('tipo_doc'),
+            'num_doc' => preg_replace('/\D+/', '', (string) $request->input('num_doc')),
+            'razon_social' => trim((string) $request->input('razon_social')),
+            'direccion' => $request->input('direccion'),
+            'email' => $request->input('email'),
+            'telefono' => $request->input('telefono'),
+            'estado' => true,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cliente registrado correctamente',
+            'data' => $cliente,
+        ], 201);
     }
 
     public function update(StoreGuiaRemisionRequest $request, int $id)
@@ -235,8 +413,9 @@ class GuiaRemisionController extends Controller
 
         $payload = $request->validated();
         $detalles = $this->resolveDetallesPayload($payload);
+        $documentoRelacionado = $this->resolveDocumentoRelacionadoPayload($payload);
 
-        DB::transaction(function () use ($guia, $payload, $detalles) {
+        DB::transaction(function () use ($guia, $payload, $detalles, $documentoRelacionado) {
             $guia->update([
                 'tipo_documento' => $payload['tipo_documento'],
                 'fecha_emision' => $payload['fecha_emision'],
@@ -266,6 +445,10 @@ class GuiaRemisionController extends Controller
                 'vehiculo_placa' => data_get($payload, 'vehiculo.placa'),
                 'vehiculo_secundario_placa' => data_get($payload, 'vehiculo.secundario_placa'),
                 'venta_id' => $payload['venta_id'] ?? null,
+                'guia_remitente_id' => $payload['guia_remitente_id'] ?? null,
+                'documento_rel_tipo' => $documentoRelacionado['tipo'],
+                'documento_rel_numero' => $documentoRelacionado['numero'],
+                'documento_rel_emisor' => $documentoRelacionado['emisor'],
                 'estado_envio' => 'pendiente',
                 'sunat_enviado' => false,
                 'fecha_envio_sunat' => null,
@@ -297,7 +480,7 @@ class GuiaRemisionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Guia actualizada y reenviada a proceso SUNAT',
-            'data' => $guia->fresh('detalles'),
+            'data' => $guia->fresh(['detalles', 'venta', 'guiaRemitente']),
         ]);
     }
 
@@ -332,24 +515,84 @@ class GuiaRemisionController extends Controller
         }
 
         $ventaId = (int) ($payload['venta_id'] ?? 0);
-        if ($ventaId <= 0) {
+        $venta = $ventaId > 0
+            ? Venta::query()->with('detalles')->find($ventaId)
+            : null;
+
+        if ($venta) {
+            return $venta->detalles->map(function ($detalle) {
+                return [
+                    'tipo_item' => $detalle->tipo_item ?? null,
+                    'item_id' => $detalle->item_id ?? null,
+                    'codigo' => $detalle->codigo_producto ?? null,
+                    'descripcion' => $detalle->descripcion,
+                    'unidad' => $detalle->unidad ?: 'NIU',
+                    'cantidad' => (float) $detalle->cantidad,
+                ];
+            })->values()->all();
+        }
+
+        $guiaRemitenteId = (int) ($payload['guia_remitente_id'] ?? 0);
+        if ($guiaRemitenteId <= 0) {
             return [];
         }
 
-        $venta = Venta::query()->with('detalles')->find($ventaId);
-        if (!$venta) {
+        $guiaRemitente = GuiaRemision::query()->with('detalles')->find($guiaRemitenteId);
+        if (!$guiaRemitente) {
             return [];
         }
 
-        return $venta->detalles->map(function ($detalle) {
+        return $guiaRemitente->detalles->map(function ($detalle) {
             return [
                 'tipo_item' => $detalle->tipo_item ?? null,
                 'item_id' => $detalle->item_id ?? null,
-                'codigo' => $detalle->codigo_producto ?? null,
+                'codigo' => $detalle->codigo ?? null,
                 'descripcion' => $detalle->descripcion,
                 'unidad' => $detalle->unidad ?: 'NIU',
                 'cantidad' => (float) $detalle->cantidad,
             ];
         })->values()->all();
+    }
+
+    protected function resolveDocumentoRelacionadoPayload(array $payload): array
+    {
+        $tipo = trim((string) data_get($payload, 'documento_relacionado.tipo', ''));
+        $numero = trim((string) data_get($payload, 'documento_relacionado.numero', ''));
+        $emisor = trim((string) data_get($payload, 'documento_relacionado.emisor', ''));
+
+        $ventaId = (int) data_get($payload, 'venta_id', 0);
+        if ($ventaId > 0) {
+            $venta = Venta::query()->select(['id', 'tipo_documento', 'numero_comprobante'])->find($ventaId);
+            if ($venta) {
+                return [
+                    'tipo' => (string) $venta->tipo_documento,
+                    'numero' => (string) $venta->numero_comprobante,
+                    'emisor' => $emisor !== '' ? $emisor : (string) config('empresa.ruc', ''),
+                ];
+            }
+        }
+
+        $guiaRemitenteId = (int) data_get($payload, 'guia_remitente_id', 0);
+        if ($guiaRemitenteId > 0) {
+            $guiaRemitente = GuiaRemision::query()
+                ->select(['id', 'tipo_documento', 'numero_guia'])
+                ->find($guiaRemitenteId);
+
+            if ($guiaRemitente && (string) $guiaRemitente->tipo_documento === '09') {
+                return [
+                    'tipo' => '09',
+                    'numero' => (string) $guiaRemitente->numero_guia,
+                    'emisor' => $emisor !== '' ? $emisor : (string) config('empresa.ruc', ''),
+                ];
+            }
+        }
+
+        return [
+            'tipo' => $tipo !== '' ? $tipo : null,
+            'numero' => $numero !== '' ? $numero : null,
+            'emisor' => $emisor !== ''
+                ? $emisor
+                : ($tipo !== '' && $numero !== '' ? (string) config('empresa.ruc', '') : null),
+        ];
     }
 }

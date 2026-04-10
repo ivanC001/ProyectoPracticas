@@ -3,6 +3,13 @@
 @section('contenido')
 @php
     $motivos = config('sunat_guia.motivos_traslado', []);
+    $documentosRelacionados = config('sunat_guia.documentos_relacionados', []);
+    $empresa = config('empresa', []);
+    $empresaGuiaDefaults = [
+        'ubigeo' => (string) data_get($empresa, 'ubigeo', ''),
+        'direccion' => (string) data_get($empresa, 'direccion', ''),
+        'ruc' => (string) data_get($empresa, 'ruc', ''),
+    ];
 @endphp
 <div class="content">
     <div class="container-fluid">
@@ -88,10 +95,14 @@
 @push('scripts')
 <script>
 const GUIA_MOTIVOS = @json($motivos);
+const GUIA_DOCUMENTOS_REL = @json($documentosRelacionados);
+const EMPRESA_GUIA_DEFAULTS = @json($empresaGuiaDefaults);
 let guiaSearch = '';
 let guiaTipo = '';
 let guiaDebounce = null;
 let facturaRelacionadaDebounce = null;
+let clienteDestinatarioDebounce = null;
+let remitenteRelacionadaDebounce = null;
 
 function toLocalDateTimeInput(date) {
     const offset = date.getTimezoneOffset();
@@ -172,8 +183,132 @@ function ocultarResultadosFactura() {
 function limpiarFacturaRelacionada() {
     $('#gr_venta_id').val('');
     $('#gr_factura_search').val('');
-    $('#gr_factura_selected').text('Sin factura relacionada');
+    $('#gr_factura_selected').text('Sin comprobante relacionado');
     ocultarResultadosFactura();
+}
+
+function ocultarResultadosRemitente() {
+    $('#gr_remitente_results').addClass('d-none').empty();
+}
+
+function limpiarRemitenteRelacionado() {
+    $('#gr_guia_remitente_id').val('');
+    $('#gr_remitente_search').val('');
+    $('#gr_remitente_selected').text('Sin guia remitente relacionada');
+    ocultarResultadosRemitente();
+}
+
+function cargarDocumentoRelacionadoDesdeSeleccion(tipo, numero, emisor = '') {
+    const tipoValue = String(tipo || '').trim();
+    if (!tipoValue || !String(numero || '').trim()) return;
+
+    $('#gr_doc_rel_tipo').val(tipoValue);
+    $('#gr_doc_rel_numero').val(String(numero || '').trim());
+    if (String(emisor || '').trim()) {
+        $('#gr_doc_rel_emisor').val(String(emisor || '').trim());
+    } else if (!String($('#gr_doc_rel_emisor').val() || '').trim()) {
+        $('#gr_doc_rel_emisor').val(EMPRESA_GUIA_DEFAULTS.ruc || '');
+    }
+}
+
+function setPartidaEmpresa() {
+    $('#gr_partida_ubigeo').val(EMPRESA_GUIA_DEFAULTS.ubigeo || '');
+    $('#gr_partida_direccion').val(EMPRESA_GUIA_DEFAULTS.direccion || '');
+}
+
+function ocultarResultadosCliente() {
+    $('#gr_cliente_results').addClass('d-none').empty();
+}
+
+function limpiarClienteSeleccionado() {
+    $('#gr_cliente_selected').text('Sin cliente seleccionado');
+}
+
+function renderResultadosClientes(items) {
+    const box = $('#gr_cliente_results');
+    box.empty();
+
+    if (!items.length) {
+        box.append('<div class="list-group-item text-muted small">Sin clientes</div>');
+        box.removeClass('d-none');
+        return;
+    }
+
+    items.forEach(c => {
+        box.append(`
+            <button type="button" class="list-group-item list-group-item-action py-2" onclick="seleccionarClienteDestinatario(${Number(c.id)})">
+                <div><strong>${escapeHtml(c.razon_social || '')}</strong></div>
+                <small class="text-muted">${escapeHtml(c.num_doc || '')}</small>
+            </button>
+        `);
+    });
+
+    box.removeClass('d-none');
+}
+
+async function buscarClientesDestinatario(search) {
+    const term = String(search || '').trim();
+
+    try {
+        const resp = await apiFetch(`/api/guias-remision/clientes?search=${encodeURIComponent(term)}`);
+        renderResultadosClientes(resp.data || []);
+    } catch (err) {
+        ocultarResultadosCliente();
+    }
+}
+
+async function seleccionarClienteDestinatario(id) {
+    try {
+        const resp = await apiFetch(`/api/guias-remision/clientes/${id}`);
+        const c = resp.data;
+
+        $('#gr_dest_tipo_doc').val(String(c.tipo_doc || '6'));
+        $('#gr_dest_num_doc').val(c.num_doc || '');
+        $('#gr_dest_razon_social').val(c.razon_social || '');
+        $('#gr_cliente_search').val(`${c.razon_social || ''} - ${c.num_doc || ''}`);
+        $('#gr_cliente_selected').text(`Cliente seleccionado: ${c.razon_social || ''}`);
+        ocultarResultadosCliente();
+    } catch (err) {
+        Swal.fire('Error', err.message || 'No se pudo cargar el cliente', 'error');
+    }
+}
+
+async function registrarNuevoClienteDesdeGuia() {
+    const tipoDoc = String($('#gr_dest_tipo_doc').val() || '').trim();
+    const numDoc = String($('#gr_dest_num_doc').val() || '').trim();
+    const razon = String($('#gr_dest_razon_social').val() || '').trim();
+
+    if (!['1', '6'].includes(tipoDoc)) {
+        Swal.fire('Atencion', 'Para registrar cliente nuevo desde guia, usa DNI o RUC.', 'warning');
+        return;
+    }
+
+    if (!numDoc || !razon) {
+        Swal.fire('Atencion', 'Completa tipo doc, numero y razon social del destinatario.', 'warning');
+        return;
+    }
+
+    const direccion = String($('#gr_llegada_direccion').val() || '').trim();
+
+    try {
+        const resp = await apiFetch('/api/guias-remision/clientes', {
+            method: 'POST',
+            body: JSON.stringify({
+                tipo_doc: tipoDoc,
+                num_doc: numDoc,
+                razon_social: razon,
+                direccion: direccion || null,
+            }),
+        });
+
+        $('#gr_cliente_selected').text(`Cliente registrado: ${resp.data?.razon_social || razon}`);
+        Swal.fire('OK', resp.message || 'Cliente registrado correctamente', 'success');
+    } catch (err) {
+        if (err?.errors?.num_doc?.[0]?.toLowerCase?.().includes('registrado')) {
+            $('#gr_cliente_selected').text('Cliente ya existente, usa el buscador para seleccionarlo.');
+        }
+        Swal.fire('Error', err.message || 'No se pudo registrar el cliente', 'error');
+    }
 }
 
 function renderResultadosFacturas(items) {
@@ -214,16 +349,25 @@ async function seleccionarFacturaRelacionada(id) {
     try {
         const resp = await apiFetch(`/api/guias-remision/facturas/${id}`);
         const venta = resp.data;
+        const tipoComprobante = String(venta.tipo_documento || '') === '03' ? 'Boleta' : 'Factura';
 
         $('#gr_venta_id').val(venta.id);
         $('#gr_factura_search').val(`${venta.numero_comprobante} - ${venta.nombre_cliente || ''}`);
-        $('#gr_factura_selected').text(`Factura relacionada: ${venta.numero_comprobante}`);
+        $('#gr_factura_selected').text(`${tipoComprobante} relacionada: ${venta.numero_comprobante}`);
+        limpiarRemitenteRelacionado();
         ocultarResultadosFactura();
+        cargarDocumentoRelacionadoDesdeSeleccion(
+            venta.tipo_documento || '',
+            venta.numero_comprobante || '',
+            EMPRESA_GUIA_DEFAULTS.ruc || ''
+        );
 
         // Autocompletar destinatario
         $('#gr_dest_tipo_doc').val(venta.tipo_documento_cliente || '6');
         $('#gr_dest_num_doc').val(venta.numero_documento_cliente || '');
         $('#gr_dest_razon_social').val(venta.nombre_cliente || '');
+        $('#gr_cliente_search').val(`${venta.nombre_cliente || ''} - ${venta.numero_documento_cliente || ''}`);
+        $('#gr_cliente_selected').text(`Cliente desde factura: ${venta.nombre_cliente || ''}`);
 
         // Cargar detalle desde la factura relacionada
         $('#gr_detalles_body').empty();
@@ -242,6 +386,80 @@ async function seleccionarFacturaRelacionada(id) {
         }
     } catch (err) {
         Swal.fire('Error', err.message || 'No se pudo cargar la factura relacionada', 'error');
+    }
+}
+
+function renderResultadosRemitentes(items) {
+    const box = $('#gr_remitente_results');
+    box.empty();
+
+    if (!items.length) {
+        box.append('<div class="list-group-item text-muted small">Sin resultados</div>');
+        box.removeClass('d-none');
+        return;
+    }
+
+    items.forEach(g => {
+        box.append(`
+            <button type="button" class="list-group-item list-group-item-action py-2" onclick="seleccionarRemitenteRelacionado(${Number(g.id)})">
+                <div><strong>${escapeHtml(g.numero_guia || '')}</strong> - ${escapeHtml(g.destinatario_razon_social || '')}</div>
+                <small class="text-muted">${escapeHtml(g.destinatario_num_doc || '')}</small>
+            </button>
+        `);
+    });
+
+    box.removeClass('d-none');
+}
+
+async function buscarRemitentesRelacionados(search) {
+    const query = String(search || '').trim();
+
+    try {
+        const resp = await apiFetch(`/api/guias-remision/remitentes?search=${encodeURIComponent(query)}`);
+        renderResultadosRemitentes(resp.data || []);
+    } catch (err) {
+        ocultarResultadosRemitente();
+    }
+}
+
+async function seleccionarRemitenteRelacionado(id) {
+    try {
+        const resp = await apiFetch(`/api/guias-remision/remitentes/${id}`);
+        const guiaRemitente = resp.data;
+
+        $('#gr_guia_remitente_id').val(guiaRemitente.id);
+        $('#gr_remitente_search').val(`${guiaRemitente.numero_guia} - ${guiaRemitente.destinatario_razon_social || ''}`);
+        $('#gr_remitente_selected').text(`Guia remitente relacionada: ${guiaRemitente.numero_guia}`);
+        limpiarFacturaRelacionada();
+        ocultarResultadosRemitente();
+        cargarDocumentoRelacionadoDesdeSeleccion(
+            '09',
+            guiaRemitente.numero_guia || '',
+            EMPRESA_GUIA_DEFAULTS.ruc || ''
+        );
+
+        $('#gr_dest_tipo_doc').val('6');
+        $('#gr_dest_num_doc').val(guiaRemitente.destinatario_num_doc || '');
+        $('#gr_dest_razon_social').val(guiaRemitente.destinatario_razon_social || '');
+        $('#gr_cliente_search').val(`${guiaRemitente.destinatario_razon_social || ''} - ${guiaRemitente.destinatario_num_doc || ''}`);
+        $('#gr_cliente_selected').text(`Cliente desde guia remitente: ${guiaRemitente.destinatario_razon_social || ''}`);
+
+        $('#gr_detalles_body').empty();
+        (guiaRemitente.detalles || []).forEach(d => {
+            agregarFilaDetalleGuia({
+                tipo_item: d.tipo_item || null,
+                codigo: d.codigo || null,
+                descripcion: d.descripcion || '',
+                unidad: d.unidad || 'NIU',
+                cantidad: Number(d.cantidad || 0) || 1,
+            });
+        });
+
+        if (!guiaRemitente.detalles || !guiaRemitente.detalles.length) {
+            agregarFilaDetalleGuia();
+        }
+    } catch (err) {
+        Swal.fire('Error', err.message || 'No se pudo cargar la guia remitente', 'error');
     }
 }
 
@@ -268,7 +486,9 @@ function showGuiaErrors(err) {
         'destinatario.tipo_doc': 'gr_dest_tipo_doc',
         'destinatario.num_doc': 'gr_dest_num_doc',
         'destinatario.razon_social': 'gr_dest_razon_social',
+        'partida.ubigeo': 'gr_partida_ubigeo',
         'partida.direccion': 'gr_partida_direccion',
+        'llegada.ubigeo': 'gr_llegada_ubigeo',
         'llegada.direccion': 'gr_llegada_direccion',
         'transportista.num_doc': 'gr_trans_num_doc',
         'transportista.razon_social': 'gr_trans_razon_social',
@@ -278,6 +498,10 @@ function showGuiaErrors(err) {
         'conductor.licencia': 'gr_cond_licencia',
         'vehiculo.placa': 'gr_veh_placa',
         'venta_id': 'gr_factura_search',
+        'guia_remitente_id': 'gr_remitente_search',
+        'documento_relacionado.tipo': 'gr_doc_rel_tipo',
+        'documento_relacionado.numero': 'gr_doc_rel_numero',
+        'documento_relacionado.emisor': 'gr_doc_rel_emisor',
         'detalles': 'gr_detalles_body',
     };
 
@@ -338,6 +562,17 @@ function readDetallesGuia() {
 }
 
 function construirPayloadGuia() {
+    const docRelTipo = String($('#gr_doc_rel_tipo').val() || '').trim();
+    const docRelNumero = String($('#gr_doc_rel_numero').val() || '').trim();
+    const docRelEmisor = String($('#gr_doc_rel_emisor').val() || '').trim();
+    const payloadDocumentoRelacionado = (docRelTipo || docRelNumero || docRelEmisor)
+        ? {
+            tipo: docRelTipo || null,
+            numero: docRelNumero || null,
+            emisor: docRelEmisor || null,
+        }
+        : null;
+
     return {
         tipo_documento: $('#gr_tipo_documento').val(),
         fecha_emision: ($('#gr_fecha_emision').val() || '').replace('T', ' ') + ':00',
@@ -350,6 +585,8 @@ function construirPayloadGuia() {
         numero_bultos: $('#gr_numero_bultos').val() ? Number($('#gr_numero_bultos').val()) : null,
         observacion: ($('#gr_observacion').val() || '').trim() || null,
         venta_id: $('#gr_venta_id').val() ? Number($('#gr_venta_id').val()) : null,
+        guia_remitente_id: $('#gr_guia_remitente_id').val() ? Number($('#gr_guia_remitente_id').val()) : null,
+        documento_relacionado: payloadDocumentoRelacionado,
         destinatario: {
             tipo_doc: $('#gr_dest_tipo_doc').val(),
             num_doc: $('#gr_dest_num_doc').val(),
@@ -389,7 +626,14 @@ function prepararNuevaGuia() {
     $('#guia_id').val('');
     $('#formGuiaRemision')[0].reset();
     limpiarFacturaRelacionada();
+    limpiarRemitenteRelacionado();
+    $('#gr_cliente_search').val('');
+    limpiarClienteSeleccionado();
     setFechasGuia();
+    setPartidaEmpresa();
+    $('#gr_doc_rel_tipo').val('');
+    $('#gr_doc_rel_numero').val('');
+    $('#gr_doc_rel_emisor').val(EMPRESA_GUIA_DEFAULTS.ruc || '');
     $('#gr_unidad_peso').val('KGM');
     $('#gr_peso_total').val('1.000');
     $('#gr_detalles_body').empty();
@@ -445,6 +689,7 @@ async function cargarGuias(page = 1) {
             const canPdf = g.estado_envio === 'aceptado';
             const canXml = !!g.archivo_xml;
             const reason = (g.mensaje_error || g.descripcion_respuesta_sunat || '').trim();
+            const docRel = String(g.documento_rel_numero || '').trim();
             tbody.append(`
                 <tr>
                     <td class="text-center">
@@ -471,7 +716,7 @@ async function cargarGuias(page = 1) {
                         </button>
                     </td>
                     <td>${g.id}</td>
-                    <td><strong>${g.numero_guia}</strong></td>
+                    <td><strong>${g.numero_guia}</strong>${docRel ? `<br><small class="text-muted">Doc rel: ${escapeHtml(docRel)}</small>` : ''}</td>
                     <td>${tipo}</td>
                     <td>${g.destinatario_razon_social}<br><small>${g.destinatario_num_doc}</small></td>
                     <td>${formatDateOnly(g.fecha_traslado)}</td>
@@ -516,15 +761,35 @@ async function editarGuia(id) {
         $('#gr_fecha_emision').val(String(g.fecha_emision || '').slice(0, 16).replace(' ', 'T'));
         $('#gr_fecha_traslado').val(String(g.fecha_traslado || '').slice(0, 10));
         $('#gr_venta_id').val(g.venta_id || '');
+        $('#gr_guia_remitente_id').val(g.guia_remitente_id || '');
+        limpiarFacturaRelacionada();
+        limpiarRemitenteRelacionado();
+
         if (g.venta_id && g.venta) {
+            const tipoComprobante = String(g.venta.tipo_documento || '') === '03' ? 'Boleta' : 'Factura';
+            $('#gr_venta_id').val(g.venta.id || g.venta_id);
             $('#gr_factura_search').val(`${g.venta.numero_comprobante} - ${g.venta.nombre_cliente || ''}`);
-            $('#gr_factura_selected').text(`Factura relacionada: ${g.venta.numero_comprobante}`);
+            $('#gr_factura_selected').text(`${tipoComprobante} relacionada: ${g.venta.numero_comprobante}`);
         } else if (g.venta_id) {
-            $('#gr_factura_search').val(`Venta #${g.venta_id}`);
-            $('#gr_factura_selected').text(`Factura relacionada: Venta #${g.venta_id}`);
-        } else {
-            limpiarFacturaRelacionada();
+            $('#gr_venta_id').val(g.venta_id);
+            $('#gr_factura_search').val(`Comprobante #${g.venta_id}`);
+            $('#gr_factura_selected').text(`Comprobante relacionado: #${g.venta_id}`);
         }
+
+        if (g.guia_remitente_id && g.guia_remitente) {
+            $('#gr_guia_remitente_id').val(g.guia_remitente.id || g.guia_remitente_id);
+            $('#gr_remitente_search').val(`${g.guia_remitente.numero_guia} - ${g.guia_remitente.destinatario_razon_social || ''}`);
+            $('#gr_remitente_selected').text(`Guia remitente relacionada: ${g.guia_remitente.numero_guia}`);
+        } else if (g.guia_remitente_id) {
+            $('#gr_guia_remitente_id').val(g.guia_remitente_id);
+            $('#gr_remitente_search').val(`Guia #${g.guia_remitente_id}`);
+            $('#gr_remitente_selected').text(`Guia remitente relacionada: #${g.guia_remitente_id}`);
+        }
+
+        $('#gr_doc_rel_tipo').val(g.documento_rel_tipo || '');
+        $('#gr_doc_rel_numero').val(g.documento_rel_numero || '');
+        $('#gr_doc_rel_emisor').val(g.documento_rel_emisor || EMPRESA_GUIA_DEFAULTS.ruc || '');
+
         $('#gr_motivo_codigo').val(g.motivo_traslado_codigo);
         $('#gr_motivo_descripcion').val(g.motivo_traslado_descripcion || '');
         $('#gr_modalidad').val(g.modalidad_transporte);
@@ -536,11 +801,16 @@ async function editarGuia(id) {
         $('#gr_dest_tipo_doc').val(g.destinatario_tipo_doc || '6');
         $('#gr_dest_num_doc').val(g.destinatario_num_doc || '');
         $('#gr_dest_razon_social').val(g.destinatario_razon_social || '');
+        $('#gr_cliente_search').val(`${g.destinatario_razon_social || ''} - ${g.destinatario_num_doc || ''}`);
+        $('#gr_cliente_selected').text(g.destinatario_razon_social ? `Cliente en guia: ${g.destinatario_razon_social}` : 'Sin cliente seleccionado');
 
         $('#gr_partida_ubigeo').val(g.partida_ubigeo || '');
         $('#gr_partida_direccion').val(g.partida_direccion || '');
         $('#gr_llegada_ubigeo').val(g.llegada_ubigeo || '');
         $('#gr_llegada_direccion').val(g.llegada_direccion || '');
+        if (!$('#gr_partida_ubigeo').val() || !$('#gr_partida_direccion').val()) {
+            setPartidaEmpresa();
+        }
 
         $('#gr_trans_tipo_doc').val(g.transportista_tipo_doc || '6');
         $('#gr_trans_num_doc').val(g.transportista_num_doc || '');
@@ -581,6 +851,7 @@ async function verGuia(id) {
                     <p class="mb-1"><strong>Destinatario:</strong> ${g.destinatario_razon_social}</p>
                     <p class="mb-1"><strong>Ruta:</strong> ${g.partida_direccion} -> ${g.llegada_direccion}</p>
                     <p class="mb-1"><strong>Fecha traslado:</strong> ${formatDateOnly(g.fecha_traslado)}</p>
+                    <p class="mb-1"><strong>Documento relacionado:</strong> ${escapeHtml(g.documento_rel_tipo || '-')}${g.documento_rel_numero ? ` - ${escapeHtml(g.documento_rel_numero)}` : ''}</p>
                     <p class="mb-2"><strong>Estado:</strong> ${g.estado_envio}</p>
                     <strong>Items:</strong>
                     <ul class="mt-1">${list || '<li>Sin items</li>'}</ul>
@@ -635,8 +906,11 @@ $(document).ready(function () {
     $('#gr_modalidad, #gr_tipo_documento').on('change', toggleBloquesTransporte);
     $('#gr_factura_search').on('input', function () {
         $('#gr_venta_id').val('');
-        $('#gr_factura_selected').text('Sin factura relacionada');
+        $('#gr_factura_selected').text('Sin comprobante relacionado');
         const term = $(this).val();
+        if (term.trim() !== '') {
+            limpiarRemitenteRelacionado();
+        }
         clearTimeout(facturaRelacionadaDebounce);
         facturaRelacionadaDebounce = setTimeout(() => buscarFacturasRelacionadas(term), 250);
     });
@@ -644,10 +918,38 @@ $(document).ready(function () {
     $('#gr_factura_search').on('focus', function () {
         buscarFacturasRelacionadas($(this).val());
     });
+    $('#gr_remitente_search').on('input', function () {
+        $('#gr_guia_remitente_id').val('');
+        $('#gr_remitente_selected').text('Sin guia remitente relacionada');
+        const term = $(this).val();
+        if (term.trim() !== '') {
+            limpiarFacturaRelacionada();
+        }
+        clearTimeout(remitenteRelacionadaDebounce);
+        remitenteRelacionadaDebounce = setTimeout(() => buscarRemitentesRelacionados(term), 250);
+    });
+
+    $('#gr_remitente_search').on('focus', function () {
+        buscarRemitentesRelacionados($(this).val());
+    });
+    $('#gr_cliente_search').on('input', function () {
+        clearTimeout(clienteDestinatarioDebounce);
+        const term = $(this).val();
+        clienteDestinatarioDebounce = setTimeout(() => buscarClientesDestinatario(term), 250);
+    });
+    $('#gr_cliente_search').on('focus', function () {
+        buscarClientesDestinatario($(this).val());
+    });
 
     $(document).on('click', function (event) {
         if (!$(event.target).closest('#gr_factura_search, #gr_factura_results').length) {
             ocultarResultadosFactura();
+        }
+        if (!$(event.target).closest('#gr_cliente_search, #gr_cliente_results').length) {
+            ocultarResultadosCliente();
+        }
+        if (!$(event.target).closest('#gr_remitente_search, #gr_remitente_results').length) {
+            ocultarResultadosRemitente();
         }
     });
 
