@@ -14,10 +14,11 @@
                         <i class="fas fa-users text-primary"></i> Gestión de Clientes
                     </h3>
                     <button class="btn btn-success"
-                        data-toggle="modal"
-                        data-target="#modalRegistroCliente">
-                    <i class="fas fa-plus-circle"></i> Nuevo Cliente
-                </button>
+                            data-toggle="modal"
+                            data-target="#modalRegistroCliente">
+                        <i class="fas fa-plus-circle"></i> Nuevo Cliente
+                    </button>
+                </div>
             </div>
 
             <!-- BODY -->

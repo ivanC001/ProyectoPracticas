@@ -383,7 +383,7 @@
     </div>
 
     <script src="{{ asset('assets/plugins/jquery/jquery.min.js') }}"></script>
-    <script src="{{ asset('assets/js/jwtapi_v2.js') }}"></script>
+    <script src="{{ asset('assets/js/jwtapi_v2.js') }}?v={{ filemtime(public_path('assets/js/jwtapi_v2.js')) }}"></script>
     <script src="{{ asset('assets/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('assets/js/adminlte.min.js') }}"></script>
     <script src="{{ asset('assets/js/jquery.dataTables.min.js') }}"></script>

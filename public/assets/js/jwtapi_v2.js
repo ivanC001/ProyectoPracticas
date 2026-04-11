@@ -79,6 +79,12 @@
             return;
         }
 
+        // Do not lock modal trigger buttons; Bootstrap needs the click flow intact.
+        const opensModal = button.matches('[data-toggle="modal"], [data-bs-toggle="modal"]');
+        if (opensModal) {
+            return;
+        }
+
         const type = String(button.getAttribute('type') || 'button').toLowerCase();
         const shouldProtect =
             button.dataset.preventDouble !== undefined ||
@@ -97,7 +103,11 @@
             return;
         }
 
-        lockButtonTemporarily(button, 1400);
+        // Apply the lock after the current click flow finishes.
+        // This avoids interfering with Bootstrap modal/data-api handlers.
+        setTimeout(function () {
+            lockButtonTemporarily(button, 1400);
+        }, 0);
     }, true);
 
     if (token) {
