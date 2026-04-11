@@ -1,6 +1,7 @@
 <?php
 namespace App\Models\VentasModel;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -36,6 +37,7 @@ class Venta extends Model
         'tipo_documento_cliente',
         'numero_documento_cliente',
         'nombre_cliente',
+        'emisor_user_id',
 
         // 💰 Totales
         'total_venta',
@@ -77,6 +79,11 @@ class Venta extends Model
     public function detalles()
     {
         return $this->hasMany(DetalleVenta::class, 'venta_id');
+    }
+
+    public function emisor()
+    {
+        return $this->belongsTo(User::class, 'emisor_user_id');
     }
 
     /*

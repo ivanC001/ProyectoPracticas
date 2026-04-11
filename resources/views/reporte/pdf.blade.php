@@ -17,6 +17,17 @@
         .table th { background: #e0ecff; text-align: left; }
         .text-right { text-align: right; }
         .totals td { font-weight: 700; background: #f8fafc; }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-ok { background: #dcfce7; color: #166534; }
+        .badge-bad { background: #fee2e2; color: #991b1b; }
+        .badge-neutral { background: #e2e8f0; color: #334155; }
     </style>
 </head>
 <body>
@@ -47,6 +58,12 @@
     <div class="section-title">Resumen economico</div>
     <table class="table">
         <tr class="totals">
+            <td>Ingresos del viaje</td>
+            <td class="text-right">S/ {{ number_format((float) $ruta['totales']['ingresos'], 2) }}</td>
+            <td>Utilidad real</td>
+            <td class="text-right">S/ {{ number_format((float) $ruta['totales']['utilidad'], 2) }}</td>
+        </tr>
+        <tr class="totals">
             <td>Total viaticos</td>
             <td class="text-right">S/ {{ number_format((float) $ruta['totales']['viaticos'], 2) }}</td>
             <td>Total combustible</td>
@@ -58,6 +75,74 @@
             <td>Total gastos</td>
             <td class="text-right">S/ {{ number_format((float) $ruta['totales']['gastos'], 2) }}</td>
         </tr>
+    </table>
+
+    <div class="section-title">Indicadores de rentabilidad</div>
+    <table class="table">
+        <tr>
+            <td><strong>Margen del viaje</strong></td>
+            <td class="text-right">
+                @if(is_null($ruta['analisis']['margen_pct']))
+                    N/D
+                @else
+                    {{ number_format((float) $ruta['analisis']['margen_pct'], 2) }}%
+                @endif
+            </td>
+            <td><strong>Gasto vs ingreso</strong></td>
+            <td class="text-right">
+                @if(is_null($ruta['analisis']['gasto_vs_ingreso_pct']))
+                    N/D
+                @else
+                    {{ number_format((float) $ruta['analisis']['gasto_vs_ingreso_pct'], 2) }}%
+                @endif
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Ganancia registrada</strong></td>
+            <td class="text-right">S/ {{ number_format((float) $ruta['analisis']['utilidad_registrada'], 2) }}</td>
+            <td><strong>Desviacion</strong></td>
+            <td class="text-right">S/ {{ number_format((float) $ruta['analisis']['desviacion_utilidad'], 2) }}</td>
+        </tr>
+        <tr>
+            <td><strong>Caja chica</strong></td>
+            <td class="text-right">S/ {{ number_format((float) $ruta['analisis']['caja_chica'], 2) }}</td>
+            <td><strong>Saldo caja chica</strong></td>
+            <td class="text-right">S/ {{ number_format((float) $ruta['analisis']['saldo_caja_chica'], 2) }}</td>
+        </tr>
+        <tr>
+            <td><strong>Clasificacion</strong></td>
+            <td colspan="3">
+                @php
+                    $utilidad = (float) $ruta['totales']['utilidad'];
+                    $badgeClass = $utilidad > 0 ? 'badge-ok' : ($utilidad < 0 ? 'badge-bad' : 'badge-neutral');
+                @endphp
+                <span class="badge {{ $badgeClass }}">{{ $ruta['analisis']['clasificacion'] ?? 'N/D' }}</span>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">Viaticos por concepto</div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Concepto</th>
+                <th class="text-right">Cantidad</th>
+                <th class="text-right">Promedio</th>
+                <th class="text-right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($ruta['viaticos_resumen'] as $item)
+                <tr>
+                    <td>{{ $item['servicio'] ?: '-' }}</td>
+                    <td class="text-right">{{ number_format((float) $item['cantidad'], 0) }}</td>
+                    <td class="text-right">S/ {{ number_format((float) $item['promedio'], 2) }}</td>
+                    <td class="text-right">S/ {{ number_format((float) $item['total'], 2) }}</td>
+                </tr>
+            @empty
+                <tr><td colspan="4">No hay viaticos para consolidar.</td></tr>
+            @endforelse
+        </tbody>
     </table>
 
     <div class="section-title">Viaticos</div>

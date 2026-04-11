@@ -43,7 +43,7 @@
                                 <th width="20%">Datos del vehículo</th>
                                 <th width="13%">Gastos de viaje</th>
                                 <th width="8%">Estado</th>
-                                <th width="20%">Costo de Viaje</th>
+                                <th width="20%">Resultado del Viaje</th>
                                 <th width="8%">Reporte</th>
                             </tr>
                         </thead>
@@ -176,8 +176,16 @@ function fetchRutas(page = 1){
 
                     <td>
                         <div class="border rounded p-2 bg-light">
-                            <strong>Pago:</strong> S/ ${rutas.pago_viaje ?? '0.00'}<br>
-                            <strong>Caja:</strong> S/ ${rutas.caja_chica ?? '0.00'}
+                            <strong>Ingreso:</strong> S/ ${(Number(rutas.resumen_financiero?.ingresos || 0)).toFixed(2)}<br>
+                            <strong>Gasto:</strong> S/ ${(Number(rutas.resumen_financiero?.gastos || 0)).toFixed(2)}<br>
+                            <strong class="${Number(rutas.resumen_financiero?.utilidad || 0) >= 0 ? 'text-success' : 'text-danger'}">
+                                Utilidad: S/ ${(Number(rutas.resumen_financiero?.utilidad || 0)).toFixed(2)}
+                            </strong><br>
+                            <small class="text-muted">Margen: ${
+                                rutas.resumen_financiero?.margen_pct === null || rutas.resumen_financiero?.margen_pct === undefined
+                                    ? 'N/D'
+                                    : `${Number(rutas.resumen_financiero.margen_pct).toFixed(2)}%`
+                            }</small>
                         </div>
                     </td>
 

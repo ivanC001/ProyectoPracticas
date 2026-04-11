@@ -7,9 +7,13 @@ use App\Http\Controllers\Factura\NotaCreditoController;
 use App\Http\Controllers\ReporteRutaController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('Inicio.welcome');
-})->name('');
+Route::get('/', fn () => view('Inicio.public_inicio'))->name('public.inicio');
+Route::get('/publico/servicios', fn () => view('Inicio.public_servicios'))->name('public.servicios');
+Route::get('/publico/transporte', fn () => view('Inicio.public_transporte'))->name('public.transporte');
+Route::get('/publico/productos', fn () => view('Inicio.public_productos'))->name('public.productos');
+Route::get('/publico/trabajos', fn () => view('Inicio.public_trabajos'))->name('public.trabajos');
+Route::get('/publico/cobertura', fn () => view('Inicio.public_cobertura'))->name('public.cobertura');
+Route::get('/contacto', fn () => view('Inicio.contacto_pagina'))->name('public.contacto');
 
 Route::get('/dashboard', function () {
     return view('dashboard');

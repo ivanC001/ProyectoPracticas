@@ -9,7 +9,7 @@ class VentasController extends Controller
 {
     public function listaFacturas(Request $request)
     {
-        $query = Venta::query();
+        $query = Venta::query()->with('emisor:id,name,email');
 
         // 🔍 BUSCADOR
         if ($request->filled('search')) {
@@ -46,6 +46,7 @@ class VentasController extends Controller
                 'correlativo',
                 'nombre_cliente',
                 'numero_documento_cliente',
+                'emisor_user_id',
                 'fecha_emision',
                 'moneda',
                 'total_venta',

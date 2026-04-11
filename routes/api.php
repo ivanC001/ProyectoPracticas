@@ -35,24 +35,15 @@ Route::middleware(['auth:api'])->group(function () {
     Route::middleware('role:admin')->apiResource('usuarios', UserController::class);
 
     Route::middleware('role:admin,operaciones')->group(function () {
-        Route::prefix('conductores')->group(function () {
-            Route::get('/', [ConductorController::class, 'index']);
-            Route::get('/eliminados', [ConductorController::class, 'deleted']);
-            Route::post('/', [ConductorController::class, 'store']);
-            Route::get('/{id}', [ConductorController::class, 'show']);
-            Route::put('/{id}', [ConductorController::class, 'update']);
-            Route::delete('/{id}', [ConductorController::class, 'destroy']);
-            Route::patch('/{id}/restore', [ConductorController::class, 'restore']);
-        });
+        Route::get('conductores/eliminados', [ConductorController::class, 'deleted']);
+        Route::apiResource('conductores', ConductorController::class)->parameters(['conductores' => 'id']);
+        Route::patch('conductores/{id}/restore', [ConductorController::class, 'restore']);
+
+        Route::get('camiones/deleted', [CamionController::class, 'deleted']);
+        Route::apiResource('camiones', CamionController::class)->parameters(['camiones' => 'id']);
+        Route::put('camiones/{id}/restore', [CamionController::class, 'restore']);
 
         Route::prefix('camiones')->group(function () {
-            Route::get('/', [CamionController::class, 'index']);
-            Route::get('/deleted', [CamionController::class, 'deleted']);
-            Route::post('/', [CamionController::class, 'store']);
-            Route::get('/{id}', [CamionController::class, 'show']);
-            Route::put('/{id}', [CamionController::class, 'update']);
-            Route::delete('/{id}', [CamionController::class, 'destroy']);
-            Route::put('/{id}/restore', [CamionController::class, 'restore']);
             Route::get('/{camion}/seguros', [CamionSeguroController::class, 'index']);
             Route::post('/{camion}/seguros', [CamionSeguroController::class, 'store']);
             Route::get('/{camion}/seguros/{seguro}', [CamionSeguroController::class, 'show']);
@@ -60,29 +51,9 @@ Route::middleware(['auth:api'])->group(function () {
             Route::delete('/{camion}/seguros/{seguro}', [CamionSeguroController::class, 'destroy']);
         });
 
-        Route::prefix('rutas')->group(function () {
-            Route::get('/', [RutaController::class, 'index']);
-            Route::post('/', [RutaController::class, 'store']);
-            Route::get('/{id}', [RutaController::class, 'show']);
-            Route::put('/{id}', [RutaController::class, 'update']);
-            Route::delete('/{id}', [RutaController::class, 'destroy']);
-        });
-
-        Route::prefix('viaticos')->group(function () {
-            Route::get('/', [ViaticoController::class, 'index']);
-            Route::post('/', [ViaticoController::class, 'store']);
-            Route::get('/{id}', [ViaticoController::class, 'show']);
-            Route::put('/{id}', [ViaticoController::class, 'update']);
-            Route::delete('/{id}', [ViaticoController::class, 'destroy']);
-        });
-
-        Route::prefix('combustibles')->group(function () {
-            Route::get('/', [CombustibleController::class, 'index']);
-            Route::post('/', [CombustibleController::class, 'store']);
-            Route::get('/{id}', [CombustibleController::class, 'show']);
-            Route::put('/{id}', [CombustibleController::class, 'update']);
-            Route::delete('/{id}', [CombustibleController::class, 'destroy']);
-        });
+        Route::apiResource('rutas', RutaController::class)->parameters(['rutas' => 'id']);
+        Route::apiResource('viaticos', ViaticoController::class)->parameters(['viaticos' => 'id']);
+        Route::apiResource('combustibles', CombustibleController::class)->parameters(['combustibles' => 'id']);
 
         Route::get('/rutas/{ruta_id}/combustibles', [RutaCombustibleController::class, 'index']);
         Route::post('/rutas/{ruta_id}/combustibles', [RutaCombustibleController::class, 'store']);
@@ -103,11 +74,7 @@ Route::middleware(['auth:api'])->group(function () {
             Route::get('/rutas/{id}', [ReporteRutaController::class, 'show']);
         });
 
-        Route::get('/rutasViaticos', [RutaViaticosController::class, 'index']);
-        Route::post('/rutasViaticos', [RutaViaticosController::class, 'store']);
-        Route::get('/rutasViaticos/{id}', [RutaViaticosController::class, 'show']);
-        Route::put('/rutasViaticos/{id}', [RutaViaticosController::class, 'update']);
-        Route::delete('/rutasViaticos/{id}', [RutaViaticosController::class, 'destroy']);
+        Route::apiResource('rutasViaticos', RutaViaticosController::class)->parameters(['rutasViaticos' => 'id']);
     });
 
     Route::middleware('role:admin,comercial')->group(function () {
@@ -131,8 +98,6 @@ Route::middleware(['auth:api'])->group(function () {
 
     Route::middleware('role:admin,comercial,operaciones')->group(function () {
         Route::prefix('guias-remision')->group(function () {
-            Route::get('/', [GuiaRemisionController::class, 'index']);
-            Route::post('/', [GuiaRemisionController::class, 'store']);
             Route::get('/facturas', [GuiaRemisionController::class, 'facturasRelacionadas']);
             Route::get('/facturas/{id}', [GuiaRemisionController::class, 'facturaRelacionada']);
             Route::get('/remitentes', [GuiaRemisionController::class, 'remitentesRelacionados']);
@@ -140,10 +105,11 @@ Route::middleware(['auth:api'])->group(function () {
             Route::get('/clientes', [GuiaRemisionController::class, 'clientesRelacionados']);
             Route::get('/clientes/{id}', [GuiaRemisionController::class, 'clienteRelacionado']);
             Route::post('/clientes', [GuiaRemisionController::class, 'registrarClienteRelacionado']);
-            Route::get('/{id}', [GuiaRemisionController::class, 'show']);
-            Route::put('/{id}', [GuiaRemisionController::class, 'update']);
-            Route::delete('/{id}', [GuiaRemisionController::class, 'destroy']);
         });
+
+        Route::apiResource('guias-remision', GuiaRemisionController::class)
+            ->only(['index', 'store', 'show'])
+            ->parameters(['guias-remision' => 'id']);
     });
 });
 

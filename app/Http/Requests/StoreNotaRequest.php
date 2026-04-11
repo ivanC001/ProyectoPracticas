@@ -21,6 +21,7 @@ class StoreNotaRequest extends FormRequest
             'tipo_documento' => 'required|in:07,08',
             'codMotivo' => 'required|string|size:2',
             'desMotivo' => 'required|string|max:255',
+            'monto_nota' => 'required|numeric|min:0.01',
         ];
     }
 
@@ -36,6 +37,9 @@ class StoreNotaRequest extends FormRequest
             'codMotivo.size' => 'El codigo de motivo debe tener 2 caracteres.',
             'desMotivo.required' => 'Debe ingresar la descripcion del motivo.',
             'desMotivo.max' => 'La descripcion del motivo es demasiado larga.',
+            'monto_nota.required' => 'Debe ingresar el monto de la nota.',
+            'monto_nota.numeric' => 'El monto de la nota debe ser numerico.',
+            'monto_nota.min' => 'El monto de la nota debe ser mayor a cero.',
         ];
     }
 
@@ -73,6 +77,21 @@ class StoreNotaRequest extends FormRequest
 
             if (!in_array((string) $venta->tipo_documento, ['01', '03'], true)) {
                 $validator->errors()->add('venta_id', 'El comprobante seleccionado no admite nota de credito/debito.');
+            }
+
+            $montoNota = (float) $this->input('monto_nota');
+            $montoVenta = (float) $venta->total_venta;
+
+            if ($montoNota <= 0) {
+                $validator->errors()->add('monto_nota', 'El monto de la nota debe ser mayor a cero.');
+                return;
+            }
+
+            if ($tipoNota === '07' && $montoNota > $montoVenta) {
+                $validator->errors()->add(
+                    'monto_nota',
+                    'En nota de credito, el monto no puede ser mayor al total del comprobante afectado.'
+                );
             }
         });
     }

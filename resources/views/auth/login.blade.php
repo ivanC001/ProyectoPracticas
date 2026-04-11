@@ -401,6 +401,16 @@
 
     document.getElementById(bootstrapMode ? 'bootstrapForm' : 'loginForm').addEventListener('submit', async function (event) {
       event.preventDefault();
+      const submitButton = this.querySelector('button[type="submit"]');
+
+      if (submitButton?.dataset.submitting === '1') {
+        return;
+      }
+
+      if (submitButton) {
+        submitButton.dataset.submitting = '1';
+        submitButton.disabled = true;
+      }
 
       try {
         const payload = Object.fromEntries(new FormData(this).entries());
@@ -426,6 +436,11 @@
           title: 'No se pudo continuar',
           text: error.message || 'Ocurrio un problema al conectar con el servidor.',
         });
+      } finally {
+        if (submitButton) {
+          submitButton.dataset.submitting = '0';
+          submitButton.disabled = false;
+        }
       }
     });
   </script>

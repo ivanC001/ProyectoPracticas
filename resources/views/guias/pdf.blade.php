@@ -56,6 +56,8 @@
         <div class="kv"><strong>Nro bultos:</strong> {{ $guia->numero_bultos ?: '-' }}</div>
         @if($guia->venta)
             <div class="kv"><strong>Comprobante relacionado:</strong> {{ $guia->venta->numero_comprobante }}</div>
+        @elseif($guia->documento_rel_numero)
+            <div class="kv"><strong>Documento relacionado:</strong> {{ $guia->documento_rel_tipo ?: '-' }} - {{ $guia->documento_rel_numero }}</div>
         @endif
     </div>
 
@@ -130,4 +132,3 @@
     </div>
 </body>
 </html>
-

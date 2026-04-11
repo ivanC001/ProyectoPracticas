@@ -6,7 +6,6 @@ use DateTime;
 use Greenter\Model\Client\Client;
 use Greenter\Model\Company\Address;
 use Greenter\Model\Company\Company;
-use Greenter\Model\Despatch\AdditionalDoc;
 use Greenter\Model\Despatch\Despatch;
 use Greenter\Model\Despatch\DespatchDetail;
 use Greenter\Model\Despatch\Direction;
@@ -14,6 +13,7 @@ use Greenter\Model\Despatch\Driver;
 use Greenter\Model\Despatch\Shipment;
 use Greenter\Model\Despatch\Transportist;
 use Greenter\Model\Despatch\Vehicle;
+use Greenter\Model\Sale\Document;
 use Greenter\Model\Sale\Cuota;
 use Greenter\Model\Sale\Detraction;
 use Greenter\Model\Sale\FormaPagos\FormaPagoContado;
@@ -22,6 +22,7 @@ use Greenter\Model\Sale\Invoice;
 use Greenter\Model\Sale\Legend;
 use Greenter\Model\Sale\Note;
 use Greenter\Model\Sale\SaleDetail;
+use Greenter\Api as SunatGreApi;
 use Greenter\See;
 use Greenter\Ws\Services\SunatEndpoints;
 use Luecano\NumeroALetras\NumeroALetras;
@@ -44,6 +45,76 @@ class SunatService
                 ? SunatEndpoints::GUIA_PRODUCCION
                 : SunatEndpoints::GUIA_BETA
         );
+    }
+
+    public function getGreApi(): SunatGreApi
+    {
+        // Fallback a env() para evitar que un worker con config stale deje "vacias"
+        // las credenciales GRE aunque ya existan en .env.
+        $clientId = trim((string) (
+            config('empresa.sunat_gre_client_id')
+            ?: env('SUNAT_GRE_CLIENT_ID', '')
+        ));
+        $clientSecret = trim((string) (
+            config('empresa.sunat_gre_client_secret')
+            ?: env('SUNAT_GRE_CLIENT_SECRET', '')
+        ));
+
+        if ($clientId === '' || $clientSecret === '') {
+            throw new \RuntimeException(
+                'Faltan configurar SUNAT_GRE_CLIENT_ID y SUNAT_GRE_CLIENT_SECRET para emitir guias por la plataforma GRE.'
+            );
+        }
+
+        $certPath = (string) config('empresa.sunat_cert_path');
+        $certificate = file_get_contents($certPath);
+
+        $baseUrl = trim((string) (
+            config('empresa.sunat_gre_base_url')
+            ?: env('SUNAT_GRE_BASE_URL', '')
+        ));
+
+        $authUrl = trim((string) config('empresa.sunat_gre_auth_url', 'https://api-seguridad.sunat.gob.pe/v1'));
+        $cpeUrl = trim((string) config('empresa.sunat_gre_cpe_url', 'https://api-cpe.sunat.gob.pe/v1'));
+
+        if ($baseUrl !== '') {
+            $authUrl = rtrim($baseUrl, '/');
+            $cpeUrl = rtrim($baseUrl, '/');
+        }
+
+        $sunatRuc = trim((string) (
+            config('empresa.sunat_ruc')
+            ?: env('SUNAT_RUC', '')
+        ));
+        $sunatUsername = trim((string) (
+            config('empresa.sunat_username')
+            ?: env('SUNAT_USERNAME', '')
+        ));
+        $sunatPassword = trim((string) (
+            config('empresa.sunat_password')
+            ?: env('SUNAT_PASSWORD', '')
+        ));
+
+        if ($sunatRuc === '' || $sunatUsername === '' || $sunatPassword === '') {
+            throw new \RuntimeException(
+                'Faltan SUNAT_RUC, SUNAT_USERNAME o SUNAT_PASSWORD para autenticar GRE.'
+            );
+        }
+
+        $api = new SunatGreApi([
+            'auth' => $authUrl,
+            'cpe' => $cpeUrl,
+        ]);
+
+        $api->setCertificate($certificate);
+        $api->setApiCredentials($clientId, $clientSecret);
+        $api->setClaveSOL(
+            $sunatRuc,
+            $sunatUsername,
+            $sunatPassword
+        );
+
+        return $api;
     }
 
     public function getInvoice($data)
@@ -142,7 +213,10 @@ class SunatService
                 ->setTipoDoc((string) data_get($data, 'transportista.tipo_doc', '6'))
                 ->setNumDoc((string) data_get($data, 'transportista.num_doc', ''))
                 ->setRznSocial((string) data_get($data, 'transportista.razon_social', ''))
-                ->setNroMtc((string) data_get($data, 'transportista.reg_mtc', ''));
+                ->setNroMtc((string) data_get($data, 'transportista.reg_mtc', ''))
+                ->setPlaca((string) data_get($data, 'vehiculo.placa', ''))
+                ->setChoferTipoDoc((string) data_get($data, 'conductor.tipo_doc', '1'))
+                ->setChoferDoc((string) data_get($data, 'conductor.num_doc', ''));
 
             $shipment->setTransportista($transportista);
         }
@@ -173,7 +247,6 @@ class SunatService
         }
 
         $despatch = (new Despatch())
-            ->setVersion('2022')
             ->setTipoDoc((string) data_get($data, 'tipo_documento', '09'))
             ->setSerie((string) data_get($data, 'serie'))
             ->setCorrelativo((string) data_get($data, 'correlativo'))
@@ -191,13 +264,11 @@ class SunatService
         $nroDocRelacionado = trim((string) data_get($data, 'documento_relacionado.nro', ''));
 
         if ($tipoDocRelacionado !== '' && $nroDocRelacionado !== '') {
-            $despatch->setAddDocs([
-                (new AdditionalDoc())
-                    ->setTipoDesc((string) data_get($data, 'documento_relacionado.tipo_desc', 'Comprobante'))
-                    ->setTipo($tipoDocRelacionado)
-                    ->setNro($nroDocRelacionado)
-                    ->setEmisor((string) data_get($data, 'documento_relacionado.emisor', (string) config('empresa.ruc', ''))),
-            ]);
+            $despatch->setRelDoc(
+                (new Document())
+                    ->setTipoDoc($tipoDocRelacionado)
+                    ->setNroDoc($nroDocRelacionado)
+            );
         }
 
         $detalles = [];

@@ -43,6 +43,7 @@
                     <th>Fecha</th>
                     <th>Moneda</th>
                     <th>Total</th>
+                    <th>Emitido por</th>
                     <th>Estado</th>
                     <th width="220">Opciones</th>
                 </tr>
@@ -50,7 +51,7 @@
 
             <tbody id="facturaTableBody">
                 <tr>
-                    <td colspan="9" class="text-center">
+                    <td colspan="10" class="text-center">
                         <div class="spinner-border text-primary"></div>
                     </td>
                 </tr>
@@ -159,7 +160,7 @@ function cargarFacturas(page = 1) {
         if (lista.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="9" class="text-center text-muted">
+                    <td colspan="10" class="text-center text-muted">
                         No hay resultados
                     </td>
                 </tr>`;
@@ -186,6 +187,7 @@ function cargarFacturas(page = 1) {
             const numeroComprobante = (f.numero_comprobante || '').replace(/'/g, "\\'");
             const canUsePdf = f.estado_envio === 'aceptado' && !!f.archivo_pdf;
             const canUseXml = !!f.archivo_xml;
+            const emisorNombre = (f.emisor && f.emisor.name) ? f.emisor.name : 'Sin usuario';
 
             tbody.innerHTML += `
                 <tr>
@@ -196,6 +198,7 @@ function cargarFacturas(page = 1) {
                     <td>${formatearFecha(f.fecha_emision)}</td>
                     <td>${f.moneda}</td>
                     <td>${f.moneda === 'USD' ? 'US$' : 'S/'} ${parseFloat(f.total_venta).toFixed(2)}</td>
+                    <td>${emisorNombre}</td>
                     <td>${estado}</td>
                     <td class="text-center">
                         <button class="btn btn-sm btn-info" title="Ver PDF"

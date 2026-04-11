@@ -13,7 +13,10 @@ class RutaController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Ruta::with(['conductor.camion', 'camion']);
+        $query = Ruta::with(['conductor.camion', 'camion'])
+            ->withSum('viaticos', 'importe')
+            ->withSum('combustibles', 'importe')
+            ->withSum('peajes', 'importe');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -35,10 +38,14 @@ class RutaController extends Controller
         $rutas = $query->orderBy('id', 'desc')
             ->paginate($request->get('per_page', 10));
 
+        $data = collect($rutas->items())
+            ->map(fn (Ruta $ruta) => $this->appendResumenFinanciero($ruta))
+            ->values();
+
         return response()->json([
             'success' => true,
             'message' => 'Listado de rutas',
-            'data' => $rutas->items(),
+            'data' => $data,
             'pagination' => [
                 'total' => $rutas->total(),
                 'per_page' => $rutas->perPage(),
@@ -64,7 +71,11 @@ class RutaController extends Controller
 
     public function show($id)
     {
-        $ruta = Ruta::with(['conductor.camion', 'camion'])->find($id);
+        $ruta = Ruta::with(['conductor.camion', 'camion'])
+            ->withSum('viaticos', 'importe')
+            ->withSum('combustibles', 'importe')
+            ->withSum('peajes', 'importe')
+            ->find($id);
 
         if (!$ruta) {
             throw ValidationException::withMessages([
@@ -75,7 +86,7 @@ class RutaController extends Controller
         return response()->json([
             'success' => true,
             'message' => "Ruta obtenida: {$ruta->origen} -> {$ruta->destino}",
-            'data' => $ruta,
+            'data' => $this->appendResumenFinanciero($ruta),
         ]);
     }
 
@@ -136,5 +147,27 @@ class RutaController extends Controller
         }
 
         return (int) $conductor->camion_id;
+    }
+
+    private function appendResumenFinanciero(Ruta $ruta): Ruta
+    {
+        $viaticos = (float) ($ruta->viaticos_sum_importe ?? 0);
+        $combustible = (float) ($ruta->combustibles_sum_importe ?? 0);
+        $peajes = (float) ($ruta->peajes_sum_importe ?? 0);
+        $gastos = $viaticos + $combustible + $peajes;
+        $ingresos = (float) ($ruta->pago_viaje ?? 0);
+        $utilidad = $ingresos - $gastos;
+
+        $ruta->setAttribute('resumen_financiero', [
+            'viaticos' => round($viaticos, 2),
+            'combustible' => round($combustible, 2),
+            'peajes' => round($peajes, 2),
+            'gastos' => round($gastos, 2),
+            'ingresos' => round($ingresos, 2),
+            'utilidad' => round($utilidad, 2),
+            'margen_pct' => $ingresos > 0 ? round(($utilidad / $ingresos) * 100, 2) : null,
+        ]);
+
+        return $ruta;
     }
 }

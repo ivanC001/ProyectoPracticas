@@ -20,6 +20,7 @@ class GuiaRemisionController extends Controller
     {
         $query = GuiaRemision::query()->with([
             'detalles',
+            'emisor:id,name,email',
             'venta:id,numero_comprobante,nombre_cliente,numero_documento_cliente,tipo_documento_cliente,fecha_emision,moneda,total_venta',
             'guiaRemitente:id,numero_guia,tipo_documento,estado_envio,fecha_traslado,destinatario_razon_social,destinatario_num_doc',
         ]);
@@ -59,10 +60,11 @@ class GuiaRemisionController extends Controller
     public function store(StoreGuiaRemisionRequest $request)
     {
         $payload = $request->validated();
+        $emisorUserId = optional($request->user('api'))->id;
         $detalles = $this->resolveDetallesPayload($payload);
         $documentoRelacionado = $this->resolveDocumentoRelacionadoPayload($payload);
 
-        $guia = DB::transaction(function () use ($payload, $detalles, $documentoRelacionado) {
+        $guia = DB::transaction(function () use ($payload, $detalles, $documentoRelacionado, $emisorUserId) {
             $correlativo = SerieCorrelativo::obtenerSiguienteCorrelativo($payload['tipo_documento']);
 
             $guia = GuiaRemision::create([
@@ -97,6 +99,7 @@ class GuiaRemisionController extends Controller
                 'vehiculo_placa' => data_get($payload, 'vehiculo.placa'),
                 'vehiculo_secundario_placa' => data_get($payload, 'vehiculo.secundario_placa'),
                 'venta_id' => $payload['venta_id'] ?? null,
+                'emisor_user_id' => $emisorUserId,
                 'guia_remitente_id' => $payload['guia_remitente_id'] ?? null,
                 'documento_rel_tipo' => $documentoRelacionado['tipo'],
                 'documento_rel_numero' => $documentoRelacionado['numero'],
@@ -131,6 +134,7 @@ class GuiaRemisionController extends Controller
     {
         $guia = GuiaRemision::with([
             'detalles',
+            'emisor:id,name,email',
             'venta:id,numero_comprobante,nombre_cliente,numero_documento_cliente,tipo_documento_cliente,fecha_emision,moneda,total_venta',
             'venta.detalles:id,venta_id,tipo_item,item_id,codigo_producto,descripcion,unidad,cantidad',
             'guiaRemitente:id,numero_guia,tipo_documento,estado_envio,fecha_traslado,destinatario_razon_social,destinatario_num_doc',
@@ -273,6 +277,10 @@ class GuiaRemisionController extends Controller
                 'fecha_traslado',
                 'destinatario_razon_social',
                 'destinatario_num_doc',
+                'partida_ubigeo',
+                'partida_direccion',
+                'llegada_ubigeo',
+                'llegada_direccion',
                 'estado_envio',
             ])
             ->find($id);
@@ -397,109 +405,18 @@ class GuiaRemisionController extends Controller
 
     public function update(StoreGuiaRemisionRequest $request, int $id)
     {
-        $guia = GuiaRemision::with('detalles')->find($id);
-
-        if (!$guia) {
-            throw ValidationException::withMessages([
-                'guia' => ['Guia de remision no encontrada.'],
-            ]);
-        }
-
-        if ($guia->estado_envio === 'aceptado') {
-            throw ValidationException::withMessages([
-                'guia' => ['No puedes editar una guia ya aceptada por SUNAT.'],
-            ]);
-        }
-
-        $payload = $request->validated();
-        $detalles = $this->resolveDetallesPayload($payload);
-        $documentoRelacionado = $this->resolveDocumentoRelacionadoPayload($payload);
-
-        DB::transaction(function () use ($guia, $payload, $detalles, $documentoRelacionado) {
-            $guia->update([
-                'tipo_documento' => $payload['tipo_documento'],
-                'fecha_emision' => $payload['fecha_emision'],
-                'fecha_traslado' => $payload['fecha_traslado'],
-                'motivo_traslado_codigo' => $payload['motivo_traslado_codigo'],
-                'motivo_traslado_descripcion' => $payload['motivo_traslado_descripcion'],
-                'modalidad_transporte' => $payload['modalidad_transporte'],
-                'peso_total' => (float) $payload['peso_total'],
-                'unidad_peso' => $payload['unidad_peso'] ?? 'KGM',
-                'numero_bultos' => $payload['numero_bultos'] ?? null,
-                'observacion' => $payload['observacion'] ?? null,
-                'destinatario_tipo_doc' => data_get($payload, 'destinatario.tipo_doc'),
-                'destinatario_num_doc' => data_get($payload, 'destinatario.num_doc'),
-                'destinatario_razon_social' => data_get($payload, 'destinatario.razon_social'),
-                'partida_ubigeo' => data_get($payload, 'partida.ubigeo'),
-                'partida_direccion' => data_get($payload, 'partida.direccion'),
-                'llegada_ubigeo' => data_get($payload, 'llegada.ubigeo'),
-                'llegada_direccion' => data_get($payload, 'llegada.direccion'),
-                'transportista_tipo_doc' => data_get($payload, 'transportista.tipo_doc'),
-                'transportista_num_doc' => data_get($payload, 'transportista.num_doc'),
-                'transportista_razon_social' => data_get($payload, 'transportista.razon_social'),
-                'transportista_reg_mtc' => data_get($payload, 'transportista.reg_mtc'),
-                'conductor_tipo_doc' => data_get($payload, 'conductor.tipo_doc'),
-                'conductor_num_doc' => data_get($payload, 'conductor.num_doc'),
-                'conductor_nombres' => data_get($payload, 'conductor.nombres'),
-                'conductor_licencia' => data_get($payload, 'conductor.licencia'),
-                'vehiculo_placa' => data_get($payload, 'vehiculo.placa'),
-                'vehiculo_secundario_placa' => data_get($payload, 'vehiculo.secundario_placa'),
-                'venta_id' => $payload['venta_id'] ?? null,
-                'guia_remitente_id' => $payload['guia_remitente_id'] ?? null,
-                'documento_rel_tipo' => $documentoRelacionado['tipo'],
-                'documento_rel_numero' => $documentoRelacionado['numero'],
-                'documento_rel_emisor' => $documentoRelacionado['emisor'],
-                'estado_envio' => 'pendiente',
-                'sunat_enviado' => false,
-                'fecha_envio_sunat' => null,
-                'codigo_respuesta_sunat' => null,
-                'descripcion_respuesta_sunat' => null,
-                'mensaje_error' => null,
-                'hash_cpe' => null,
-                'archivo_xml' => null,
-                'archivo_pdf' => null,
-                'archivo_cdr' => null,
-            ]);
-
-            $guia->detalles()->delete();
-
-            foreach ($detalles as $detalle) {
-                $guia->detalles()->create([
-                    'tipo_item' => $detalle['tipo_item'] ?? null,
-                    'item_id' => $detalle['item_id'] ?? null,
-                    'codigo' => $detalle['codigo'] ?? null,
-                    'descripcion' => $detalle['descripcion'],
-                    'unidad' => $detalle['unidad'] ?? 'NIU',
-                    'cantidad' => (float) $detalle['cantidad'],
-                ]);
-            }
-        });
-
-        ProcesarGuiaRemisionJob::dispatch((int) $guia->id);
-
         return response()->json([
-            'success' => true,
-            'message' => 'Guia actualizada y reenviada a proceso SUNAT',
-            'data' => $guia->fresh(['detalles', 'venta', 'guiaRemitente']),
-        ]);
+            'success' => false,
+            'message' => 'La edicion de guias de remision esta deshabilitada para todos los usuarios.',
+        ], 403);
     }
 
     public function destroy(int $id)
     {
-        $guia = GuiaRemision::find($id);
-
-        if (!$guia) {
-            throw ValidationException::withMessages([
-                'guia' => ['Guia de remision no encontrada.'],
-            ]);
-        }
-
-        $guia->delete();
-
         return response()->json([
-            'success' => true,
-            'message' => 'Guia de remision eliminada correctamente',
-        ]);
+            'success' => false,
+            'message' => 'La eliminacion de guias de remision esta deshabilitada para todos los usuarios.',
+        ], 403);
     }
 
     protected function resolveDetallesPayload(array $payload): array

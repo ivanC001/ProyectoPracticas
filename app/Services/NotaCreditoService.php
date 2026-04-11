@@ -33,6 +33,7 @@ class NotaCreditoService
 
             return Nota::query()->create([
                 'venta_id' => $venta->id,
+                'emisor_user_id' => $data['emisor_user_id'] ?? null,
                 'tipo_documento' => $data['tipo_documento'],
                 'serie' => $correlativo['serie'],
                 'correlativo' => $correlativo['correlativo'],
@@ -42,7 +43,7 @@ class NotaCreditoService
                 'numDocAfectado' => $venta->numero_comprobante,
                 'codMotivo' => $data['codMotivo'],
                 'desMotivo' => $data['desMotivo'],
-                'total' => $venta->total_venta,
+                'total' => (float) ($data['monto_nota'] ?? $venta->total_venta),
                 'estado_envio' => 'pendiente',
             ]);
         });

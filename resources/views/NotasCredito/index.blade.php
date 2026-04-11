@@ -23,6 +23,8 @@
                     <th>Tipo</th>
                     <th>Factura Afectada</th>
                     <th>Cliente</th>
+                    <th>Emitido por</th>
+                    <th>Monto</th>
                     <th>Motivo</th>
                     <th>Estado</th>
                     <th>Respuesta SUNAT</th>
@@ -85,7 +87,7 @@ function cargarNotas() {
             if (!lista.length) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="9" class="text-center text-muted">No hay notas registradas</td>
+                        <td colspan="11" class="text-center text-muted">No hay notas registradas</td>
                     </tr>
                 `;
                 return;
@@ -97,6 +99,7 @@ function cargarNotas() {
                 const code = n.codigo_respuesta_sunat ? `<small class="text-muted">[${n.codigo_respuesta_sunat}]</small> ` : '';
                 const canUsePdf = n.estado_envio === 'aceptado' && !!n.archivo_pdf;
                 const canUseXml = !!n.archivo_xml;
+                const simbolo = (n.venta_moneda || 'PEN') === 'USD' ? 'US$' : 'S/';
 
                 tbody.innerHTML += `
                     <tr>
@@ -105,6 +108,8 @@ function cargarNotas() {
                         <td>${tipo}</td>
                         <td>${n.factura_afectada || '-'}</td>
                         <td>${n.cliente || '-'}</td>
+                        <td>${n.emisor_nombre || 'Sin usuario'}</td>
+                        <td>${simbolo} ${Number(n.total || 0).toFixed(2)}</td>
                         <td><small>${n.codMotivo || ''}</small> ${n.desMotivo || ''}</td>
                         <td>${badgeEstadoNota(n.estado_envio)}</td>
                         <td>${code}${reason}</td>

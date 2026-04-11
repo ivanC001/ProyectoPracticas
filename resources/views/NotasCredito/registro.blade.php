@@ -20,6 +20,21 @@
 
 <div id="facturaSeleccionadaBox" class="border rounded p-2 mb-3 bg-light d-none"></div>
 
+<div class="row mb-3">
+    <div class="col-md-8">
+        <label for="monto_nota">Monto de la nota</label>
+        <input type="number" class="form-control" id="monto_nota" step="0.01" min="0.01" placeholder="0.00">
+        <small id="montoNotaHelp" class="form-text text-muted">
+            Sugerencia: usar el monto total de la factura para nota completa.
+        </small>
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+        <button type="button" class="btn btn-outline-primary w-100" onclick="usarMontoCompletoNota()">
+            Usar monto completo sugerido
+        </button>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-md-5">
         <label for="tipo_documento_nota">Tipo de nota</label>
@@ -72,16 +87,19 @@ let timeoutBuscarFacturaNota = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     actualizarMotivosNota();
+    actualizarAyudaMontoNota();
     cargarFacturasEmitidasNota();
 });
 
 document.getElementById('tipo_documento_nota').addEventListener('change', function() {
     actualizarMotivosNota();
+    actualizarAyudaMontoNota();
     limpiarErroresNota();
 });
 
 document.getElementById('codMotivo').addEventListener('change', limpiarErroresNota);
 document.getElementById('desMotivo').addEventListener('input', limpiarErroresNota);
+document.getElementById('monto_nota').addEventListener('input', limpiarErroresNota);
 document.getElementById('venta_id').addEventListener('change', function() {
     renderFacturaSeleccionadaNota();
     limpiarErroresNota();
@@ -107,6 +125,18 @@ function actualizarMotivosNota() {
         option.textContent = `${motivo.code} - ${motivo.label}`;
         select.appendChild(option);
     });
+}
+
+function actualizarAyudaMontoNota() {
+    const tipoNota = document.getElementById('tipo_documento_nota').value;
+    const help = document.getElementById('montoNotaHelp');
+
+    if (tipoNota === '07') {
+        help.textContent = 'Sugerencia: para nota de credito completa usa el total de la factura; para parcial ingresa un monto menor.';
+        return;
+    }
+
+    help.textContent = 'Sugerencia: en nota de debito ingresa el monto adicional a cobrar.';
 }
 
 function renderFacturaOptionsNota() {
@@ -159,6 +189,23 @@ function renderFacturaSeleccionadaNota() {
         <div><strong>Doc cliente:</strong> ${factura.numero_documento_cliente || '-'}</div>
         <div><strong>Total:</strong> ${simbolo} ${Number(factura.total_venta).toFixed(2)}</div>
     `;
+
+    const montoInput = document.getElementById('monto_nota');
+    if (!String(montoInput.value || '').trim()) {
+        montoInput.value = Number(factura.total_venta || 0).toFixed(2);
+    }
+}
+
+function usarMontoCompletoNota() {
+    const selectedId = Number(document.getElementById('venta_id').value || 0);
+    const factura = facturasEmitidasNota.find((f) => Number(f.id) === selectedId);
+    if (!factura) {
+        Swal.fire('Atencion', 'Primero selecciona una factura afectada.', 'warning');
+        return;
+    }
+
+    document.getElementById('monto_nota').value = Number(factura.total_venta || 0).toFixed(2);
+    limpiarErroresNota();
 }
 
 async function cargarFacturasEmitidasNota(search = '') {
@@ -182,7 +229,7 @@ function limpiarErroresNota() {
     box.classList.add('d-none');
     box.innerHTML = '';
 
-    ['venta_id', 'tipo_documento_nota', 'codMotivo', 'desMotivo'].forEach((id) => {
+    ['venta_id', 'tipo_documento_nota', 'codMotivo', 'desMotivo', 'monto_nota'].forEach((id) => {
         const input = document.getElementById(id);
         if (input) {
             input.classList.remove('is-invalid');
@@ -199,6 +246,7 @@ function mostrarErroresNota(err) {
         tipo_documento: 'tipo_documento_nota',
         codMotivo: 'codMotivo',
         desMotivo: 'desMotivo',
+        monto_nota: 'monto_nota',
     };
 
     if (!err || !err.errors) {
@@ -234,6 +282,7 @@ async function procesarNota() {
         tipo_documento: document.getElementById('tipo_documento_nota').value,
         codMotivo: document.getElementById('codMotivo').value,
         desMotivo: document.getElementById('desMotivo').value.trim(),
+        monto_nota: document.getElementById('monto_nota').value,
     };
 
     try {

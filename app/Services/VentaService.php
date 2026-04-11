@@ -28,6 +28,7 @@ class VentaService
             'tipo_documento_cliente' => $data['cliente']['tipo_doc'],
             'numero_documento_cliente' => $data['cliente']['num_doc'],
             'nombre_cliente' => $data['cliente']['razon_social'],
+            'emisor_user_id' => $data['emisor_user_id'] ?? null,
 
             'total_venta' => $totales['total'],
             'total_impuestos' => $totales['igv'],
@@ -76,6 +77,7 @@ class VentaService
                 'tipo_documento_cliente' => $cliente['tipo_doc'] ?? null,
                 'numero_documento_cliente' => $cliente['num_doc'] ?? null,
                 'nombre_cliente' => $nombreCliente,
+                'emisor_user_id' => $data['emisor_user_id'] ?? null,
 
                 'estado_envio' => 'pendiente',
                 'total_venta' => 0,

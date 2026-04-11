@@ -12,6 +12,7 @@ class FacturaController extends Controller
 {
     
     $data = $request->validated();
+    $data['emisor_user_id'] = optional($request->user('api'))->id;
 
     $ventaService = new VentaService();
 

@@ -44,7 +44,7 @@
                     <table class="table table-hover table-striped table-bordered">
                         <thead class="thead-dark">
                             <tr>
-                                <th width="250">Acciones</th>
+                                <th width="220">Acciones</th>
                                 <th>#</th>
                                 <th>Guia</th>
                                 <th>Tipo</th>
@@ -52,12 +52,13 @@
                                 <th>Traslado</th>
                                 <th>Modalidad</th>
                                 <th>Peso</th>
+                                <th>Emitido por</th>
                                 <th>Estado</th>
                             </tr>
                         </thead>
                         <tbody id="guiaTableBody">
                             <tr>
-                                <td colspan="9" class="text-center">
+                                <td colspan="10" class="text-center">
                                     <div class="spinner-border text-primary"></div>
                                 </td>
                             </tr>
@@ -170,10 +171,28 @@ function toggleBloquesTransporte() {
     const tipoGuia = $('#gr_tipo_documento').val();
 
     const showTransportista = modalidad === '01' || tipoGuia === '31';
-    const showPrivado = modalidad === '02';
+    const showConductorVehiculo = modalidad === '01' || modalidad === '02' || tipoGuia === '31';
+    const isPublico = modalidad === '01' || tipoGuia === '31';
+    const isPrivado = modalidad === '02' && tipoGuia !== '31';
 
     $('#bloqueTransportista').toggle(showTransportista);
-    $('#bloquePrivado').toggle(showPrivado);
+    $('#bloquePrivado').toggle(showConductorVehiculo);
+
+    $('#gr_cond_nombres').closest('.col-md-4').toggle(isPrivado);
+    $('#gr_cond_licencia_wrap').toggle(isPrivado);
+    $('#gr_veh_sec_wrap').toggle(isPrivado);
+
+    $('#gr_conductor_titulo').text(isPublico ? 'Unidad y conductor del traslado' : 'Conductor y vehiculo');
+    $('#gr_conductor_help').text(
+        isPublico
+            ? 'SUNAT te pedira al menos documento del conductor y placa principal de la unidad.'
+            : 'Completa conductor, licencia y placas del traslado privado.'
+    );
+    $('#gr_transporte_help').text(
+        isPublico
+            ? 'Publico: transportista con RUC, MTC, placa y documento del conductor.'
+            : 'Privado: conductor + licencia + placa principal; la placa secundaria es opcional.'
+    );
 }
 
 function ocultarResultadosFactura() {
@@ -267,6 +286,9 @@ async function seleccionarClienteDestinatario(id) {
         $('#gr_dest_razon_social').val(c.razon_social || '');
         $('#gr_cliente_search').val(`${c.razon_social || ''} - ${c.num_doc || ''}`);
         $('#gr_cliente_selected').text(`Cliente seleccionado: ${c.razon_social || ''}`);
+        if (!String($('#gr_llegada_direccion').val() || '').trim() && String(c.direccion || '').trim()) {
+            $('#gr_llegada_direccion').val(c.direccion || '');
+        }
         ocultarResultadosCliente();
     } catch (err) {
         Swal.fire('Error', err.message || 'No se pudo cargar el cliente', 'error');
@@ -443,6 +465,13 @@ async function seleccionarRemitenteRelacionado(id) {
         $('#gr_dest_razon_social').val(guiaRemitente.destinatario_razon_social || '');
         $('#gr_cliente_search').val(`${guiaRemitente.destinatario_razon_social || ''} - ${guiaRemitente.destinatario_num_doc || ''}`);
         $('#gr_cliente_selected').text(`Cliente desde guia remitente: ${guiaRemitente.destinatario_razon_social || ''}`);
+
+        if (!String($('#gr_llegada_ubigeo').val() || '').trim() && String(guiaRemitente.llegada_ubigeo || '').trim()) {
+            $('#gr_llegada_ubigeo').val(guiaRemitente.llegada_ubigeo || '');
+        }
+        if (!String($('#gr_llegada_direccion').val() || '').trim() && String(guiaRemitente.llegada_direccion || '').trim()) {
+            $('#gr_llegada_direccion').val(guiaRemitente.llegada_direccion || '');
+        }
 
         $('#gr_detalles_body').empty();
         (guiaRemitente.detalles || []).forEach(d => {
@@ -678,7 +707,7 @@ async function cargarGuias(page = 1) {
         tbody.empty();
 
         if (!resp.data || !resp.data.length) {
-            tbody.html('<tr><td colspan="9" class="text-center text-muted">No hay guias registradas</td></tr>');
+            tbody.html('<tr><td colspan="10" class="text-center text-muted">No hay guias registradas</td></tr>');
             $('#guiaPaginacion').html('');
             return;
         }
@@ -690,17 +719,11 @@ async function cargarGuias(page = 1) {
             const canXml = !!g.archivo_xml;
             const reason = (g.mensaje_error || g.descripcion_respuesta_sunat || '').trim();
             const docRel = String(g.documento_rel_numero || '').trim();
-            tbody.append(`
+                tbody.append(`
                 <tr>
                     <td class="text-center">
-                        <button class="btn btn-sm btn-warning" onclick="editarGuia(${g.id})" title="Editar">
-                            <i class="fas fa-edit"></i>
-                        </button>
                         <button class="btn btn-sm btn-info" onclick="verGuia(${g.id})" title="Ver detalle">
                             <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="eliminarGuia(${g.id})" title="Eliminar">
-                            <i class="fas fa-trash"></i>
                         </button>
                         <button class="btn btn-sm btn-info ${canPdf ? '' : 'disabled'}" ${canPdf ? `onclick="window.open('${getGuiaPdfUrl(g.id)}','_blank')"` : ''} title="Ver PDF">
                             <i class="fas fa-file-pdf"></i>
@@ -722,6 +745,7 @@ async function cargarGuias(page = 1) {
                     <td>${formatDateOnly(g.fecha_traslado)}</td>
                     <td>${modalidad}</td>
                     <td>${Number(g.peso_total || 0).toFixed(3)} ${g.unidad_peso || 'KGM'}</td>
+                    <td>${escapeHtml(g.emisor?.name || 'Sin usuario')}</td>
                     <td>
                         ${getBadgeEstado(g.estado_envio)}
                         ${reason ? `<br><small class="text-danger">${escapeHtml(reason)}</small>` : ''}
@@ -732,7 +756,7 @@ async function cargarGuias(page = 1) {
 
         renderPaginacionGuias(resp.pagination);
     } catch (err) {
-        $('#guiaTableBody').html('<tr><td colspan="9" class="text-center text-danger">No se pudo cargar guias</td></tr>');
+        $('#guiaTableBody').html('<tr><td colspan="10" class="text-center text-danger">No se pudo cargar guias</td></tr>');
     }
 }
 

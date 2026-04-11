@@ -19,17 +19,22 @@ class NotaCreditoController extends Controller
     public function index()
     {
         $notas = Nota::query()
-            ->with('venta:id,numero_comprobante,nombre_cliente')
+            ->with([
+                'venta:id,numero_comprobante,nombre_cliente,moneda',
+                'emisor:id,name,email',
+            ])
             ->orderByDesc('id')
             ->get([
                 'id',
                 'venta_id',
+                'emisor_user_id',
                 'tipo_documento',
                 'serie',
                 'correlativo',
                 'numero_comprobante',
                 'codMotivo',
                 'desMotivo',
+                'total',
                 'estado_envio',
                 'codigo_respuesta_sunat',
                 'descripcion_respuesta_sunat',
@@ -44,12 +49,15 @@ class NotaCreditoController extends Controller
                 return [
                     'id' => $nota->id,
                     'venta_id' => $nota->venta_id,
+                    'emisor_user_id' => $nota->emisor_user_id,
+                    'emisor_nombre' => $nota->emisor?->name,
                     'tipo_documento' => $nota->tipo_documento,
                     'serie' => $nota->serie,
                     'correlativo' => $nota->correlativo,
                     'numero_comprobante' => $nota->numero_comprobante,
                     'codMotivo' => $nota->codMotivo,
                     'desMotivo' => $nota->desMotivo,
+                    'total' => (float) $nota->total,
                     'estado_envio' => $nota->estado_envio,
                     'codigo_respuesta_sunat' => $nota->codigo_respuesta_sunat,
                     'descripcion_respuesta_sunat' => $nota->descripcion_respuesta_sunat,
@@ -59,6 +67,7 @@ class NotaCreditoController extends Controller
                     'created_at' => $nota->created_at,
                     'factura_afectada' => $nota->venta?->numero_comprobante,
                     'cliente' => $nota->venta?->nombre_cliente,
+                    'venta_moneda' => $nota->venta?->moneda ?? 'PEN',
                 ];
             }),
         ]);
@@ -67,6 +76,7 @@ class NotaCreditoController extends Controller
     public function store(StoreNotaRequest $request)
     {
         $data = $request->validated();
+        $data['emisor_user_id'] = optional($request->user('api'))->id;
 
         $service = new NotaCreditoService();
         $nota = $service->guardarNotaPendiente($data);

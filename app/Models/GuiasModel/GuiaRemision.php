@@ -2,6 +2,7 @@
 
 namespace App\Models\GuiasModel;
 
+use App\Models\User;
 use App\Models\VentasModel\Venta;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -44,6 +45,7 @@ class GuiaRemision extends Model
         'vehiculo_placa',
         'vehiculo_secundario_placa',
         'venta_id',
+        'emisor_user_id',
         'guia_remitente_id',
         'documento_rel_tipo',
         'documento_rel_numero',
@@ -76,6 +78,11 @@ class GuiaRemision extends Model
     public function venta()
     {
         return $this->belongsTo(Venta::class, 'venta_id');
+    }
+
+    public function emisor()
+    {
+        return $this->belongsTo(User::class, 'emisor_user_id');
     }
 
     public function guiaRemitente()

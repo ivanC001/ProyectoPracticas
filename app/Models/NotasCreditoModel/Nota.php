@@ -1,6 +1,7 @@
 <?php
 namespace App\Models\NotasCreditoModel;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\VentasModel\Venta;
 
@@ -11,6 +12,7 @@ class Nota extends Model
     protected $fillable = [
 
         'venta_id',
+        'emisor_user_id',
 
         'tipo_documento', // 07 | 08
         'serie',
@@ -44,5 +46,10 @@ class Nota extends Model
     {
         return $this->belongsTo(Venta::class, 'venta_id');
 
+    }
+
+    public function emisor()
+    {
+        return $this->belongsTo(User::class, 'emisor_user_id');
     }
 }

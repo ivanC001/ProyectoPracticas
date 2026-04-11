@@ -100,17 +100,30 @@ class ProcesarNotaCreditoJob implements ShouldQueue
                 'num_doc' => $nota->venta->numero_documento_cliente,
                 'razon_social' => $nota->venta->nombre_cliente,
             ],
-            'items' => $nota->venta->detalles->map(function ($d) {
-                return [
-                    'codigo' => $d->codigo_producto,
-                    'descripcion' => $d->descripcion,
-                    'unidad' => $d->unidad,
-                    'cantidad' => $d->cantidad,
-                    'valor_unitario' => $d->valor_unitario,
-                    'descuento' => $d->descuento,
-                    'tip_afe_igv' => $d->tip_afe_igv,
-                ];
-            })->toArray(),
+            'items' => $this->buildItemsParaNota($nota),
         ];
+    }
+
+    private function buildItemsParaNota(Nota $nota): array
+    {
+        $venta = $nota->venta;
+        $montoVenta = max((float) ($venta->total_venta ?? 0), 0.0);
+        $montoNota = max((float) ($nota->total ?? 0), 0.0);
+        $factor = ($montoVenta > 0 && $montoNota > 0) ? ($montoNota / $montoVenta) : 1.0;
+
+        return $venta->detalles->map(function ($d) use ($factor) {
+            $valorUnitario = round((float) $d->valor_unitario * $factor, 6);
+            $descuento = round((float) $d->descuento * $factor, 6);
+
+            return [
+                'codigo' => $d->codigo_producto,
+                'descripcion' => $d->descripcion,
+                'unidad' => $d->unidad,
+                'cantidad' => (float) $d->cantidad,
+                'valor_unitario' => $valorUnitario,
+                'descuento' => $descuento,
+                'tip_afe_igv' => $d->tip_afe_igv,
+            ];
+        })->toArray();
     }
 }

@@ -13,6 +13,10 @@
         <strong>Campos obligatorios SUNAT:</strong> tipo de guia, fecha emision, fecha traslado, motivo, modalidad,
         peso total, destinatario, partida, llegada y al menos 1 item.
     </div>
+    <div class="alert alert-light border py-2 mb-3">
+        <strong>Ayuda rapida:</strong> la partida se puede jalar desde la empresa, el destinatario desde clientes y,
+        si relacionas un comprobante o una guia remitente, el detalle se completa automaticamente.
+    </div>
 
     <div class="row">
         <div class="col-md-3">
@@ -73,7 +77,7 @@
         </div>
         <div class="col-md-3">
             <label for="gr_doc_rel_emisor">RUC emisor doc. relacionado</label>
-            <input type="text" id="gr_doc_rel_emisor" class="form-control" placeholder="11 digitos (opcional)">
+            <input type="text" id="gr_doc_rel_emisor" class="form-control" placeholder="11 digitos (se completa con tu empresa por defecto)">
         </div>
     </div>
 
@@ -139,10 +143,10 @@
                 <option value="0">Sin doc</option>
             </select>
         </div>
-        <div class="col-md-3">
-            <label for="gr_dest_num_doc">Numero <span class="text-danger">*</span></label>
-            <input type="text" id="gr_dest_num_doc" class="form-control">
-        </div>
+            <div class="col-md-3">
+                <label for="gr_dest_num_doc">Numero <span class="text-danger">*</span></label>
+            <input type="text" id="gr_dest_num_doc" class="form-control" placeholder="RUC 11 digitos o DNI 8 digitos">
+            </div>
         <div class="col-md-7">
             <label for="gr_dest_razon_social">Nombre / Razon social <span class="text-danger">*</span></label>
             <input type="text" id="gr_dest_razon_social" class="form-control">
@@ -189,8 +193,8 @@
 
     <hr>
     <h6><i class="fas fa-truck"></i> Transporte</h6>
-    <small class="text-muted d-block mb-2">
-        Publico: transportista con RUC y registro MTC. Privado: conductor + licencia + placa.
+    <small id="gr_transporte_help" class="text-muted d-block mb-2">
+        Publico: transportista con RUC, MTC, placa y documento del conductor. Privado: conductor + licencia + placa.
     </small>
 
     <div id="bloqueTransportista" class="border rounded p-2 mb-2">
@@ -218,7 +222,10 @@
     </div>
 
     <div id="bloquePrivado" class="border rounded p-2 mb-2">
-        <h6 class="text-primary mb-2">Conductor y vehiculo</h6>
+        <h6 id="gr_conductor_titulo" class="text-primary mb-2">Conductor y vehiculo</h6>
+        <small id="gr_conductor_help" class="text-muted d-block mb-2">
+            Completa los datos de la unidad que realiza el traslado.
+        </small>
         <div class="row">
             <div class="col-md-2">
                 <label for="gr_cond_tipo_doc">Tipo doc</label>
@@ -236,7 +243,7 @@
                 <label for="gr_cond_nombres">Nombres completos <span class="text-danger">*</span></label>
                 <input type="text" id="gr_cond_nombres" class="form-control">
             </div>
-            <div class="col-md-2">
+            <div class="col-md-2" id="gr_cond_licencia_wrap">
                 <label for="gr_cond_licencia">Licencia <span class="text-danger">*</span></label>
                 <input type="text" id="gr_cond_licencia" class="form-control">
             </div>
@@ -245,7 +252,7 @@
                 <input type="text" id="gr_veh_placa" class="form-control">
             </div>
         </div>
-        <div class="row mt-2">
+        <div class="row mt-2" id="gr_veh_sec_wrap">
             <div class="col-md-2">
                 <label for="gr_veh_sec_placa">Placa secundaria</label>
                 <input type="text" id="gr_veh_sec_placa" class="form-control">

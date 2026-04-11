@@ -94,17 +94,17 @@ body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; }
         </tr>
         </thead>
         <tbody>
-        @foreach($venta->detalles as $i => $d)
+        @foreach($itemsDisplay as $d)
             <tr>
-                <td class="text-center">{{ $i + 1 }}</td>
-                <td class="text-center">{{ $d->codigo_producto }}</td>
-                <td>{{ $d->descripcion }}</td>
-                <td class="text-center">{{ $d->unidad }}</td>
-                <td class="text-right">{{ number_format($d->cantidad, 2) }}</td>
-                <td class="text-right">{{ $monedaSimbolo }} {{ number_format($d->valor_unitario, 2) }}</td>
-                <td class="text-right">{{ $monedaSimbolo }} {{ number_format($d->subtotal, 2) }}</td>
-                <td class="text-right">{{ ((float)$d->igv > 0) ? ($monedaSimbolo . ' ' . number_format($d->igv, 2)) : '-' }}</td>
-                <td class="text-right">{{ $monedaSimbolo }} {{ number_format($d->total, 2) }}</td>
+                <td class="text-center">{{ $d['index'] }}</td>
+                <td class="text-center">{{ $d['codigo'] }}</td>
+                <td>{{ $d['descripcion'] }}</td>
+                <td class="text-center">{{ $d['unidad'] }}</td>
+                <td class="text-right">{{ number_format($d['cantidad'], 2) }}</td>
+                <td class="text-right">{{ $monedaSimbolo }} {{ number_format($d['valor_unitario'], 2) }}</td>
+                <td class="text-right">{{ $monedaSimbolo }} {{ number_format($d['subtotal'], 2) }}</td>
+                <td class="text-right">{{ ((float)$d['igv'] > 0) ? ($monedaSimbolo . ' ' . number_format($d['igv'], 2)) : '-' }}</td>
+                <td class="text-right">{{ $monedaSimbolo }} {{ number_format($d['total'], 2) }}</td>
             </tr>
         @endforeach
         </tbody>

@@ -22,7 +22,7 @@
 
             <div class="card-body">
                 <div class="row mb-4" id="kpiContainer">
-                    <div class="col-md-6 col-xl-3 mb-3">
+                    <div class="col-md-6 col-xl-2 mb-3">
                         <div class="small-box bg-primary shadow-sm">
                             <div class="inner">
                                 <h3 id="kpi_total_rutas">0</h3>
@@ -31,31 +31,95 @@
                             <div class="icon"><i class="fas fa-road"></i></div>
                         </div>
                     </div>
-                    <div class="col-md-6 col-xl-3 mb-3">
+                    <div class="col-md-6 col-xl-2 mb-3">
                         <div class="small-box bg-info shadow-sm">
                             <div class="inner">
-                                <h3 id="kpi_total_viaticos">S/ 0.00</h3>
-                                <p>Total viaticos</p>
+                                <h3 id="kpi_total_ingresos">S/ 0.00</h3>
+                                <p>Ingresos</p>
                             </div>
-                            <div class="icon"><i class="fas fa-wallet"></i></div>
+                            <div class="icon"><i class="fas fa-coins"></i></div>
                         </div>
                     </div>
-                    <div class="col-md-6 col-xl-3 mb-3">
-                        <div class="small-box bg-success shadow-sm">
-                            <div class="inner">
-                                <h3 id="kpi_total_combustible">S/ 0.00</h3>
-                                <p>Total combustible</p>
-                            </div>
-                            <div class="icon"><i class="fas fa-gas-pump"></i></div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-xl-3 mb-3">
+                    <div class="col-md-6 col-xl-2 mb-3">
                         <div class="small-box bg-warning shadow-sm">
                             <div class="inner">
                                 <h3 id="kpi_total_gastos">S/ 0.00</h3>
                                 <p>Gasto total</p>
                             </div>
                             <div class="icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xl-2 mb-3">
+                        <div class="small-box bg-success shadow-sm" id="kpi_utilidad_card">
+                            <div class="inner">
+                                <h3 id="kpi_utilidad_neta">S/ 0.00</h3>
+                                <p>Utilidad neta</p>
+                            </div>
+                            <div class="icon"><i class="fas fa-chart-line"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xl-2 mb-3">
+                        <div class="small-box bg-secondary shadow-sm">
+                            <div class="inner">
+                                <h3 id="kpi_margen_neto">0.00%</h3>
+                                <p>Margen neto</p>
+                            </div>
+                            <div class="icon"><i class="fas fa-percentage"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xl-2 mb-3">
+                        <div class="small-box bg-secondary shadow-sm">
+                            <div class="inner">
+                                <h3 id="kpi_total_viaticos">S/ 0.00</h3>
+                                <p>Viaticos</p>
+                            </div>
+                            <div class="icon"><i class="fas fa-wallet"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-lg-4 mb-3">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-light">
+                                <strong>Distribucion de gastos</strong>
+                            </div>
+                            <div class="card-body" id="analiticaGastos">
+                                <p class="text-muted mb-0">Cargando...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 mb-3">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-light">
+                                <strong>Top viaticos por concepto</strong>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Concepto</th>
+                                                <th class="text-center">Cant.</th>
+                                                <th class="text-right">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="analiticaViaticos">
+                                            <tr><td colspan="3" class="text-center text-muted">Cargando...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 mb-3">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-light">
+                                <strong>Rutas con mayor utilidad</strong>
+                            </div>
+                            <div class="card-body" id="analiticaTopUtilidad">
+                                <p class="text-muted mb-0">Cargando...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -95,10 +159,10 @@
                                 <th>Conductor</th>
                                 <th>Unidad</th>
                                 <th>Fechas</th>
-                                <th>Viaticos</th>
-                                <th>Combustible</th>
-                                <th>Peajes</th>
-                                <th>Total gastos</th>
+                                <th>Ingreso</th>
+                                <th>Gastos</th>
+                                <th>Utilidad</th>
+                                <th>Margen</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -123,6 +187,14 @@ let paginaReporteActual = 1;
 
 function formatMoney(value) {
     return `S/ ${Number(value || 0).toFixed(2)}`;
+}
+
+function formatPct(value) {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) {
+        return 'N/D';
+    }
+
+    return `${Number(value).toFixed(2)}%`;
 }
 
 function buildReporteQuery(page = 1) {
@@ -153,9 +225,61 @@ function renderReportePagination(pagination = {}) {
 
 function renderReporteKPIs(kpis = {}) {
     $('#kpi_total_rutas').text(kpis.total_rutas || 0);
-    $('#kpi_total_viaticos').text(formatMoney(kpis.total_viaticos));
-    $('#kpi_total_combustible').text(formatMoney(kpis.total_combustible));
+    $('#kpi_total_ingresos').text(formatMoney(kpis.total_ingresos));
     $('#kpi_total_gastos').text(formatMoney(kpis.total_gastos));
+    $('#kpi_utilidad_neta').text(formatMoney(kpis.utilidad_neta));
+    $('#kpi_margen_neto').text(formatPct(kpis.margen_neto_pct));
+    $('#kpi_total_viaticos').text(formatMoney(kpis.total_viaticos));
+
+    const utilidad = Number(kpis.utilidad_neta || 0);
+    const card = $('#kpi_utilidad_card');
+    card.removeClass('bg-success bg-danger bg-secondary');
+    card.addClass(utilidad > 0 ? 'bg-success' : utilidad < 0 ? 'bg-danger' : 'bg-secondary');
+}
+
+function renderAnalitica(analitica = {}) {
+    const gastos = analitica.gastos_por_tipo || [];
+    const htmlGastos = gastos.length
+        ? gastos.map(item => `
+            <div class="mb-3">
+                <div class="d-flex justify-content-between">
+                    <strong>${item.nombre}</strong>
+                    <span>${formatMoney(item.monto)}</span>
+                </div>
+                <small class="text-muted d-block mb-1">${formatPct(item.porcentaje)} del gasto total</small>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: ${Math.min(Number(item.porcentaje || 0), 100)}%"></div>
+                </div>
+            </div>
+        `).join('')
+        : '<p class="text-muted mb-0">Sin datos para el rango filtrado.</p>';
+    $('#analiticaGastos').html(htmlGastos);
+
+    const viaticos = analitica.viaticos_por_servicio || [];
+    const htmlViaticos = viaticos.length
+        ? viaticos.map(item => `
+            <tr>
+                <td>${item.servicio}</td>
+                <td class="text-center">${item.cantidad}</td>
+                <td class="text-right">${formatMoney(item.total)}</td>
+            </tr>
+        `).join('')
+        : '<tr><td colspan="3" class="text-center text-muted">Sin viaticos para mostrar.</td></tr>';
+    $('#analiticaViaticos').html(htmlViaticos);
+
+    const topUtilidad = analitica.top_rutas_utilidad || [];
+    const htmlTop = topUtilidad.length
+        ? topUtilidad.map(item => `
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <a href="/reportes/rutas/${item.id}" class="font-weight-bold">Ruta #${item.id}</a>
+                    <small class="d-block text-muted">${item.ruta}</small>
+                </div>
+                <strong class="${Number(item.monto) >= 0 ? 'text-success' : 'text-danger'}">${formatMoney(item.monto)}</strong>
+            </div>
+        `).join('')
+        : '<p class="text-muted mb-0">Sin rutas para el filtro aplicado.</p>';
+    $('#analiticaTopUtilidad').html(htmlTop);
 }
 
 function fetchReporteRutas(page = 1) {
@@ -167,6 +291,7 @@ function fetchReporteRutas(page = 1) {
             tbody.empty();
 
             renderReporteKPIs(resp.kpis || {});
+            renderAnalitica(resp.analitica || {});
 
             if (!resp.data.length) {
                 tbody.html(`
@@ -181,6 +306,8 @@ function fetchReporteRutas(page = 1) {
             }
 
             resp.data.forEach(ruta => {
+                const utilidad = Number(ruta.totales?.utilidad || 0);
+                const utilidadClass = utilidad > 0 ? 'text-success' : (utilidad < 0 ? 'text-danger' : 'text-muted');
                 tbody.append(`
                     <tr>
                         <td class="text-left">
@@ -196,10 +323,15 @@ function fetchReporteRutas(page = 1) {
                             <small class="d-block">Inicio: ${ruta.fecha_inicio || '-'}</small>
                             <small class="d-block">Fin: ${ruta.fecha_fin || '-'}</small>
                         </td>
-                        <td>${formatMoney(ruta.totales?.viaticos)}</td>
-                        <td>${formatMoney(ruta.totales?.combustible)}</td>
-                        <td>${formatMoney(ruta.totales?.peajes)}</td>
-                        <td><strong>${formatMoney(ruta.totales?.gastos)}</strong></td>
+                        <td><strong>${formatMoney(ruta.totales?.ingresos)}</strong></td>
+                        <td class="text-left">
+                            <strong class="d-block text-center">${formatMoney(ruta.totales?.gastos)}</strong>
+                            <small class="d-block text-muted">V: ${formatMoney(ruta.totales?.viaticos)}</small>
+                            <small class="d-block text-muted">C: ${formatMoney(ruta.totales?.combustible)}</small>
+                            <small class="d-block text-muted">P: ${formatMoney(ruta.totales?.peajes)}</small>
+                        </td>
+                        <td><strong class="${utilidadClass}">${formatMoney(utilidad)}</strong></td>
+                        <td>${formatPct(ruta.totales?.margen_pct)}</td>
                         <td>
                             <a href="/reportes/rutas/${ruta.id}" class="btn btn-info btn-sm">
                                 <i class="fas fa-eye"></i>

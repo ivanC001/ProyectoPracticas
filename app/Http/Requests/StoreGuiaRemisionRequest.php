@@ -148,6 +148,14 @@ class StoreGuiaRemisionRequest extends FormRequest
                 if ($transportistaMtc === '') {
                     $validator->errors()->add('transportista.reg_mtc', 'En transporte publico debe registrar numero MTC del transportista.');
                 }
+
+                if ($conductorNumDoc === '') {
+                    $validator->errors()->add('conductor.num_doc', 'En transporte publico debe registrar documento del conductor.');
+                }
+
+                if ($placa === '') {
+                    $validator->errors()->add('vehiculo.placa', 'En transporte publico debe registrar placa principal de la unidad.');
+                }
             }
 
             if ($modalidad === '02') {
