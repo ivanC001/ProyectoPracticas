@@ -33,6 +33,7 @@
                 radial-gradient(circle at top, rgba(56, 189, 248, 0.22), transparent 34%),
                 linear-gradient(180deg, #0f172a 0%, #102a43 42%, #0b1f33 100%) !important;
             border-right: 1px solid rgba(148, 163, 184, 0.08);
+            z-index: 1040;
         }
 
         .brand-link {
@@ -80,6 +81,7 @@
 
         .sidebar {
             padding: 14px 12px 28px;
+            overflow-x: hidden;
         }
 
         .sidebar-user-card {
@@ -90,6 +92,8 @@
             margin-bottom: 14px;
             color: #e2e8f0;
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+            min-width: 0;
+            overflow: hidden;
         }
 
         .sidebar-user-card small {
@@ -105,6 +109,21 @@
             display: block;
             font-size: 14px;
             word-break: break-word;
+            overflow-wrap: anywhere;
+            line-height: 1.25;
+            max-width: 100%;
+        }
+
+        .sidebar-user-card span {
+            display: block;
+            margin-top: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(226, 232, 240, 0.92);
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            line-height: 1.25;
+            max-width: 100%;
         }
 
         .sidebar-user-role {
@@ -118,6 +137,10 @@
             font-weight: 700;
             letter-spacing: .8px;
             text-transform: uppercase;
+            max-width: 100%;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            text-align: center;
         }
 
         .nav-section-label {
@@ -141,6 +164,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            position: relative;
         }
 
         .nav-sidebar .nav-link .nav-icon {
@@ -169,6 +193,30 @@
             border-radius: 999px;
         }
 
+        .nav-sidebar .nav-link p {
+            margin: 0;
+        }
+
+        .nav-sidebar .nav-treeview {
+            padding-left: 14px;
+        }
+
+        .nav-sidebar .nav-treeview > .nav-item {
+            margin-bottom: 4px;
+        }
+
+        .nav-sidebar .nav-treeview > .nav-item > .nav-link {
+            border-radius: 12px;
+            padding: 9px 12px;
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .nav-sidebar .nav-treeview > .nav-item > .nav-link .nav-icon {
+            font-size: 12px;
+            width: 16px;
+        }
+
         .content-wrapper {
             background: transparent;
         }
@@ -181,6 +229,311 @@
             background: rgba(255, 255, 255, 0.9);
             border-top: 1px solid rgba(148, 163, 184, 0.15);
             color: #475569;
+            position: relative;
+            z-index: 1020;
+        }
+
+        .module-shell {
+            padding-bottom: 24px;
+        }
+
+        .module-card {
+            border: 0;
+            border-radius: 24px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+        }
+
+        .module-header {
+            padding: 22px 24px 16px;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+            background:
+                radial-gradient(circle at right top, rgba(14, 165, 233, 0.14), transparent 28%),
+                linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, rgba(255, 255, 255, 0.94) 100%);
+        }
+
+        .module-heading {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+        }
+
+        .module-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%);
+            color: #0f4c81;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+            font-size: 20px;
+            flex: 0 0 auto;
+        }
+
+        .module-title {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            color: #0f172a;
+            letter-spacing: -.02em;
+        }
+
+        .module-subtitle {
+            margin: 6px 0 0;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .module-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .module-body {
+            padding: 22px 24px 24px;
+        }
+
+        .module-search .input-group-text,
+        .module-search .form-control {
+            min-height: 48px;
+            border-color: #dbe5f0;
+        }
+
+        .module-search .input-group-text {
+            background: #fff;
+            color: #64748b;
+            border-radius: 14px 0 0 14px;
+        }
+
+        .module-search .form-control {
+            border-radius: 0 14px 14px 0;
+            box-shadow: none;
+        }
+
+        .module-search .form-control:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 0.2rem rgba(56, 189, 248, 0.12);
+        }
+
+        .module-table-wrap {
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .module-table {
+            margin-bottom: 0;
+        }
+
+        .module-table thead th {
+            border: 0;
+            background: linear-gradient(135deg, #0f5fcf 0%, #1891ff 100%);
+            color: #fff;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: .04em;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .module-table tbody td {
+            vertical-align: middle;
+            border-color: #edf2f7;
+        }
+
+        .module-table tbody tr:hover {
+            background: #f8fbff;
+        }
+
+        .module-pagination {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .module-empty {
+            padding: 28px 12px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        .table-action-group {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .content-wrapper .btn,
+        .content-wrapper .btn:focus,
+        .modal .btn,
+        .modal .btn:focus {
+            border-radius: 14px;
+            font-weight: 700;
+            letter-spacing: .01em;
+            min-height: 44px;
+            padding: .68rem 1.15rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .42rem;
+            border-width: 1px;
+            box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+            transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+        }
+
+        .content-wrapper .btn:hover,
+        .modal .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+        }
+
+        .content-wrapper .btn:disabled,
+        .modal .btn:disabled {
+            opacity: .55;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .content-wrapper .btn-sm,
+        .modal .btn-sm {
+            min-height: 34px;
+            padding: .42rem .72rem;
+            border-radius: 10px;
+            font-size: 12px;
+            box-shadow: none;
+        }
+
+        .content-wrapper .btn-lg,
+        .modal .btn-lg {
+            min-height: 50px;
+            border-radius: 16px;
+            padding: .82rem 1.35rem;
+        }
+
+        .content-wrapper .btn-block,
+        .modal .btn-block {
+            width: 100%;
+        }
+
+        .content-wrapper .btn-primary,
+        .modal .btn-primary {
+            background: linear-gradient(135deg, #0f5fcf 0%, #1891ff 100%);
+            border-color: #0f5fcf;
+            color: #fff;
+        }
+
+        .content-wrapper .btn-success,
+        .modal .btn-success {
+            background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+            border-color: #16a34a;
+            color: #fff;
+        }
+
+        .content-wrapper .btn-info,
+        .modal .btn-info {
+            background: linear-gradient(135deg, #0891b2 0%, #22d3ee 100%);
+            border-color: #0891b2;
+            color: #fff;
+        }
+
+        .content-wrapper .btn-warning,
+        .modal .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+            border-color: #f59e0b;
+            color: #111827;
+        }
+
+        .content-wrapper .btn-danger,
+        .modal .btn-danger {
+            background: linear-gradient(135deg, #dc2626 0%, #f87171 100%);
+            border-color: #dc2626;
+            color: #fff;
+        }
+
+        .content-wrapper .btn-secondary,
+        .modal .btn-secondary,
+        .content-wrapper .btn-dark,
+        .modal .btn-dark {
+            background: linear-gradient(135deg, #334155 0%, #475569 100%);
+            border-color: #334155;
+            color: #fff;
+        }
+
+        .content-wrapper .btn-light,
+        .modal .btn-light {
+            background: #fff;
+            border-color: #dbe5f0;
+            color: #334155;
+        }
+
+        .content-wrapper .btn-outline-primary,
+        .modal .btn-outline-primary {
+            background: rgba(15, 95, 207, 0.08);
+            border-color: rgba(15, 95, 207, 0.22);
+            color: #0f5fcf;
+        }
+
+        .content-wrapper .btn-outline-secondary,
+        .modal .btn-outline-secondary {
+            background: rgba(148, 163, 184, 0.12);
+            border-color: rgba(148, 163, 184, 0.24);
+            color: #334155;
+        }
+
+        .content-wrapper .btn-outline-dark,
+        .modal .btn-outline-dark {
+            background: rgba(51, 65, 85, 0.08);
+            border-color: rgba(51, 65, 85, 0.2);
+            color: #0f172a;
+        }
+
+        .content-wrapper .btn-link,
+        .modal .btn-link {
+            box-shadow: none;
+            min-height: auto;
+            padding: 0;
+            border-radius: 0;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .btn-soft-primary {
+            background: #e0f2fe;
+            color: #075985;
+            border-color: #bae6fd;
+        }
+
+        .btn-soft-secondary {
+            background: #e2e8f0;
+            color: #334155;
+            border-color: #cbd5e1;
+        }
+
+        .btn-soft-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-color: #fde68a;
+        }
+
+        .btn-soft-danger {
+            background: #fee2e2;
+            color: #b91c1c;
+            border-color: #fecaca;
+        }
+
+        .btn-soft-dark {
+            background: #dbe4f0;
+            color: #0f172a;
+            border-color: #cbd5e1;
         }
 
         .topbar-chip {
@@ -225,6 +578,27 @@
             .topbar-chip {
                 display: none;
             }
+
+            .module-header {
+                padding: 20px 18px 14px;
+            }
+
+            .module-body {
+                padding: 18px;
+            }
+
+            .module-header .d-flex {
+                flex-direction: column;
+                align-items: stretch !important;
+            }
+
+            .module-header-actions {
+                margin-top: 14px;
+            }
+
+            .module-header-actions .btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -245,7 +619,6 @@
                 ['href' => '/clientes', 'icon' => 'fas fa-users', 'text' => 'Clientes', 'match' => 'clientes*', 'roles' => ['admin', 'comercial']],
                 ['href' => '/cotizaciones', 'icon' => 'fas fa-file-signature', 'text' => 'Cotizaciones', 'match' => 'cotizaciones*', 'roles' => ['admin', 'comercial']],
                 ['href' => '/venta', 'icon' => 'fas fa-cash-register', 'text' => 'Ventas', 'match' => 'venta*', 'roles' => ['admin', 'comercial']],
-                ['href' => '/nueva-venta', 'icon' => 'fas fa-plus-circle', 'text' => 'Nueva venta', 'match' => 'nueva-venta*', 'roles' => ['admin', 'comercial']],
                 ['href' => '/notascredito', 'icon' => 'fas fa-file-invoice-dollar', 'text' => 'Notas Cred/Deb', 'match' => 'notascredito*', 'roles' => ['admin', 'comercial']],
             ],
         ],
@@ -263,10 +636,19 @@
             'items' => [
                 ['href' => '/conductor', 'icon' => 'fas fa-id-card-alt', 'text' => 'Conductores', 'match' => 'conductor*', 'roles' => ['admin', 'operaciones']],
                 ['href' => '/camion', 'icon' => 'fas fa-truck-moving', 'text' => 'Tractos y trailers', 'match' => 'camion*', 'roles' => ['admin', 'operaciones']],
-                ['href' => '/rutas', 'icon' => 'fas fa-route', 'text' => 'Rutas', 'match' => 'rutas*', 'roles' => ['admin', 'operaciones']],
+                [
+                    'href' => '/rutas',
+                    'icon' => 'fas fa-route',
+                    'text' => 'Rutas',
+                    'roles' => ['admin', 'operaciones'],
+                    'children' => [
+                        ['href' => '/rutas', 'icon' => 'far fa-circle', 'text' => 'Resumen de rutas', 'match' => 'rutas*'],
+                        ['href' => '/rutas', 'icon' => 'far fa-circle', 'text' => 'Viaticos por ruta', 'match' => 'ruta/*/rutaviatico*'],
+                        ['href' => '/rutas', 'icon' => 'far fa-circle', 'text' => 'Combustible por ruta', 'match' => 'ruta/*/rutacombustible*'],
+                        ['href' => '/rutas', 'icon' => 'far fa-circle', 'text' => 'Peajes por ruta', 'match' => 'ruta/*/rutapeaje*'],
+                    ],
+                ],
                 ['href' => '/guias-remision', 'icon' => 'fas fa-truck-loading', 'text' => 'Guias de remision', 'match' => 'guias-remision*', 'roles' => ['admin', 'comercial', 'operaciones']],
-                ['href' => '/viaticos', 'icon' => 'fas fa-wallet', 'text' => 'Viaticos', 'match' => 'viaticos*', 'roles' => ['admin', 'operaciones']],
-                ['href' => '/combustible', 'icon' => 'fas fa-gas-pump', 'text' => 'Combustible', 'match' => 'combustible*', 'roles' => ['admin', 'operaciones']],
             ],
         ],
         [
@@ -346,21 +728,56 @@
                             @foreach($section['items'] as $item)
                                 @php
                                     $match = $item['match'] ?? ltrim($item['href'], '/');
+                                    $hasChildren = !empty($item['children']);
                                     $isActive = $match === ''
                                         ? request()->path() === '/'
                                         : request()->is($match);
+                                    $childActive = false;
+
+                                    if ($hasChildren) {
+                                        foreach ($item['children'] as $child) {
+                                            $childMatch = $child['match'] ?? ltrim($child['href'], '/');
+                                            if ($childMatch === '' ? request()->path() === '/' : request()->is($childMatch)) {
+                                                $childActive = true;
+                                                break;
+                                            }
+                                        }
+                                    }
                                 @endphp
-                                <li class="nav-item"
+                                <li class="nav-item {{ $hasChildren && $childActive ? 'menu-open' : '' }}"
                                     data-section-item="{{ $section['key'] }}"
                                     data-role-guard="{{ implode(',', $item['roles'] ?? []) }}"
                                     data-nav-path="{{ $item['href'] }}">
-                                    <a href="{{ $item['href'] }}" class="nav-link {{ $isActive ? 'active' : '' }}">
+                                    <a href="{{ $hasChildren ? '#' : $item['href'] }}" class="nav-link {{ $isActive || $childActive ? 'active' : '' }}">
                                         <i class="nav-icon {{ $item['icon'] }}"></i>
-                                        <p>{{ $item['text'] }}</p>
-                                        @if(!empty($item['pill']))
+                                        <p>
+                                            {{ $item['text'] }}
+                                            @if($hasChildren)
+                                                <i class="right fas fa-angle-left"></i>
+                                            @endif
+                                        </p>
+                                        @if(!$hasChildren && !empty($item['pill']))
                                             <span class="nav-pill">{{ $item['pill'] }}</span>
                                         @endif
                                     </a>
+                                    @if($hasChildren)
+                                        <ul class="nav nav-treeview">
+                                            @foreach($item['children'] as $child)
+                                                @php
+                                                    $childMatch = $child['match'] ?? ltrim($child['href'], '/');
+                                                    $childIsActive = $childMatch === ''
+                                                        ? request()->path() === '/'
+                                                        : request()->is($childMatch);
+                                                @endphp
+                                                <li class="nav-item">
+                                                    <a href="{{ $child['href'] }}" class="nav-link {{ $childIsActive ? 'active' : '' }}">
+                                                        <i class="nav-icon {{ $child['icon'] }}"></i>
+                                                        <p>{{ $child['text'] }}</p>
+                                                    </a>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
                                 </li>
                             @endforeach
                         @endforeach

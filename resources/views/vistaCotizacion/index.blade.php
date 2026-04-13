@@ -3,38 +3,46 @@
 @section('contenido')
 <div class="content">
     <div class="container-fluid">
-        <div class="card shadow-sm border-0">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <div>
-                    <h4 class="mb-0">
-                        <i class="fas fa-file-invoice-dollar text-primary"></i> Cotizaciones
-                    </h4>
-                    <small class="text-muted">Listado de cotizaciones registradas</small>
-                </div>
-
-                <a href="/cotizaciones/registro" class="btn btn-success">
-                    <i class="fas fa-plus"></i> Nueva Cotizacion
-                </a>
-            </div>
-
-            <div class="card-body">
-                <div class="mb-3">
-                    <div class="input-group shadow-sm">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text bg-white">
-                                <i class="fas fa-search text-muted"></i>
-                            </span>
+        <div class="module-shell">
+            <div class="card module-card">
+                <div class="module-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="module-heading">
+                            <div class="module-icon">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                            </div>
+                            <div>
+                                <h3 class="module-title">Cotizaciones</h3>
+                                <p class="module-subtitle">Revisa cotizaciones, abre su PDF y continua la edicion con el mismo formato del panel.</p>
+                            </div>
                         </div>
-                        <input type="text"
-                            id="buscador"
-                            class="form-control"
-                            placeholder="Buscar por cliente, asunto o item...">
+                        <div class="module-header-actions">
+                            <a href="/cotizaciones/registro" class="btn btn-success">
+                                <i class="fas fa-plus-circle"></i> Nueva Cotizacion
+                            </a>
+                        </div>
                     </div>
                 </div>
 
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped text-center">
-                        <thead class="bg-primary text-white">
+                <div class="module-body">
+                    <div class="module-search mb-4">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                            </div>
+                            <input type="text"
+                                id="buscador"
+                                class="form-control"
+                                placeholder="Buscar por cliente, asunto o item...">
+                        </div>
+                    </div>
+
+                    <div class="module-table-wrap">
+                        <div class="table-responsive">
+                            <table class="table table-hover module-table text-center">
+                                <thead>
                             <tr>
                                 <th>Acciones</th>
                                 <th>#</th>
@@ -48,16 +56,18 @@
                         </thead>
 
                         <tbody id="cotizacionTable">
-                            <tr>
-                                <td colspan="8" class="text-center">
-                                    <div class="spinner-border text-primary"></div>
-                                </td>
-                            </tr>
+                                <tr>
+                                    <td colspan="8" class="module-empty">
+                                        <div class="spinner-border text-primary"></div>
+                                    </td>
+                                </tr>
                         </tbody>
-                    </table>
-                </div>
+                            </table>
+                        </div>
+                    </div>
 
-                <div id="paginacion" class="mt-3 text-center"></div>
+                    <div id="paginacion" class="module-pagination mt-4"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -118,7 +128,7 @@ function renderPaginacion(pagination) {
 
     for (let page = 1; page <= pagination.last_page; page++) {
         html += `
-            <button class="btn btn-sm ${page === pagination.current_page ? 'btn-primary' : 'btn-light'} mr-1"
+            <button type="button" class="btn btn-sm ${page === pagination.current_page ? 'btn-primary' : 'btn-light'}"
                 onclick="fetchCotizaciones(${page})">
                 ${page}
             </button>
@@ -133,7 +143,7 @@ function fetchCotizaciones(page = 1) {
 
     $('#cotizacionTable').html(`
         <tr>
-            <td colspan="8" class="text-center">
+            <td colspan="8" class="module-empty">
                 <div class="spinner-border text-primary"></div>
             </td>
         </tr>
@@ -144,7 +154,7 @@ function fetchCotizaciones(page = 1) {
             if (!resp.data.length) {
                 $('#cotizacionTable').html(`
                     <tr>
-                        <td colspan="8" class="text-center text-muted">
+                        <td colspan="8" class="module-empty">
                             No se encontraron cotizaciones
                         </td>
                     </tr>
@@ -159,17 +169,19 @@ function fetchCotizaciones(page = 1) {
                 html += `
                     <tr>
                         <td>
-                            <a href="/cotizaciones/registro?id=${cotizacion.id}" class="btn btn-warning btn-sm">
-                                <i class="fas fa-edit"></i>
-                            </a>
+                            <div class="table-action-group">
+                                <a href="/cotizaciones/registro?id=${cotizacion.id}" class="btn btn-soft-warning btn-sm" title="Editar cotizacion">
+                                    <i class="fas fa-edit"></i>
+                                </a>
 
-                            <button class="btn btn-info btn-sm" onclick="verPdf(${cotizacion.id})">
-                                <i class="fas fa-file-pdf"></i>
-                            </button>
+                                <button type="button" class="btn btn-soft-primary btn-sm" onclick="verPdf(${cotizacion.id})" title="Ver PDF">
+                                    <i class="fas fa-file-pdf"></i>
+                                </button>
 
-                            <button class="btn btn-danger btn-sm" onclick="eliminar(${cotizacion.id})">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                                <button type="button" class="btn btn-soft-danger btn-sm" onclick="eliminar(${cotizacion.id})" title="Eliminar cotizacion">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
                         </td>
                         <td>#${cotizacion.id}</td>
                         <td class="text-left">${cotizacion.cliente?.razon_social || '-'}</td>
@@ -192,7 +204,7 @@ function fetchCotizaciones(page = 1) {
         .catch(err => {
             $('#cotizacionTable').html(`
                 <tr>
-                    <td colspan="8" class="text-center text-danger">
+                    <td colspan="8" class="module-empty text-danger">
                         No se pudieron cargar las cotizaciones
                     </td>
                 </tr>

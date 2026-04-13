@@ -3,43 +3,66 @@
 @section('contenido')
 <div class="content">
     <div class="container-fluid">
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="m-0">
-                            Registro de viáticos 
-                            <button class="btn btn-primary" data-toggle="modal" data-target="#modalRegistroViatico">
-                                <i class="fas fa-file"></i> Nuevo Viático
-                            </button>
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div>
-                            <form action="" method="get">
-                                <input class="form-control me-2" type="search" placeholder="Buscar conductor"
-                                    aria-label="Search" id="buscador">
-                            </form>
-                        </div>
-                        <div class="mt-2">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-bordered table-hover table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th width="10%">Opciones</th>
-                                            <th width="5%">ID</th>
-                                            <th width="15%">Nombre</th> <!-- Mostrar ID, salida y llegada -->
-                                            <th width="15%">Ruta</th> <!-- Mostrar ID, salida y llegada -->
-                                            <th width="10%">Fecha Viático</th>
-                                            <th width="10%">Monto</th>
-                                            <th width="15%">Descripción</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="viaticoTableBody">
-                                        {{-- Aquí se llenará dinámicamente la tabla con JavaScript --}}
-                                    </tbody>
-                                </table>
+        <div class="module-shell">
+            <div class="card module-card">
+                <div class="module-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="module-heading">
+                            <div class="module-icon">
+                                <i class="fas fa-wallet"></i>
                             </div>
+                            <div>
+                                <h3 class="module-title">Viaticos</h3>
+                                <p class="module-subtitle">Consulta y registra gastos operativos con el mismo formato del resto del panel.</p>
+                            </div>
+                        </div>
+
+                        <div class="module-header-actions">
+                            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modalRegistroViatico">
+                                <i class="fas fa-plus-circle"></i> Nuevo viatico
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="module-body">
+                    <div class="module-search mb-4">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                            </div>
+                            <input type="text"
+                                   class="form-control"
+                                   id="buscador"
+                                   placeholder="Buscar por servicio, ruta, factura o descripcion...">
+                        </div>
+                    </div>
+
+                    <div class="module-table-wrap">
+                        <div class="table-responsive">
+                            <table class="table table-hover module-table text-center">
+                                <thead>
+                                    <tr>
+                                        <th>Acciones</th>
+                                        <th>ID</th>
+                                        <th>Servicio</th>
+                                        <th>Ruta</th>
+                                        <th>Fecha</th>
+                                        <th>Factura</th>
+                                        <th>Importe</th>
+                                        <th>Descripcion</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="viaticoTableBody">
+                                    <tr>
+                                        <td colspan="8" class="module-empty">
+                                            <div class="spinner-border text-primary"></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -48,105 +71,140 @@
     </div>
 </div>
 
-@include('viaticos.registro') {{-- Modal para registrar nuevo viático --}}
-
+@include('viaticos.registro')
 @endsection
 
 @push('scripts')
 <script>
-    // Función para obtener datos de viáticos desde la API
-    function fetchViaticos() {
-        $.ajax({
-            url: "/api/viaticos", // Ruta API para obtener viáticos
-            method: "GET",
-            success: function(response) {
-                console.log(response); // Ver respuesta en la consola
+let viaticosSource = [];
 
-                let tbody = $("#viaticoTableBody");
-                tbody.empty(); 
-                
-                // Asegúrate de que 'response' sea un array con viáticos
-                $.each(response, function(index, viatico) {
-                    let rutaInfo = viatico.ruta 
-                        ? `${viatico.ruta.id} - desde ${viatico.ruta.origen} a ${viatico.ruta.destino}` 
-                        : 'N/A';
-
-                    tbody.append(`
-                        <tr>
-                            <td>
-
-                                <div class="d-flex align-items-center">
-                                    <button type="button" class="btn btn-warning btn-sm editar me-2" onclick="editarViatico(${viatico.id})">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-
-                                    <button type="button" class="btn btn-danger btn-sm eliminar" onclick="eliminar(${viatico.id})">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                            <td>${viatico.id}</td>
-                            <td>${viatico.nombre_servicio}</td>
-                            <td>${rutaInfo}</td> <!-- Muestra el ID de la ruta, salida y llegada -->
-                            <td>${viatico.fecha}</td>
-                            <td>${viatico.importe}</td>
-                            <td>${viatico.descripcion}</td>
-                        </tr>
-                    `);
-                });
-            },
-            error: function() {
-                alert("Error al obtener datos de viáticos.");
-            }
-        });
+function getRutaInfo(viatico) {
+    if (!viatico.ruta) {
+        return 'Sin ruta';
     }
 
-    // Cargar datos de viáticos al cargar la página
-    $(document).ready(function() {
-        fetchViaticos();
+    return `#${viatico.ruta.id} - ${viatico.ruta.origen || '-'} a ${viatico.ruta.destino || '-'}`;
+}
 
-        // Funcionalidad de búsqueda
-        $("#searchButton").click(function() {
-            let searchText = $("#searchText").val();
-            if (searchText.trim() !== "") {
+function renderViaticos(rows) {
+    const tbody = $('#viaticoTableBody');
+
+    if (!rows.length) {
+        tbody.html(`
+            <tr>
+                <td colspan="8" class="module-empty">No se encontraron viaticos.</td>
+            </tr>
+        `);
+        return;
+    }
+
+    let html = '';
+
+    rows.forEach(viatico => {
+        html += `
+            <tr>
+                <td>
+                    <div class="table-action-group">
+                        <button type="button" class="btn btn-soft-warning btn-sm" onclick="editarViatico(${viatico.id})" title="Editar viatico">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="btn btn-soft-danger btn-sm" onclick="eliminar(${viatico.id})" title="Eliminar viatico">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+                <td>${viatico.id}</td>
+                <td class="text-left">${viatico.nombre_servicio || '-'}</td>
+                <td class="text-left">${getRutaInfo(viatico)}</td>
+                <td>${viatico.fecha || '-'}</td>
+                <td>${viatico.numero_factura || '-'}</td>
+                <td>S/ ${Number(viatico.importe || 0).toFixed(2)}</td>
+                <td class="text-left">${viatico.descripcion || '-'}</td>
+            </tr>
+        `;
+    });
+
+    tbody.html(html);
+}
+
+function applyViaticosFilter() {
+    const value = $('#buscador').val().toLowerCase().trim();
+
+    if (!value) {
+        renderViaticos(viaticosSource);
+        return;
+    }
+
+    const filtered = viaticosSource.filter(viatico => {
+        const content = [
+            viatico.nombre_servicio,
+            viatico.fecha,
+            viatico.numero_factura,
+            viatico.descripcion,
+            viatico.ruta?.origen,
+            viatico.ruta?.destino,
+        ].join(' ').toLowerCase();
+
+        return content.includes(value);
+    });
+
+    renderViaticos(filtered);
+}
+
+function fetchViaticos() {
+    apiFetch('/api/viaticos')
+        .then(response => {
+            viaticosSource = Array.isArray(response) ? response : [];
+            renderViaticos(viaticosSource);
+        })
+        .catch(() => {
+            $('#viaticoTableBody').html(`
+                <tr>
+                    <td colspan="8" class="module-empty text-danger">No se pudieron cargar los viaticos.</td>
+                </tr>
+            `);
+        });
+}
+
+function eliminar(id) {
+    Swal.fire({
+        title: 'Eliminar registro?',
+        text: 'Esta accion no se puede deshacer.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Si, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then(result => {
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        $.ajax({
+            method: 'DELETE',
+            url: `/api/viaticos/${id}`,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function () {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Viatico eliminado',
+                    timer: 1400,
+                    showConfirmButton: false
+                });
                 fetchViaticos();
+            },
+            error: function () {
+                Swal.fire('Error', 'No se pudo eliminar el viatico.', 'error');
             }
         });
     });
+}
 
-    function eliminar(id) {
-        Swal.fire({
-            title: 'Eliminar registro',
-            text: "¿Está seguro de querer eliminar el registro?",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Sí',
-            cancelButtonText: 'No'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    method: 'DELETE',
-                    url:  `/api/viaticos/${id}`,
-                    headers:{
-                      'X-CSRF-TOKEN':$('meta[name="csrf-token"]').attr('content')
-                    },
-                    success: function(res){
-                        window.location.reload();
-                        Swal.fire({
-                            icon: res.status,
-                            title: res.message,
-                            showConfirmButton: false,
-                            timer: 1500
-                        });
-                    },
-                    error: function (res){
-                        console.log(res);
-                    }
-                });
-            }
-        });
-    }
+$('#buscador').on('input', applyViaticosFilter);
+
+$(document).ready(function () {
+    fetchViaticos();
+});
 </script>
 @endpush

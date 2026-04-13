@@ -1,72 +1,87 @@
 @extends('admin.main')
 
 @section('contenido')
-
 <div class="content">
-<div class="container-fluid">
+    <div class="container-fluid">
+        <div class="module-shell">
+            <div class="card module-card">
+                <div class="module-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="module-heading">
+                            <div class="module-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div>
+                                <h3 class="module-title">Notas de Credito y Debito</h3>
+                                <p class="module-subtitle">Controla notas emitidas, revisa respuestas de SUNAT y abre sus archivos desde una sola tabla.</p>
+                            </div>
+                        </div>
+                        <div class="module-header-actions">
+                            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modalNota">
+                                <i class="fas fa-plus-circle"></i> Generar Nota
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-<div class="card shadow">
-<div class="card-header d-flex justify-content-between align-items-center">
-    <h5 class="m-0"><i class="fas fa-file-alt"></i> Notas de Credito y Debito</h5>
-    <button class="btn btn-primary" data-toggle="modal" data-target="#modalNota">
-        Generar Nota
-    </button>
-</div>
-
-<div class="card-body">
-    <div class="table-responsive">
-        <table class="table table-bordered table-striped table-sm">
-            <thead class="thead-dark">
-                <tr>
-                    <th>#</th>
-                    <th>Nota</th>
-                    <th>Tipo</th>
-                    <th>Factura Afectada</th>
-                    <th>Cliente</th>
-                    <th>Emitido por</th>
-                    <th>Monto</th>
-                    <th>Motivo</th>
-                    <th>Estado</th>
-                    <th>Respuesta SUNAT</th>
-                    <th width="170">Opciones</th>
-                </tr>
-            </thead>
-            <tbody id="tablaNotas"></tbody>
-        </table>
+                <div class="module-body">
+                    <div class="module-table-wrap">
+                        <div class="table-responsive">
+                            <table class="table table-hover module-table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Nota</th>
+                                        <th>Tipo</th>
+                                        <th>Factura Afectada</th>
+                                        <th>Cliente</th>
+                                        <th>Emitido por</th>
+                                        <th>Monto</th>
+                                        <th>Motivo</th>
+                                        <th>Estado</th>
+                                        <th>Respuesta SUNAT</th>
+                                        <th>Opciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaNotas">
+                                    <tr>
+                                        <td colspan="11" class="module-empty">
+                                            <div class="spinner-border text-primary"></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
-</div>
-
-</div>
 </div>
 
 <div class="modal fade" id="modalNota" tabindex="-1">
-<div class="modal-dialog modal-lg modal-dialog-centered">
-<div class="modal-content">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Nueva Nota de Credito / Debito</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
 
-<div class="modal-header bg-primary text-white">
-    <h5 class="modal-title">Nueva Nota de Credito / Debito</h5>
-    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
-</div>
+            <div class="modal-body">
+                @include('NotasCredito.registro')
+            </div>
 
-<div class="modal-body">
-    @include('NotasCredito.registro')
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" onclick="procesarNota()">Registrar Nota</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+            </div>
+        </div>
+    </div>
 </div>
-
-<div class="modal-footer">
-    <button class="btn btn-success" onclick="procesarNota()">Registrar Nota</button>
-    <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-</div>
-
-</div>
-</div>
-</div>
-
 @endsection
 
 @push('scripts')
 <script>
-
 document.addEventListener('DOMContentLoaded', cargarNotas);
 
 function badgeEstadoNota(estado) {
@@ -87,7 +102,7 @@ function cargarNotas() {
             if (!lista.length) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="11" class="text-center text-muted">No hay notas registradas</td>
+                        <td colspan="11" class="module-empty">No hay notas registradas</td>
                     </tr>
                 `;
                 return;
@@ -114,26 +129,20 @@ function cargarNotas() {
                         <td>${badgeEstadoNota(n.estado_envio)}</td>
                         <td>${code}${reason}</td>
                         <td class="text-center">
-                            <button class="btn btn-sm btn-info" title="Ver PDF"
-                                ${canUsePdf ? '' : 'disabled'}
-                                onclick="${canUsePdf ? `verPdfNota(${n.id})` : 'return false;'}">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger" title="Descargar PDF"
-                                ${canUsePdf ? '' : 'disabled'}
-                                onclick="${canUsePdf ? `descargarPdfNota(${n.id})` : 'return false;'}">
-                                <i class="fas fa-download"></i>
-                            </button>
-                            <button class="btn btn-sm btn-secondary" title="Ver XML"
-                                ${canUseXml ? '' : 'disabled'}
-                                onclick="${canUseXml ? `verXmlNota(${n.id})` : 'return false;'}">
-                                <i class="fas fa-code"></i>
-                            </button>
-                            <button class="btn btn-sm btn-dark" title="Descargar XML"
-                                ${canUseXml ? '' : 'disabled'}
-                                onclick="${canUseXml ? `descargarXmlNota(${n.id})` : 'return false;'}">
-                                <i class="fas fa-file-download"></i>
-                            </button>
+                            <div class="table-action-group">
+                                <button type="button" class="btn btn-soft-primary btn-sm" title="Ver PDF" ${canUsePdf ? '' : 'disabled'} onclick="${canUsePdf ? `verPdfNota(${n.id})` : 'return false;'}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button type="button" class="btn btn-soft-danger btn-sm" title="Descargar PDF" ${canUsePdf ? '' : 'disabled'} onclick="${canUsePdf ? `descargarPdfNota(${n.id})` : 'return false;'}">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button type="button" class="btn btn-soft-secondary btn-sm" title="Ver XML" ${canUseXml ? '' : 'disabled'} onclick="${canUseXml ? `verXmlNota(${n.id})` : 'return false;'}">
+                                    <i class="fas fa-code"></i>
+                                </button>
+                                <button type="button" class="btn btn-soft-dark btn-sm" title="Descargar XML" ${canUseXml ? '' : 'disabled'} onclick="${canUseXml ? `descargarXmlNota(${n.id})` : 'return false;'}">
+                                    <i class="fas fa-file-download"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -176,7 +185,7 @@ function descargarXmlNota(id) {
     window.open(getNotaXmlDownloadUrl(id), '_blank');
 }
 
-$(document).ready(function() {
+$(document).ready(function () {
     $('#modalNota').on('shown.bs.modal', function () {
         if (typeof cargarFacturasEmitidasNota === 'function') {
             cargarFacturasEmitidasNota();
@@ -187,6 +196,5 @@ $(document).ready(function() {
         cargarNotas();
     });
 });
-
 </script>
 @endpush

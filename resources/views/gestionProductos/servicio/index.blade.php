@@ -5,34 +5,47 @@
 <div class="content">
     <div class="container-fluid">
 
-        <div class="card shadow-sm border-0">
+        <div class="module-shell">
+            <div class="card module-card">
 
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <div>
-                    <h4 class="mb-0 font-weight-bold">
-                        <i class="fas fa-concierge-bell text-primary"></i> Gestion de Servicios
-                    </h4>
-                    <small class="text-muted">Servicios ofrecidos por la empresa</small>
-                </div>
+            <div class="module-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="module-heading">
+                        <div class="module-icon">
+                            <i class="fas fa-concierge-bell"></i>
+                        </div>
+                        <div>
+                            <h3 class="module-title">Servicios</h3>
+                            <p class="module-subtitle">Mantiene ordenado el catalogo de servicios, precios y condiciones operativas.</p>
+                        </div>
+                    </div>
 
-                <button class="btn btn-success"
+                    <div class="module-header-actions">
+                        <button type="button" class="btn btn-success"
                         data-toggle="modal"
                         data-target="#modalServicio">
-                    <i class="fas fa-plus"></i> Nuevo Servicio
-                </button>
-
+                            <i class="fas fa-plus-circle"></i> Nuevo Servicio
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            <div class="card-body">
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <input type="text" id="buscador" class="form-control" placeholder="Buscar servicio por nombre...">
+            <div class="module-body">
+                <div class="module-search mb-4">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">
+                                <i class="fas fa-search"></i>
+                            </span>
+                        </div>
+                        <input type="text" id="buscador" class="form-control" placeholder="Buscar servicio por nombre, tipo o nivel...">
                     </div>
                 </div>
 
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped text-center">
-                        <thead class="bg-primary text-white">
+                <div class="module-table-wrap">
+                    <div class="table-responsive">
+                    <table class="table table-hover module-table text-center">
+                        <thead>
                             <tr>
                                 <th>Acciones</th>
                                 <th>ID</th>
@@ -47,9 +60,11 @@
 
                         <tbody id="servicioTable"></tbody>
                     </table>
+                    </div>
                 </div>
 
-                <div id="paginacion" class="mt-2 text-center"></div>
+                <div id="paginacion" class="module-pagination mt-4"></div>
+            </div>
             </div>
         </div>
 
@@ -85,7 +100,8 @@ function fetchServicios(page = 1){
         tbody.empty();
 
         if(resp.data.length === 0){
-            tbody.html('<tr><td colspan="8">Sin registros</td></tr>');
+            tbody.html('<tr><td colspan="8" class="module-empty">Sin registros</td></tr>');
+            $('#paginacion').html('');
             return;
         }
 
@@ -93,13 +109,15 @@ function fetchServicios(page = 1){
             tbody.append(`
                 <tr>
                     <td>
-                        <button class="btn btn-warning btn-sm" onclick="editar(${s.id})">
-                            <i class="fas fa-edit"></i>
-                        </button>
+                        <div class="table-action-group">
+                            <button type="button" class="btn btn-soft-warning btn-sm" onclick="editar(${s.id})" title="Editar servicio">
+                                <i class="fas fa-edit"></i>
+                            </button>
 
-                        <button class="btn btn-danger btn-sm" onclick="eliminar(${s.id})">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                            <button type="button" class="btn btn-soft-danger btn-sm" onclick="eliminar(${s.id})" title="Eliminar servicio">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </td>
                     <td>${s.id}</td>
                     <td class="text-left">${s.nombre}</td>
@@ -121,11 +139,16 @@ function fetchServicios(page = 1){
 }
 
 function renderPaginacion(p){
+    if (!p || p.last_page <= 1) {
+        $('#paginacion').html('');
+        return;
+    }
+
     let html = '';
 
     for(let i = 1; i <= p.last_page; i++){
         html += `
-            <button class="btn btn-sm ${i === p.current_page ? 'btn-primary' : 'btn-light'}"
+            <button type="button" class="btn btn-sm ${i === p.current_page ? 'btn-primary' : 'btn-light'}"
                 onclick="fetchServicios(${i})">${i}</button>
         `;
     }

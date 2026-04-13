@@ -40,8 +40,16 @@
         }
 
         .main-nav {
-            min-height: 86px;
+            min-height: 96px;
             box-shadow: 0 10px 30px rgba(13, 42, 81, 0.08);
+        }
+
+        .main-nav .container-fluid {
+            max-width: 1720px;
+        }
+
+        .main-nav .navbar-collapse {
+            justify-content: flex-end;
         }
 
         .brand-dual {
@@ -51,17 +59,24 @@
             font-weight: 800;
             color: #163764;
             line-height: 1.1;
+            margin-right: 20px;
         }
 
         .brand-logo {
-            width: 52px;
-            height: 52px;
+            width: 62px;
+            height: 62px;
             object-fit: contain;
+        }
+
+        .brand-copy {
+            white-space: nowrap;
+            font-size: 1.12rem;
+            letter-spacing: -0.01em;
         }
 
         .brand-copy small {
             display: block;
-            font-size: 12px;
+            font-size: 13px;
             color: #4f5f79;
             font-weight: 700;
         }
@@ -69,9 +84,9 @@
         .navbar-light .navbar-nav .nav-link {
             font-weight: 800;
             color: #1d3557;
-            margin-left: 16px;
-            font-size: 1rem;
-            padding: 12px 4px;
+            margin-left: 14px;
+            font-size: 1.03rem;
+            padding: 16px 2px;
         }
 
         .navbar-light .navbar-nav .nav-link.active {
@@ -79,13 +94,19 @@
             border-bottom: 2px solid #1b74d1;
         }
 
+        .navbar-nav .nav-item:last-child {
+            margin-left: 12px !important;
+        }
+
         .btn-hecab {
             background: linear-gradient(120deg, var(--hecab-blue), var(--hecab-sky));
             color: #fff;
             border-radius: 30px;
-            padding: 11px 24px;
+            padding: 12px 26px;
             font-weight: 700;
             border: 0;
+            white-space: nowrap;
+            font-size: 0.98rem;
         }
 
         .btn-hecab:hover {
@@ -143,6 +164,13 @@
             padding: 24px;
             height: 100%;
             box-shadow: 0 10px 24px rgba(20, 44, 86, 0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card-public:hover {
+            transform: translateY(-4px);
+            border-color: #d1e2fb;
+            box-shadow: 0 18px 34px rgba(20, 44, 86, 0.12);
         }
 
         .card-public img {
@@ -171,9 +199,64 @@
             font-size: 14px;
         }
 
+        @media (max-width: 1399.98px) {
+            .brand-copy {
+                font-size: 1.02rem;
+            }
+
+            .navbar-light .navbar-nav .nav-link {
+                margin-left: 10px;
+                font-size: 0.95rem;
+            }
+
+            .btn-hecab {
+                padding: 10px 18px;
+                font-size: 0.93rem;
+            }
+        }
+
+        @media (max-width: 1199.98px) {
+            .brand-copy {
+                font-size: 0.95rem;
+            }
+
+            .brand-copy small {
+                font-size: 11px;
+            }
+
+            .navbar-light .navbar-nav .nav-link {
+                margin-left: 8px;
+                font-size: 0.9rem;
+            }
+
+            .btn-hecab {
+                padding: 10px 14px;
+                font-size: 0.88rem;
+            }
+        }
+
         @media (max-width: 991.98px) {
+            .main-nav {
+                min-height: 88px;
+            }
+
             .navbar-light .navbar-nav .nav-link {
                 margin-left: 0;
+                font-size: 1rem;
+                padding: 12px 0;
+            }
+
+            .navbar-nav .nav-item:last-child {
+                margin-left: 0 !important;
+            }
+
+            .brand-logo {
+                width: 54px;
+                height: 54px;
+            }
+
+            .brand-copy small {
+                font-size: 12px;
             }
         }
     </style>
@@ -194,14 +277,13 @@
     </div>
 
     <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top main-nav">
-        <div class="container">
+        <div class="container-fluid px-4 px-xl-5">
             <a class="navbar-brand brand-dual" href="{{ route('public.inicio') }}">
                 <img src="{{ asset('assets/dinamic/images/logo.png') }}" alt="Logo HECAB" class="brand-logo">
                 <span class="brand-copy">
                     {{ data_get($empresa, 'nombre_comercial') }}
                     <small>Servicios Energeticos</small>
                 </span>
-                <img src="{{ asset('assets/dinamic/images/logo1.png') }}" alt="Logo secundario HECAB" class="brand-logo">
             </a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#menuInicio" aria-controls="menuInicio" aria-expanded="false" aria-label="Menu">
                 <span class="navbar-toggler-icon"></span>

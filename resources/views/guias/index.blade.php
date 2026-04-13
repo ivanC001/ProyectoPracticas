@@ -13,23 +13,40 @@
 @endphp
 <div class="content">
     <div class="container-fluid">
-        <div class="card shadow-sm border-0">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <div>
-                    <h4 class="mb-0">
-                        <i class="fas fa-truck-loading text-primary"></i> Guias de Remision
-                    </h4>
-                    <small class="text-muted">Remitente (09) y Transportista (31)</small>
+        <div class="module-shell">
+            <div class="card module-card">
+                <div class="module-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="module-heading">
+                            <div class="module-icon">
+                                <i class="fas fa-truck-loading"></i>
+                            </div>
+                            <div>
+                                <h3 class="module-title">Guias de remision</h3>
+                                <p class="module-subtitle">Gestiona guias remitente y transportista con acceso rapido a SUNAT, PDF y XML.</p>
+                            </div>
+                        </div>
+                        <div class="module-header-actions">
+                            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modalGuiaRemision" onclick="prepararNuevaGuia()">
+                                <i class="fas fa-plus-circle"></i> Nueva Guia
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <button class="btn btn-primary" data-toggle="modal" data-target="#modalGuiaRemision" onclick="prepararNuevaGuia()">
-                    <i class="fas fa-plus-circle"></i> Nueva Guia
-                </button>
-            </div>
 
-            <div class="card-body">
+                <div class="module-body">
                 <div class="row mb-3">
                     <div class="col-md-4">
-                        <input type="text" id="guiaBuscador" class="form-control" placeholder="Buscar por guia, destinatario, documento o placa...">
+                        <div class="module-search">
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-search"></i>
+                                    </span>
+                                </div>
+                                <input type="text" id="guiaBuscador" class="form-control" placeholder="Buscar por guia, destinatario, documento o placa...">
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-3">
                         <select id="guiaFiltroTipo" class="form-control">
@@ -40,9 +57,10 @@
                     </div>
                 </div>
 
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped table-bordered">
-                        <thead class="thead-dark">
+                <div class="module-table-wrap">
+                    <div class="table-responsive">
+                    <table class="table table-hover module-table">
+                        <thead>
                             <tr>
                                 <th width="220">Acciones</th>
                                 <th>#</th>
@@ -58,15 +76,17 @@
                         </thead>
                         <tbody id="guiaTableBody">
                             <tr>
-                                <td colspan="10" class="text-center">
+                                <td colspan="10" class="module-empty">
                                     <div class="spinner-border text-primary"></div>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+                    </div>
                 </div>
 
-                <div id="guiaPaginacion" class="mt-2"></div>
+                <div id="guiaPaginacion" class="module-pagination mt-4"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -707,7 +727,7 @@ async function cargarGuias(page = 1) {
         tbody.empty();
 
         if (!resp.data || !resp.data.length) {
-            tbody.html('<tr><td colspan="10" class="text-center text-muted">No hay guias registradas</td></tr>');
+            tbody.html('<tr><td colspan="10" class="module-empty">No hay guias registradas</td></tr>');
             $('#guiaPaginacion').html('');
             return;
         }
@@ -722,21 +742,23 @@ async function cargarGuias(page = 1) {
                 tbody.append(`
                 <tr>
                     <td class="text-center">
-                        <button class="btn btn-sm btn-info" onclick="verGuia(${g.id})" title="Ver detalle">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-info ${canPdf ? '' : 'disabled'}" ${canPdf ? `onclick="window.open('${getGuiaPdfUrl(g.id)}','_blank')"` : ''} title="Ver PDF">
-                            <i class="fas fa-file-pdf"></i>
-                        </button>
-                        <button class="btn btn-sm btn-secondary ${canPdf ? '' : 'disabled'}" ${canPdf ? `onclick="window.open('${getGuiaPdfDownloadUrl(g.id)}','_blank')"` : ''} title="Descargar PDF">
-                            <i class="fas fa-download"></i>
-                        </button>
-                        <button class="btn btn-sm btn-dark ${canXml ? '' : 'disabled'}" ${canXml ? `onclick="window.open('${getGuiaXmlUrl(g.id)}','_blank')"` : ''} title="Ver XML">
-                            <i class="fas fa-code"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-dark ${canXml ? '' : 'disabled'}" ${canXml ? `onclick="window.open('${getGuiaXmlDownloadUrl(g.id)}','_blank')"` : ''} title="Descargar XML">
-                            <i class="fas fa-file-download"></i>
-                        </button>
+                        <div class="table-action-group">
+                            <button type="button" class="btn btn-soft-primary btn-sm" onclick="verGuia(${g.id})" title="Ver detalle">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button type="button" class="btn btn-soft-primary btn-sm ${canPdf ? '' : 'disabled'}" ${canPdf ? `onclick="window.open('${getGuiaPdfUrl(g.id)}','_blank')"` : ''} title="Ver PDF">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                            <button type="button" class="btn btn-soft-danger btn-sm ${canPdf ? '' : 'disabled'}" ${canPdf ? `onclick="window.open('${getGuiaPdfDownloadUrl(g.id)}','_blank')"` : ''} title="Descargar PDF">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button type="button" class="btn btn-soft-secondary btn-sm ${canXml ? '' : 'disabled'}" ${canXml ? `onclick="window.open('${getGuiaXmlUrl(g.id)}','_blank')"` : ''} title="Ver XML">
+                                <i class="fas fa-code"></i>
+                            </button>
+                            <button type="button" class="btn btn-soft-dark btn-sm ${canXml ? '' : 'disabled'}" ${canXml ? `onclick="window.open('${getGuiaXmlDownloadUrl(g.id)}','_blank')"` : ''} title="Descargar XML">
+                                <i class="fas fa-file-download"></i>
+                            </button>
+                        </div>
                     </td>
                     <td>${g.id}</td>
                     <td><strong>${g.numero_guia}</strong>${docRel ? `<br><small class="text-muted">Doc rel: ${escapeHtml(docRel)}</small>` : ''}</td>
@@ -756,7 +778,7 @@ async function cargarGuias(page = 1) {
 
         renderPaginacionGuias(resp.pagination);
     } catch (err) {
-        $('#guiaTableBody').html('<tr><td colspan="10" class="text-center text-danger">No se pudo cargar guias</td></tr>');
+        $('#guiaTableBody').html('<tr><td colspan="10" class="module-empty text-danger">No se pudo cargar guias</td></tr>');
     }
 }
 
@@ -768,7 +790,7 @@ function renderPaginacionGuias(p) {
 
     let html = '';
     for (let i = 1; i <= p.last_page; i++) {
-        html += `<button class="btn btn-sm ${i === p.current_page ? 'btn-primary' : 'btn-light'} mr-1" onclick="cargarGuias(${i})">${i}</button>`;
+        html += `<button type="button" class="btn btn-sm ${i === p.current_page ? 'btn-primary' : 'btn-light'}" onclick="cargarGuias(${i})">${i}</button>`;
     }
     $('#guiaPaginacion').html(html);
 }

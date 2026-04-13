@@ -3,35 +3,45 @@
 @section('contenido')
 <div class="content">
     <div class="container-fluid">
-        <div class="card shadow-sm border-0">
-            <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
-                <div>
-                    <h4 class="mb-1">
-                        <i class="fas fa-users-cog text-primary"></i> Usuarios y roles
-                    </h4>
-                    <small class="text-muted">Controla acceso, rol y estado de cada usuario del sistema.</small>
+        <div class="module-shell">
+            <div class="card module-card">
+                <div class="module-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="module-heading">
+                            <div class="module-icon">
+                                <i class="fas fa-users-cog"></i>
+                            </div>
+                            <div>
+                                <h3 class="module-title">Usuarios y roles</h3>
+                                <p class="module-subtitle">Controla accesos, permisos y estado de cada usuario del sistema.</p>
+                            </div>
+                        </div>
+
+                        <div class="module-header-actions">
+                            <button type="button" class="btn btn-success mt-2 mt-md-0"
+                                    data-toggle="modal"
+                                    data-target="#modalRegistroUsuario">
+                                <i class="fas fa-plus-circle"></i> Nuevo usuario
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                <button class="btn btn-primary mt-2 mt-md-0"
-                        data-toggle="modal"
-                        data-target="#modalRegistroUsuario">
-                    <i class="fas fa-plus"></i> Nuevo usuario
-                </button>
-            </div>
-
-            <div class="card-body">
+                <div class="module-body">
                 <div class="row mb-3">
                     <div class="col-md-6 mb-2 mb-md-0">
-                        <div class="input-group shadow-sm">
+                        <div class="module-search">
+                            <div class="input-group">
                             <div class="input-group-prepend">
-                                <span class="input-group-text bg-white">
-                                    <i class="fas fa-search text-muted"></i>
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
                                 </span>
                             </div>
                             <input type="text"
                                    id="searchText"
                                    class="form-control"
                                    placeholder="Buscar por nombre, correo o rol...">
+                            </div>
                         </div>
                     </div>
 
@@ -50,9 +60,10 @@
                     </div>
                 </div>
 
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped text-center">
-                        <thead class="bg-primary text-white">
+                <div class="module-table-wrap">
+                    <div class="table-responsive">
+                    <table class="table table-hover module-table text-center">
+                        <thead>
                             <tr>
                                 <th>Acciones</th>
                                 <th>ID</th>
@@ -64,15 +75,17 @@
                         </thead>
                         <tbody id="usuarioTableBody">
                             <tr>
-                                <td colspan="6" class="text-center">
+                                <td colspan="6" class="module-empty">
                                     <div class="spinner-border text-primary"></div>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+                    </div>
                 </div>
 
-                <div id="paginacion" class="mt-3 text-center"></div>
+                <div id="paginacion" class="module-pagination mt-4"></div>
+            </div>
             </div>
         </div>
     </div>
@@ -99,11 +112,16 @@ function populateRoleFilter() {
 }
 
 function renderPagination(pagination) {
+    if (!pagination || pagination.last_page <= 1) {
+        $('#paginacion').html('');
+        return;
+    }
+
     let html = '';
 
     for (let i = 1; i <= pagination.last_page; i++) {
         html += `
-            <button class="btn btn-sm ${i === pagination.current_page ? 'btn-primary' : 'btn-light'}"
+            <button type="button" class="btn btn-sm ${i === pagination.current_page ? 'btn-primary' : 'btn-light'}"
                 onclick="fetchUsuarios(${i})">
                 ${i}
             </button>
@@ -152,7 +170,7 @@ function fetchUsuarios(page = 1) {
             if (!response.data.length) {
                 tbody.html(`
                     <tr>
-                        <td colspan="6" class="text-center text-muted">
+                        <td colspan="6" class="module-empty">
                             No se encontraron usuarios
                         </td>
                     </tr>
@@ -167,12 +185,14 @@ function fetchUsuarios(page = 1) {
                 tbody.append(`
                     <tr>
                         <td>
-                            <button class="btn btn-warning btn-sm" onclick="editarUsuario(${usuario.id})">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-danger btn-sm" onclick="desactivarUsuario(${usuario.id})" ${disableDelete ? 'disabled' : ''}>
-                                <i class="fas fa-user-slash"></i>
-                            </button>
+                            <div class="table-action-group">
+                                <button type="button" class="btn btn-soft-warning btn-sm" onclick="editarUsuario(${usuario.id})" title="Editar usuario">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-soft-danger btn-sm" onclick="desactivarUsuario(${usuario.id})" ${disableDelete ? 'disabled' : ''} title="Desactivar usuario">
+                                    <i class="fas fa-user-slash"></i>
+                                </button>
+                            </div>
                         </td>
                         <td>${usuario.id}</td>
                         <td class="text-left">${usuario.name}</td>
