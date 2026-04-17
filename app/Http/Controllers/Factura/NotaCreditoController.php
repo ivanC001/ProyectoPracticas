@@ -16,15 +16,20 @@ use Illuminate\Validation\ValidationException;
 
 class NotaCreditoController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $notas = Nota::query()
+        $query = Nota::query()
             ->with([
                 'venta:id,numero_comprobante,nombre_cliente,moneda',
                 'emisor:id,name,email',
             ])
-            ->orderByDesc('id')
-            ->get([
+            ->orderByDesc('id');
+
+        if ($request->filled('venta_id')) {
+            $query->where('venta_id', (int) $request->input('venta_id'));
+        }
+
+        $notas = $query->get([
                 'id',
                 'venta_id',
                 'emisor_user_id',

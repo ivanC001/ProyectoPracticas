@@ -6,21 +6,20 @@
 <style>
 @page {
     size: A4;
-    margin: 6mm;
+    margin: 8mm;
 }
 
 body {
     margin: 0;
     font-family: DejaVu Sans, sans-serif;
-    font-size: 10px;
+    font-size: 9.6px;
     color: #111827;
 }
 
 .page {
     border: 1px solid #111827;
-    min-height: 284mm;
-    box-sizing: border-box;
-    padding: 6px 8px;
+    padding: 6px 8px 16mm;
+    position: relative;
 }
 
 .top-line {
@@ -32,6 +31,7 @@ body {
 .header {
     width: 100%;
     border-collapse: collapse;
+    margin-bottom: 2px;
 }
 
 .header td {
@@ -40,15 +40,15 @@ body {
 
 .empresa-title {
     color: #0f3f82;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
-    margin: 3px 0 5px;
+    margin: 2px 0 4px;
 }
 
 .empresa-info {
     line-height: 1.4;
     color: #334155;
-    font-size: 10px;
+    font-size: 9.4px;
 }
 
 .doc-box {
@@ -61,37 +61,38 @@ body {
     background: #0f3f82;
     color: #fff;
     text-align: center;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
-    padding: 6px 8px;
+    padding: 5px 8px;
     letter-spacing: .5px;
 }
 
 .doc-box-body {
     text-align: center;
-    padding: 8px 6px;
+    padding: 7px 6px;
 }
 
 .doc-number {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     letter-spacing: 1px;
 }
 
 .section-box {
-    margin-top: 7px;
+    margin-top: 6px;
     border: 1px solid #cbd5e1;
     border-radius: 8px;
-    padding: 7px 8px;
+    padding: 6px 8px;
     background: #f8fafc;
+    page-break-inside: avoid;
 }
 
 .section-title {
     color: #0f3f82;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: .8px;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
 }
 
 .two-col {
@@ -104,7 +105,7 @@ body {
 }
 
 .line {
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
 
 .line strong {
@@ -114,22 +115,23 @@ body {
 .items-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 8px;
+    margin-top: 7px;
+    page-break-inside: avoid;
 }
 
 .items-table th {
     background: #0f3f82;
     color: #fff;
     border: 1px solid #9fb3cf;
-    padding: 5px 4px;
-    font-size: 9px;
+    padding: 4px 3px;
+    font-size: 8.6px;
     text-transform: uppercase;
 }
 
 .items-table td {
     border: 1px solid #cbd5e1;
-    padding: 5px 4px;
-    font-size: 9px;
+    padding: 4px 3px;
+    font-size: 8.6px;
 }
 
 .items-table tr:nth-child(even) td {
@@ -142,7 +144,8 @@ body {
 .summary-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 8px;
+    margin-top: 7px;
+    page-break-inside: avoid;
 }
 
 .summary-left {
@@ -158,12 +161,12 @@ body {
 
 .letters-title {
     font-weight: 700;
-    font-size: 12px;
-    margin-bottom: 4px;
+    font-size: 11px;
+    margin-bottom: 3px;
 }
 
 .letters-value {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     color: #1f2937;
@@ -182,8 +185,8 @@ body {
 
 .totals-box td {
     border-bottom: 1px solid #dbe2ec;
-    padding: 6px 8px;
-    font-size: 10px;
+    padding: 5px 7px;
+    font-size: 9.4px;
 }
 
 .totals-box tr:last-child td {
@@ -193,30 +196,31 @@ body {
 .total-final td {
     background: #0f3f82;
     color: #fff;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
 }
 
 .extra-box {
-    margin-top: 8px;
+    margin-top: 7px;
     border: 1px solid #9ca3af;
+    page-break-inside: avoid;
 }
 
 .extra-box .head {
     background: #fef08a;
     border-bottom: 1px solid #9ca3af;
-    padding: 4px 6px;
+    padding: 3px 6px;
     font-weight: 700;
 }
 
 .extra-box .body {
-    padding: 5px 6px;
+    padding: 4px 6px;
 }
 
 .extra-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 9px;
+    font-size: 8.5px;
 }
 
 .extra-table td, .extra-table th {
@@ -227,7 +231,8 @@ body {
 .security {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 8px;
+    margin-top: 7px;
+    page-break-inside: avoid;
 }
 
 .security td {
@@ -237,14 +242,14 @@ body {
 .hash-box {
     border: 1px solid #cbd5e1;
     border-radius: 8px;
-    padding: 6px;
+    padding: 5px;
     background: #f8fafc;
 }
 
 .hash-title {
     color: #0f3f82;
     font-weight: 700;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
 }
 
 .hash-value {
@@ -264,12 +269,16 @@ body {
 }
 
 .footer-note {
-    margin-top: 8px;
+    position: fixed;
+    left: 9mm;
+    right: 9mm;
+    bottom: 9mm;
     border: 1px solid #9ca3af;
-    padding: 5px 6px;
+    padding: 4px 6px;
     text-align: center;
-    font-size: 10px;
+    font-size: 9.2px;
     font-style: italic;
+    background: #fff;
 }
 </style>
 </head>
@@ -504,9 +513,9 @@ body {
         </tr>
     </table>
 
-    <div class="footer-note">
-        Esta es una representacion impresa de la factura electronica, generada en el Sistema de SUNAT. Puede verificarla utilizando su clave SOL.
-    </div>
+</div>
+<div class="footer-note">
+    Esta es una representacion impresa de la factura electronica, generada en el Sistema de SUNAT. Puede verificarla utilizando su clave SOL.
 </div>
 </body>
 </html>

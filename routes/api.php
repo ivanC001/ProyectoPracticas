@@ -80,6 +80,9 @@ Route::middleware(['auth:api'])->group(function () {
     Route::middleware('role:admin,comercial')->group(function () {
         Route::post('/factura/nuevaventa', [FacturaController::class, 'newventa']);
         Route::get('/facturas', [VentasController::class, 'listaFacturas']);
+        Route::get('/reportes/ventas', [VentasController::class, 'reporteVentas']);
+        Route::post('/facturas/{id}/reintentar', [VentasController::class, 'reintentarFactura']);
+        Route::get('/facturas/{id}/duplicar-rechazada', [VentasController::class, 'duplicarRechazada']);
         Route::match(['get', 'post'], '/factura/pdf/{id?}', [FacturaPdfController::class, 'show']);
         Route::get('/factura/xml/{id?}', [FacturaPdfController::class, 'showXml']);
         Route::prefix('facturacion')->group(function () {

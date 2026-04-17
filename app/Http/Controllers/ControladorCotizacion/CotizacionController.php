@@ -199,12 +199,20 @@ class CotizacionController extends Controller
             ->filter()
             ->values();
 
+        $incluyeIgvPorNotas = $this->resolveIncluyeIgvFromNotas($cotizacion->notas);
+        $incluyeIgv = $incluyeIgvPorNotas ?? (bool) ($cotizacion->incluye_igv ?? ((float) $cotizacion->igv > 0));
+        $montoIgv = $incluyeIgv ? (float) $cotizacion->igv : 0;
+        $montoTotal = $incluyeIgv ? (float) $cotizacion->total : (float) $cotizacion->subtotal;
+
         $html = view('vistaCotizacion.pdf', [
             'cotizacion' => $cotizacion,
             'tipoCotizacion' => $tipoCotizacion,
             'fechaTexto' => mb_strtoupper($fecha, 'UTF-8'),
             'numeroCotizacion' => $numeroCotizacion,
-            'totalLetras' => $formatter->toInvoice((float) $cotizacion->total, 2, 'SOLES'),
+            'incluyeIgv' => $incluyeIgv,
+            'montoIgv' => $montoIgv,
+            'montoTotal' => $montoTotal,
+            'totalLetras' => $formatter->toInvoice($montoTotal, 2, 'SOLES'),
             'tipoDocumentoCliente' => $this->resolveTipoDocumentoCliente($cotizacion->cliente?->tipo_doc),
             'notas' => $notas,
             'mediosPago' => $mediosPago,
@@ -241,6 +249,8 @@ class CotizacionController extends Controller
 
     private function buildCotizacionPayload(array $data, ?Cotizacion $cotizacion = null): array
     {
+        $incluyeIgv = $this->resolveIncluyeIgv($data, $cotizacion);
+
         return [
             'cliente_id' => $data['cliente_id'],
             'asunto' => $data['asunto'] ?? $cotizacion?->asunto ?? 'Cotizacion',
@@ -248,6 +258,7 @@ class CotizacionController extends Controller
             'descripcion_general' => $data['descripcion_general'] ?? null,
             'notas' => $data['notas'] ?? null,
             'medios_pago' => $data['medios_pago'] ?? $cotizacion?->medios_pago ?? array_keys(config('empresa.medios_pago', [])),
+            'incluye_igv' => $incluyeIgv,
             'estado' => $data['estado'] ?? $cotizacion?->estado ?? 'borrador',
             'subtotal' => $cotizacion?->subtotal ?? 0,
             'igv' => $cotizacion?->igv ?? 0,
@@ -282,13 +293,86 @@ class CotizacionController extends Controller
             $subtotal += $sub;
         }
 
-        $igv = round($subtotal * 0.18, 2);
+        $incluyeIgv = (bool) ($cotizacion->incluye_igv ?? true);
+        $igv = $incluyeIgv ? round($subtotal * 0.18, 2) : 0;
         $total = round($subtotal + $igv, 2);
 
         $cotizacion->update([
             'subtotal' => $subtotal,
             'igv' => $igv,
             'total' => $total,
+        ]);
+    }
+
+    private function resolveIncluyeIgv(array $data, ?Cotizacion $cotizacion = null): bool
+    {
+        $incluyeIgvPorNotas = $this->resolveIncluyeIgvFromNotas($data['notas'] ?? null);
+
+        if ($incluyeIgvPorNotas !== null) {
+            return $incluyeIgvPorNotas;
+        }
+
+        if (array_key_exists('incluye_igv', $data) && $data['incluye_igv'] !== null) {
+            return (bool) $data['incluye_igv'];
+        }
+
+        if ($cotizacion) {
+            $incluyeIgvPorNotasGuardadas = $this->resolveIncluyeIgvFromNotas($cotizacion->notas);
+
+            if ($incluyeIgvPorNotasGuardadas !== null) {
+                return $incluyeIgvPorNotasGuardadas;
+            }
+
+            if ($cotizacion->incluye_igv !== null) {
+                return (bool) $cotizacion->incluye_igv;
+            }
+
+            return (float) $cotizacion->igv > 0;
+        }
+
+        return true;
+    }
+
+    private function resolveIncluyeIgvFromNotas(?string $notas): ?bool
+    {
+        if (!$notas) {
+            return null;
+        }
+
+        $lineas = preg_split('/\r\n|\r|\n/', $notas) ?: [];
+        $decision = null;
+
+        foreach ($lineas as $linea) {
+            $normalizada = $this->normalizeText($linea);
+
+            if (str_contains($normalizada, 'no incluye igv')) {
+                $decision = false;
+                continue;
+            }
+
+            if (str_contains($normalizada, 'incluye igv')) {
+                $decision = true;
+            }
+        }
+
+        return $decision;
+    }
+
+    private function normalizeText(string $text): string
+    {
+        $normalized = mb_strtolower(trim($text), 'UTF-8');
+
+        return strtr($normalized, [
+            'á' => 'a',
+            'é' => 'e',
+            'í' => 'i',
+            'ó' => 'o',
+            'ú' => 'u',
+            'ä' => 'a',
+            'ë' => 'e',
+            'ï' => 'i',
+            'ö' => 'o',
+            'ü' => 'u',
         ]);
     }
 

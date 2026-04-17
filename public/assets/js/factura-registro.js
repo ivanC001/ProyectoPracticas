@@ -29,6 +29,14 @@
     return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 16);
   }
 
+  function fromServerDateTime(value) {
+    if (!value) return toLocalInput(new Date());
+    const normalized = String(value).replace(' ', 'T');
+    const dt = new Date(normalized);
+    if (Number.isNaN(dt.getTime())) return toLocalInput(new Date());
+    return toLocalInput(dt);
+  }
+
   window.setFechaActual = function setFechaActual() {
     const input = el('fecha_emision');
     if (!input) return;
@@ -441,6 +449,60 @@
     aplicarReglasComprobante();
     aplicarReglasFormaPago();
     syncDetraccionPct();
+    recalcDetraccion();
+  };
+
+  // Permite cargar una factura rechazada para corregirla y generar un nuevo comprobante.
+  window.cargarFacturaDesdePayload = async function cargarFacturaDesdePayload(payload) {
+    if (!payload) return;
+
+    if (!productosDisponibles.length && !serviciosDisponibles.length) {
+      await window.fetchProductos();
+    }
+
+    window.limpiarFormularioFactura();
+
+    el('tipo_documento').value = payload.tipo_documento || '01';
+    el('fecha_emision').value = fromServerDateTime(payload.fecha_emision);
+    el('moneda').value = payload.moneda || 'PEN';
+    el('forma_pago').value = payload.forma_pago || 'contado';
+    el('observacion').value = payload.observacion || '';
+
+    const cliente = payload.cliente || {};
+    el('cliente_tipo_doc').value = String(cliente.tipo_doc || (el('tipo_documento').value === '01' ? '6' : '1'));
+    el('cliente_num_doc').value = cliente.num_doc || '';
+    el('cliente_razon_social').value = cliente.razon_social || '';
+
+    if (payload.credito) {
+      el('credito_cuotas').value = Number(payload.credito.cuotas || 1);
+      el('credito_fecha_vencimiento').value = payload.credito.fecha_vencimiento || '';
+      el('credito_monto_pendiente').value = Number(payload.credito.monto_pendiente || 0).toFixed(2);
+    }
+
+    const detr = payload.detraccion || {};
+    el('detraccion_codigo').value = detr.codigo || el('detraccion_codigo').value;
+    syncDetraccionPct();
+    el('detraccion_cuenta').value = detr.cuenta || el('detraccion_cuenta').value;
+    el('detraccion_aplica').checked = !!detr.aplica;
+    el('detraccion_monto').value = Number(detr.monto || 0).toFixed(2);
+    detraccionManual = !!detr.aplica;
+
+    itemsSeleccionados = (payload.items || []).map((item) => ({
+      tipo_item: item.tipo_item || 'producto',
+      item_id: Number(item.item_id || 0),
+      codigo: item.codigo || '',
+      descripcion: item.descripcion || '',
+      unidad: item.unidad || (item.tipo_item === 'servicio' ? 'ZZ' : 'NIU'),
+      cantidad: Number(item.cantidad || 0),
+      valor_unitario: Number(item.valor_unitario || 0),
+      descuento: Number(item.descuento || 0),
+      tip_afe_igv: String(item.tip_afe_igv || '10'),
+    })).filter((item) => item.cantidad > 0);
+
+    aplicarReglasComprobante();
+    aplicarReglasFormaPago();
+    updateTabla();
+    renderReglasOperacion();
     recalcDetraccion();
   };
 

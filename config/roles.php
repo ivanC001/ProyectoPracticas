@@ -20,6 +20,7 @@ return [
                 '/producto',
                 '/servicios',
                 '/venta',
+                '/reporte-ventas',
                 '/notascredito',
                 '/guias-remision',
             ],

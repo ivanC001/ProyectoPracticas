@@ -1,4 +1,4 @@
-@extends('admin.main')
+﻿@extends('admin.main')
 
 @section('contenido')
 <div class="content">
@@ -13,13 +13,13 @@
                             </div>
                             <div>
                                 <h3 class="module-title">Cotizaciones</h3>
-                                <p class="module-subtitle">Revisa cotizaciones, abre su PDF y continua la edicion con el mismo formato del panel.</p>
+                                <p class="module-subtitle">Revisa, edita y descarga cotizaciones con el mismo estilo del sistema.</p>
                             </div>
                         </div>
                         <div class="module-header-actions">
-                            <a href="/cotizaciones/registro" class="btn btn-success">
-                                <i class="fas fa-plus-circle"></i> Nueva Cotizacion
-                            </a>
+                            <button type="button" class="btn btn-success" onclick="window.location.href='/cotizaciones/registro'">
+                                <i class="fas fa-plus-circle"></i> Nueva cotizacion
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -43,25 +43,25 @@
                         <div class="table-responsive">
                             <table class="table table-hover module-table text-center">
                                 <thead>
-                            <tr>
-                                <th>Acciones</th>
-                                <th>#</th>
-                                <th>Cliente</th>
-                                <th>Asunto</th>
-                                <th>Fecha</th>
-                                <th>Items</th>
-                                <th>Total</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
+                                    <tr>
+                                        <th>Acciones</th>
+                                        <th>#</th>
+                                        <th>Cliente</th>
+                                        <th>Asunto</th>
+                                        <th>Fecha</th>
+                                        <th>Items</th>
+                                        <th>Total</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
 
-                        <tbody id="cotizacionTable">
-                                <tr>
-                                    <td colspan="8" class="module-empty">
-                                        <div class="spinner-border text-primary"></div>
-                                    </td>
-                                </tr>
-                        </tbody>
+                                <tbody id="cotizacionTable">
+                                    <tr>
+                                        <td colspan="8" class="module-empty">
+                                            <div class="spinner-border text-primary"></div>
+                                        </td>
+                                    </tr>
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -154,9 +154,7 @@ function fetchCotizaciones(page = 1) {
             if (!resp.data.length) {
                 $('#cotizacionTable').html(`
                     <tr>
-                        <td colspan="8" class="module-empty">
-                            No se encontraron cotizaciones
-                        </td>
+                        <td colspan="8" class="module-empty">No se encontraron cotizaciones</td>
                     </tr>
                 `);
                 $('#paginacion').html('');
@@ -173,11 +171,9 @@ function fetchCotizaciones(page = 1) {
                                 <a href="/cotizaciones/registro?id=${cotizacion.id}" class="btn btn-soft-warning btn-sm" title="Editar cotizacion">
                                     <i class="fas fa-edit"></i>
                                 </a>
-
                                 <button type="button" class="btn btn-soft-primary btn-sm" onclick="verPdf(${cotizacion.id})" title="Ver PDF">
                                     <i class="fas fa-file-pdf"></i>
                                 </button>
-
                                 <button type="button" class="btn btn-soft-danger btn-sm" onclick="eliminar(${cotizacion.id})" title="Eliminar cotizacion">
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -204,9 +200,7 @@ function fetchCotizaciones(page = 1) {
         .catch(err => {
             $('#cotizacionTable').html(`
                 <tr>
-                    <td colspan="8" class="module-empty text-danger">
-                        No se pudieron cargar las cotizaciones
-                    </td>
+                    <td colspan="8" class="module-empty text-danger">No se pudieron cargar las cotizaciones</td>
                 </tr>
             `);
 

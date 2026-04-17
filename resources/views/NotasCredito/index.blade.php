@@ -25,6 +25,7 @@
                 </div>
 
                 <div class="module-body">
+                    <div id="notaFiltroInfo" class="alert alert-info py-2 px-3 mb-3" style="display:none;"></div>
                     <div class="module-table-wrap">
                         <div class="table-responsive">
                             <table class="table table-hover module-table table-sm">
@@ -82,6 +83,10 @@
 
 @push('scripts')
 <script>
+const notaQueryParams = new URLSearchParams(window.location.search);
+const notaFiltroVentaId = notaQueryParams.get('venta_id');
+const notaFiltroFactura = notaQueryParams.get('factura');
+
 document.addEventListener('DOMContentLoaded', cargarNotas);
 
 function badgeEstadoNota(estado) {
@@ -93,7 +98,21 @@ function badgeEstadoNota(estado) {
 }
 
 function cargarNotas() {
-    apiFetch('/api/facturacion/notas')
+    const endpoint = notaFiltroVentaId
+        ? `/api/facturacion/notas?venta_id=${encodeURIComponent(notaFiltroVentaId)}`
+        : '/api/facturacion/notas';
+
+    if (notaFiltroVentaId) {
+        const info = document.getElementById('notaFiltroInfo');
+        info.style.display = 'block';
+        info.innerHTML = `
+            Mostrando notas relacionadas a la factura:
+            <strong>${notaFiltroFactura || `ID ${notaFiltroVentaId}`}</strong>
+            <a href="/notascredito" class="ml-2">Ver todas</a>
+        `;
+    }
+
+    apiFetch(endpoint)
         .then((data) => {
             const tbody = document.getElementById('tablaNotas');
             const lista = data.data || [];

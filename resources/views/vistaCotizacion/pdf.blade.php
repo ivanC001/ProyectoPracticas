@@ -386,14 +386,19 @@
                 <tr>
                     <td colspan="3" style="font-weight: 700;">{{ $totalLetras }}</td>
                     <td colspan="2" class="text-center" style="font-weight: 700;">TOTAL</td>
-                    <td class="text-right" style="font-weight: 700; font-size: 16px;">{{ number_format((float) $cotizacion->total, 2) }}</td>
+                    <td class="text-right" style="font-weight: 700; font-size: 16px;">{{ number_format((float) $montoTotal, 2) }}</td>
                 </tr>
             </tfoot>
         </table>
 
         <div class="igv-note">
-            {{ $cotizacion->igv > 0 ? 'LA PRESENTE COTIZACION INCLUYE I.G.V.' : 'LA PRESENTE COTIZACION NO INCLUYE I.G.V.' }}
+            {{ $incluyeIgv ? 'LA PRESENTE COTIZACION INCLUYE I.G.V.' : 'LA PRESENTE COTIZACION NO INCLUYE I.G.V.' }}
         </div>
+        @if($incluyeIgv)
+            <div style="margin-top: 2px; font-size: 11px; font-weight: 700;">
+                MONTO IGV (18%): S/ {{ number_format((float) $montoIgv, 2) }}
+            </div>
+        @endif
 
         @if($cotizacion->descripcion_general)
             <div class="section-title">Descripcion general:</div>

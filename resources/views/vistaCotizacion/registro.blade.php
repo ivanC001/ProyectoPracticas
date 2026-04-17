@@ -236,22 +236,6 @@
                             </div>
                         </div>
 
-                        <div class="mb-3 d-flex flex-wrap justify-content-center align-items-center text-center cot-quick-actions">
-                            <button type="button"
-                                class="btn btn-sm btn-outline-success mr-2 mb-2"
-                                data-toggle="modal"
-                                data-target="#modalProductoRapido">
-                                <i class="fas fa-box-open"></i> Registrar producto nuevo
-                            </button>
-
-                            <button type="button"
-                                class="btn btn-sm btn-outline-info mb-2"
-                                data-toggle="modal"
-                                data-target="#modalServicioRapido">
-                                <i class="fas fa-concierge-bell"></i> Registrar servicio nuevo
-                            </button>
-                        </div>
-
                         <div id="resultados" class="mb-4">
                             <div class="alert alert-light border text-muted mb-0">
                                 Escribe al menos 2 letras para buscar.
@@ -330,6 +314,16 @@
                             <label for="descripcion_general">Descripcion general</label>
                             <textarea id="descripcion_general" class="form-control" rows="3" placeholder="Resumen general del alcance de la cotizacion"></textarea>
                             <div class="invalid-feedback d-block" id="error_descripcion_general"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="incluye_igv">Tratamiento de IGV</label>
+                            <select id="incluye_igv" class="form-control">
+                                <option value="1">Incluye IGV (18%)</option>
+                                <option value="0">No incluye IGV</option>
+                            </select>
+                            <small class="text-muted">Este campo controla el calculo oficial y el texto del PDF.</small>
+                            <div class="invalid-feedback d-block" id="error_incluye_igv"></div>
                         </div>
 
                         <div class="cot-soft-box mb-3">
@@ -423,7 +417,7 @@
                         <hr>
 
                         <p class="mb-1">Subtotal: <strong id="subtotal">S/ 0.00</strong></p>
-                        <p class="mb-1">IGV (18%): <strong id="igv">S/ 0.00</strong></p>
+                        <p class="mb-1"><span id="igvLabel">IGV (18%):</span> <strong id="igv">S/ 0.00</strong></p>
                         <h4 class="mt-2">Total: <span id="total">S/ 0.00</span></h4>
 
                         <button id="btnGuardar" class="btn btn-success btn-block mt-3">
@@ -627,6 +621,46 @@ const presetKeys = {
     facilidades: 'El cliente debe brindar facilidades para la ejecucion'
 };
 
+function incluyeIgvSeleccionado() {
+    return $('#incluye_igv').val() !== '0';
+}
+
+function syncIgvNotesWithSelector() {
+    const incluyeIgv = incluyeIgvSeleccionado();
+
+    removeNoteLine(incluyeIgv ? presetKeys.igv_no : presetKeys.igv_si);
+    addNoteLine(incluyeIgv ? presetKeys.igv_si : presetKeys.igv_no);
+    syncPresetControlsFromNotes();
+    calc();
+}
+
+function normalizeText(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
+
+function resolveIncluyeIgvFromNotes(notes = []) {
+    let decision = null;
+
+    notes.forEach((line) => {
+        const normalized = normalizeText(line);
+
+        if (normalized.includes('no incluye igv')) {
+            decision = false;
+            return;
+        }
+
+        if (normalized.includes('incluye igv')) {
+            decision = true;
+        }
+    });
+
+    return decision;
+}
+
 function formatCurrency(value) {
     return `S/ ${Number(value || 0).toFixed(2)}`;
 }
@@ -697,14 +731,14 @@ function togglePresetNote(key, line) {
     const button = $(`[data-note-key="${key}"]`);
     const isActive = button.hasClass('active');
 
-    if (key === 'igv_no') {
-        $(`[data-note-key="igv_si"]`).removeClass('active');
-        removeNoteLine(presetKeys.igv_si);
-    }
-
-    if (key === 'igv_si') {
-        $(`[data-note-key="igv_no"]`).removeClass('active');
+    if (key === 'igv_no' || key === 'igv_si') {
+        $('#incluye_igv').val(key === 'igv_si' ? '1' : '0');
         removeNoteLine(presetKeys.igv_no);
+        removeNoteLine(presetKeys.igv_si);
+        addNoteLine(line);
+        syncPresetControlsFromNotes();
+        calc();
+        return;
     }
 
     button.toggleClass('active', !isActive);
@@ -728,13 +762,27 @@ function upsertSelectNote(prefix, value) {
 
 function syncPresetControlsFromNotes() {
     const notes = getNoteLines();
+    const incluyeIgvDesdeNotas = resolveIncluyeIgvFromNotes(notes);
+
+    if (incluyeIgvDesdeNotas !== null) {
+        $('#incluye_igv').val(incluyeIgvDesdeNotas ? '1' : '0');
+    }
 
     Object.entries(presetKeys).forEach(([key, text]) => {
+        if (key === 'igv_no' || key === 'igv_si') {
+            return;
+        }
+
         $(`[data-note-key="${key}"]`).toggleClass('active', notes.includes(text));
     });
 
+    const incluyeIgv = incluyeIgvSeleccionado();
+    $(`[data-note-key="igv_no"]`).toggleClass('active', !incluyeIgv);
+    $(`[data-note-key="igv_si"]`).toggleClass('active', incluyeIgv);
+
     $('#presetValidez').val(notes.find(line => line.startsWith('Validez de la oferta:')) || '');
     $('#presetDuracion').val(notes.find(line => line.startsWith('Duracion de trabajos:')) || '');
+    calc();
 }
 
 function getModoCotizacion() {
@@ -1153,9 +1201,11 @@ function renderItems() {
 
 function calc() {
     const subtotal = items.reduce((sum, item) => sum + (Number(item.precio) * Number(item.cantidad)), 0);
-    const igv = subtotal * 0.18;
+    const incluyeIgv = incluyeIgvSeleccionado();
+    const igv = incluyeIgv ? (subtotal * 0.18) : 0;
     const total = subtotal + igv;
 
+    $('#igvLabel').text(incluyeIgv ? 'IGV (18%):' : 'IGV (0%):');
     $('#subtotal').text(formatCurrency(subtotal));
     $('#igv').text(formatCurrency(igv));
     $('#total').text(formatCurrency(total));
@@ -1189,6 +1239,7 @@ function buildPayload() {
         descripcion_general: $('#descripcion_general').val().trim(),
         notas: $('#notas').val().trim(),
         medios_pago: getSelectedMediosPago(),
+        incluye_igv: incluyeIgvSeleccionado(),
         estado: $('#estado').val(),
         items: items.map(item => ({
             tipo: item.tipo,
@@ -1206,6 +1257,7 @@ async function guardarCotizacion() {
     }
 
     limpiarErrores();
+    syncPresetControlsFromNotes();
 
     if (!$('#cliente_id').val()) {
         $('#cliente_search').addClass('is-invalid');
@@ -1255,6 +1307,11 @@ function hydrateCotizacion(cotizacion) {
     $('#fecha').val((cotizacion.fecha || '').slice(0, 10));
     $('#descripcion_general').val(cotizacion.descripcion_general || '');
     $('#notas').val(cotizacion.notas || '');
+    const notas = (cotizacion.notas || '').split(/\r?\n/).map(line => line.trim());
+    const incluyeIgv = typeof cotizacion.incluye_igv === 'boolean'
+        ? cotizacion.incluye_igv
+        : (notas.includes(presetKeys.igv_no) ? false : Number(cotizacion.igv || 0) > 0);
+    $('#incluye_igv').val(incluyeIgv ? '1' : '0');
     setSelectedMediosPago(Array.isArray(cotizacion.medios_pago) ? cotizacion.medios_pago : null);
     $('#estado').val(cotizacion.estado || 'borrador');
 
@@ -1275,6 +1332,7 @@ function hydrateCotizacion(cotizacion) {
 async function loadCotizacion() {
     if (!editingCotizacionId) {
         $('#fecha').val(new Date().toISOString().slice(0, 10));
+        $('#incluye_igv').val('1');
         renderItems();
         syncPresetControlsFromNotes();
         return;
@@ -1357,6 +1415,7 @@ $('#presetValidez').on('change', function () {
 $('#presetDuracion').on('change', function () {
     upsertSelectNote('Duracion de trabajos:', $(this).val());
 });
+$('#incluye_igv').on('change', syncIgvNotesWithSelector);
 $('#asunto').on('input', function () {
     $(this).data('auto-generated', false);
 });

@@ -619,6 +619,7 @@
                 ['href' => '/clientes', 'icon' => 'fas fa-users', 'text' => 'Clientes', 'match' => 'clientes*', 'roles' => ['admin', 'comercial']],
                 ['href' => '/cotizaciones', 'icon' => 'fas fa-file-signature', 'text' => 'Cotizaciones', 'match' => 'cotizaciones*', 'roles' => ['admin', 'comercial']],
                 ['href' => '/venta', 'icon' => 'fas fa-cash-register', 'text' => 'Ventas', 'match' => 'venta*', 'roles' => ['admin', 'comercial']],
+                ['href' => '/reporte-ventas', 'icon' => 'fas fa-chart-bar', 'text' => 'Reporte ventas', 'match' => 'reporte-ventas*', 'roles' => ['admin', 'comercial']],
                 ['href' => '/notascredito', 'icon' => 'fas fa-file-invoice-dollar', 'text' => 'Notas Cred/Deb', 'match' => 'notascredito*', 'roles' => ['admin', 'comercial']],
             ],
         ],

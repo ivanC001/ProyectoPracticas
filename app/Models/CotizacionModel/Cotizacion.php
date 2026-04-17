@@ -17,6 +17,7 @@ class Cotizacion extends Model
         'descripcion_general',
         'notas',
         'medios_pago',
+        'incluye_igv',
         'subtotal',
         'igv',
         'total',
@@ -26,6 +27,7 @@ class Cotizacion extends Model
     protected $casts = [
         'fecha' => 'date',
         'medios_pago' => 'array',
+        'incluye_igv' => 'boolean',
         'subtotal' => 'float',
         'igv' => 'float',
         'total' => 'float'

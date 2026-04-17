@@ -2,6 +2,7 @@
 namespace App\Models\VentasModel;
 
 use App\Models\User;
+use App\Models\NotasCreditoModel\Nota;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -84,6 +85,11 @@ class Venta extends Model
     public function emisor()
     {
         return $this->belongsTo(User::class, 'emisor_user_id');
+    }
+
+    public function notasCredito()
+    {
+        return $this->hasMany(Nota::class, 'venta_id');
     }
 
     /*

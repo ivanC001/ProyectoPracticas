@@ -41,6 +41,7 @@ Route::get('/reporte/ruta-completo', fn () => redirect('/reporte-ruta'));
 Route::get('/producto', fn () => view('gestionProductos.producto.index'));
 Route::get('/servicios', fn () => view('gestionProductos.servicio.index'));
 Route::get('/venta', fn () => view('factura.index'));
+Route::get('/reporte-ventas', fn () => view('factura.reporte'));
 Route::redirect('/nueva-venta', '/venta')->name('nueva-venta');
 Route::get('/factura/pdf/{id}', [FacturaPdfController::class, 'show']);
 Route::get('/factura/pdf/{id}/descargar', [FacturaPdfController::class, 'download']);
