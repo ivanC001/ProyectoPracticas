@@ -155,6 +155,18 @@ function getCurrentRole() {
     }
 }
 
+function encodeParam(value) {
+    return encodeURIComponent(String(value ?? ''));
+}
+
+function decodeParam(value) {
+    try {
+        return decodeURIComponent(String(value ?? ''));
+    } catch (e) {
+        return String(value ?? '');
+    }
+}
+
 function applyFacturaColumnsByRole() {
     const emisorHeader = document.getElementById('thEmisor');
     const placeholderCell = document.querySelector('#facturaTableBody td[colspan]');
@@ -213,9 +225,11 @@ function cargarFacturas(page = 1) {
                 const canUseXml = !!f.archivo_xml;
                 const canRetry = ['error', 'pendiente'].includes(f.estado_envio) && !f.sunat_enviado;
                 const canDuplicate = f.estado_envio === 'rechazado';
-                const hasErrorInfo = !!(f.descripcion_respuesta_sunat || f.mensaje_error || f.codigo_respuesta_sunat);
-                const rejectionCode = (f.codigo_respuesta_sunat || '').replace(/'/g, "\\'");
-                const rejectionDesc = (f.descripcion_respuesta_sunat || f.mensaje_error || '').replace(/'/g, "\\'");
+                const hasErrorInfo = ['rechazado', 'error'].includes(f.estado_envio)
+                    || !!(f.descripcion_respuesta_sunat || f.mensaje_error || f.codigo_respuesta_sunat);
+                const rejectionCode = encodeParam(f.codigo_respuesta_sunat || '');
+                const rejectionDesc = encodeParam(f.descripcion_respuesta_sunat || '');
+                const technicalError = encodeParam(f.mensaje_error || '');
                 const emisorNombre = (f.emisor && f.emisor.name) ? f.emisor.name : 'Sin usuario';
                 const notaCreditoCount = Number(f.notas_credito_count || 0);
                 const hasNotaCredito = notaCreditoCount > 0;
@@ -257,7 +271,7 @@ function cargarFacturas(page = 1) {
                                 <button type="button" class="btn btn-soft-dark btn-sm" title="Descargar XML" ${canUseXml ? '' : 'disabled'} onclick="${canUseXml ? `descargarXml(${f.id})` : 'return false;'}">
                                     <i class="fas fa-file-download"></i>
                                 </button>
-                                <button type="button" class="btn btn-soft-secondary btn-sm" title="Ver motivo" ${hasErrorInfo ? '' : 'disabled'} onclick="${hasErrorInfo ? `verMotivoRechazo(${f.id}, '${rejectionCode}', '${rejectionDesc}')` : 'return false;'}">
+                                <button type="button" class="btn btn-soft-secondary btn-sm" title="Ver motivo" ${hasErrorInfo ? '' : 'disabled'} onclick="${hasErrorInfo ? `verMotivoRechazo(${f.id}, '${rejectionCode}', '${rejectionDesc}', '${technicalError}', '${f.estado_envio || ''}')` : 'return false;'}">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
                                 ${retryButton}
@@ -341,14 +355,22 @@ function descargarXml(id) {
     window.open(getXmlDownloadUrl(id), '_blank');
 }
 
-function verMotivoRechazo(id, codigo = '', descripcion = '') {
-    const codigoMsg = codigo ? `<strong>Codigo:</strong> ${codigo}<br>` : '';
-    const detalle = descripcion || 'No hay detalle registrado.';
+function verMotivoRechazo(id, codigo = '', descripcion = '', mensajeError = '', estado = '') {
+    const decCode = decodeParam(codigo);
+    const decDescripcion = decodeParam(descripcion);
+    const decMensajeError = decodeParam(mensajeError);
+
+    const codigoMsg = decCode ? `<strong>Codigo:</strong> ${decCode}<br>` : '';
+    const detalle = decDescripcion || decMensajeError || 'No hay detalle registrado en la base de datos.';
+    const estadoMsg = estado ? `<strong>Estado:</strong> ${estado}<br>` : '';
+    const ayuda = (!decDescripcion && !decMensajeError)
+        ? '<br><small class="text-muted">Revisa el log del servidor en <code>storage/logs/laravel.log</code>.</small>'
+        : '';
 
     Swal.fire({
         icon: 'info',
         title: `Detalle de estado #${id}`,
-        html: `${codigoMsg}<strong>Motivo:</strong> ${detalle}`,
+        html: `${estadoMsg}${codigoMsg}<strong>Motivo:</strong> ${detalle}${ayuda}`,
         confirmButtonText: 'Entendido'
     });
 }

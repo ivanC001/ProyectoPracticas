@@ -412,11 +412,19 @@ class SunatService
     public function sunatResponse($result)
     {
         if (!$result->isSuccess()) {
+            $error = $result->getError();
+            $errorCode = $error ? $error->getCode() : null;
+            $errorMessage = $error ? trim((string) $error->getMessage()) : '';
+
+            if ($errorMessage === '') {
+                $errorMessage = 'SUNAT devolvio un error sin detalle.';
+            }
+
             return [
                 'success' => false,
                 'error' => [
-                    'code' => $result->getError()->getCode(),
-                    'message' => $result->getError()->getMessage(),
+                    'code' => $errorCode ?: 'SUNAT_NO_CODE',
+                    'message' => $errorMessage,
                 ],
             ];
         }
