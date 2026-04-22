@@ -5,6 +5,7 @@ namespace App\Jobs;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Services\FacturaPdfRenderService;
 use App\Services\SunatService;
 use App\Services\GuardarComprobantes;
@@ -160,9 +161,25 @@ class ProcesarFacturaJob implements ShouldQueue
             | ERROR
             |-----------------------------------------
             */
+            $exceptionMessage = trim((string) $e->getMessage());
+            $errorMessage = $exceptionMessage !== ''
+                ? $exceptionMessage
+                : ('Error interno de procesamiento: ' . get_class($e));
+            $errorDetail = $errorMessage . ' [' . basename((string) $e->getFile()) . ':' . $e->getLine() . ']';
+
             $venta->update([
                 'estado_envio' => 'error',
-                'mensaje_error' => $e->getMessage()
+                'mensaje_error' => $errorDetail,
+                'descripcion_respuesta_sunat' => $errorDetail,
+            ]);
+
+            Log::error('Error al procesar factura SUNAT', [
+                'venta_id' => $venta->id,
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             throw $e;
