@@ -714,7 +714,7 @@
                 </div>
             </a>
 
-            <div class="sidebar">
+            <div class="sidebar" id="mainSidebarScroll">
                 <div class="sidebar-user-card">
                     <small>Sesion activa</small>
                     <strong id="sidebarUserName">Invitado</strong>
@@ -904,6 +904,76 @@
             });
         }
 
+        const SIDEBAR_SCROLL_KEY = 'hecab_sidebar_scroll_top';
+
+        function getSidebarScroller() {
+            return document.getElementById('mainSidebarScroll');
+        }
+
+        function persistSidebarScroll(value) {
+            if (!Number.isFinite(value)) {
+                return;
+            }
+
+            sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(Math.max(0, Math.floor(value))));
+        }
+
+        function restoreSidebarScroll() {
+            const sidebar = getSidebarScroller();
+
+            if (!sidebar) {
+                return;
+            }
+
+            const savedValue = Number(sessionStorage.getItem(SIDEBAR_SCROLL_KEY));
+
+            if (!Number.isFinite(savedValue) || savedValue < 0) {
+                return;
+            }
+
+            sidebar.scrollTop = savedValue;
+            requestAnimationFrame(() => {
+                sidebar.scrollTop = savedValue;
+            });
+        }
+
+        function bindSidebarScrollPersistence() {
+            const sidebar = getSidebarScroller();
+
+            if (!sidebar) {
+                return;
+            }
+
+            let ticking = false;
+            sidebar.addEventListener('scroll', () => {
+                if (ticking) {
+                    return;
+                }
+
+                ticking = true;
+                requestAnimationFrame(() => {
+                    persistSidebarScroll(sidebar.scrollTop);
+                    ticking = false;
+                });
+            }, { passive: true });
+
+            document.querySelectorAll('.main-sidebar .nav-link[href]').forEach((link) => {
+                const href = link.getAttribute('href') || '';
+
+                if (!href || href === '#') {
+                    return;
+                }
+
+                link.addEventListener('click', () => {
+                    persistSidebarScroll(sidebar.scrollTop);
+                });
+            });
+
+            window.addEventListener('beforeunload', () => {
+                persistSidebarScroll(sidebar.scrollTop);
+            });
+        }
+
         async function ensureUserContext() {
             const token = localStorage.getItem('token');
 
@@ -938,6 +1008,8 @@
 
                 applyUserToLayout(user);
                 filterMenuByRole(user.rol);
+                bindSidebarScrollPersistence();
+                restoreSidebarScroll();
 
                 const currentPath = window.location.pathname;
 

@@ -86,8 +86,15 @@
 const notaQueryParams = new URLSearchParams(window.location.search);
 const notaFiltroVentaId = notaQueryParams.get('venta_id');
 const notaFiltroFactura = notaQueryParams.get('factura');
+const NOTA_STATUS_ACTIVE = ['pendiente', 'procesando'];
+let notaHasActiveProcessing = false;
+let notaAutoRefreshTimer = null;
+let notaSnapshot = '';
 
-document.addEventListener('DOMContentLoaded', cargarNotas);
+document.addEventListener('DOMContentLoaded', () => {
+    cargarNotas({ forceRender: true });
+    startNotasAutoRefresh();
+});
 
 function badgeEstadoNota(estado) {
     if (estado === 'aceptado') return '<span class="badge badge-success">Aceptado</span>';
@@ -97,7 +104,29 @@ function badgeEstadoNota(estado) {
     return '<span class="badge badge-warning">Pendiente</span>';
 }
 
-function cargarNotas() {
+function buildNotasSnapshot(lista) {
+    const rows = (lista || []).map((n) => [
+        n.id,
+        n.estado_envio || '',
+        Number(Boolean(n.archivo_pdf)),
+        Number(Boolean(n.archivo_xml)),
+        n.codigo_respuesta_sunat || '',
+        n.descripcion_respuesta_sunat || '',
+    ].join(':')).join('|');
+
+    return `${lista?.length || 0}::${rows}`;
+}
+
+function updateNotasRefreshFlag(lista) {
+    notaHasActiveProcessing = (lista || []).some((n) => NOTA_STATUS_ACTIVE.includes(String(n.estado_envio || '').toLowerCase()));
+}
+
+function nextNotaRefreshDelay() {
+    return notaHasActiveProcessing ? 7000 : 20000;
+}
+
+async function cargarNotas(options = {}) {
+    const { background = false, forceRender = false } = options;
     const endpoint = notaFiltroVentaId
         ? `/api/facturacion/notas?venta_id=${encodeURIComponent(notaFiltroVentaId)}`
         : '/api/facturacion/notas';
@@ -112,22 +141,31 @@ function cargarNotas() {
         `;
     }
 
-    apiFetch(endpoint)
-        .then((data) => {
-            const tbody = document.getElementById('tablaNotas');
-            const lista = data.data || [];
-            tbody.innerHTML = '';
+    try {
+        const data = await apiFetch(endpoint);
+        const tbody = document.getElementById('tablaNotas');
+        const lista = data.data || [];
+        const nextSnapshot = buildNotasSnapshot(lista);
 
-            if (!lista.length) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="11" class="module-empty">No hay notas registradas</td>
-                    </tr>
-                `;
-                return;
-            }
+        updateNotasRefreshFlag(lista);
 
-            lista.forEach((n) => {
+        if (background && !forceRender && nextSnapshot === notaSnapshot) {
+            return;
+        }
+
+        notaSnapshot = nextSnapshot;
+        tbody.innerHTML = '';
+
+        if (!lista.length) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="11" class="module-empty">No hay notas registradas</td>
+                </tr>
+            `;
+            return;
+        }
+
+        lista.forEach((n) => {
                 const tipo = n.tipo_documento === '07' ? 'Credito' : 'Debito';
                 const reason = n.descripcion_respuesta_sunat || n.mensaje_error || '-';
                 const code = n.codigo_respuesta_sunat ? `<small class="text-muted">[${n.codigo_respuesta_sunat}]</small> ` : '';
@@ -165,11 +203,34 @@ function cargarNotas() {
                         </td>
                     </tr>
                 `;
-            });
-        })
-        .catch((err) => {
-            console.error('ERROR NOTAS:', err);
         });
+    } catch (err) {
+        if (!background) {
+            console.error('ERROR NOTAS:', err);
+        }
+    }
+}
+
+function stopNotasAutoRefresh() {
+    if (notaAutoRefreshTimer) {
+        clearTimeout(notaAutoRefreshTimer);
+        notaAutoRefreshTimer = null;
+    }
+}
+
+function scheduleNotasAutoRefresh() {
+    stopNotasAutoRefresh();
+
+    notaAutoRefreshTimer = setTimeout(async () => {
+        if (document.visibilityState === 'visible') {
+            await cargarNotas({ background: true });
+        }
+        scheduleNotasAutoRefresh();
+    }, nextNotaRefreshDelay());
+}
+
+function startNotasAutoRefresh() {
+    scheduleNotasAutoRefresh();
 }
 
 function getNotaPdfUrl(id) {
@@ -212,8 +273,16 @@ $(document).ready(function () {
     });
 
     $('#modalNota').on('hidden.bs.modal', function () {
-        cargarNotas();
+        cargarNotas({ forceRender: true });
     });
 });
+
+document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') {
+        cargarNotas({ background: true });
+    }
+});
+
+window.addEventListener('beforeunload', stopNotasAutoRefresh);
 </script>
 @endpush

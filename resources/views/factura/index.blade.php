@@ -145,6 +145,11 @@ let searchGlobal = '';
 let facturaPdfActual = null;
 const showEmisorColumn = getCurrentRole() === 'admin';
 const facturaTableColspan = showEmisorColumn ? 9 : 8;
+const FACTURA_STATUS_ACTIVE = ['pendiente', 'procesando'];
+let currentFacturasPage = 1;
+let facturaHasActiveProcessing = false;
+let facturaAutoRefreshTimer = null;
+let facturaSnapshot = '';
 
 function getCurrentRole() {
     try {
@@ -170,32 +175,74 @@ function applyFacturaColumnsByRole() {
 
 document.addEventListener('DOMContentLoaded', () => {
     applyFacturaColumnsByRole();
-    cargarFacturas();
+    cargarFacturas(1, { forceRender: true });
+    startFacturaAutoRefresh();
 });
 
 document.getElementById('buscar').addEventListener('keyup', function () {
     searchGlobal = this.value;
-    cargarFacturas(1);
+    cargarFacturas(1, { forceRender: true });
 });
 
-function cargarFacturas(page = 1) {
-    apiFetch(`/api/facturas?page=${page}&search=${encodeURIComponent(searchGlobal)}`)
-        .then((data) => {
-            const tbody = document.getElementById('facturaTableBody');
-            tbody.innerHTML = '';
+function buildFacturasSnapshot(data) {
+    const lista = data?.data || [];
+    const meta = [
+        data?.current_page || 1,
+        data?.last_page || 1,
+        data?.total || 0,
+    ].join('|');
 
-            const lista = data.data || [];
+    const rows = lista.map((f) => [
+        f.id,
+        f.estado_envio || '',
+        Number(f.sunat_enviado || 0),
+        Number(f.notas_credito_count || 0),
+        Number(Boolean(f.archivo_pdf)),
+        Number(Boolean(f.archivo_xml)),
+        f.codigo_respuesta_sunat || '',
+    ].join(':')).join('|');
 
-            if (!lista.length) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="${facturaTableColspan}" class="module-empty">No hay resultados</td>
-                    </tr>`;
-                document.getElementById('paginacion').innerHTML = '';
-                return;
-            }
+    return `${meta}::${rows}`;
+}
 
-            lista.forEach((f) => {
+function updateFacturaRefreshFlag(lista) {
+    facturaHasActiveProcessing = lista.some((f) => FACTURA_STATUS_ACTIVE.includes(String(f.estado_envio || '').toLowerCase()));
+}
+
+function nextFacturaRefreshDelay() {
+    return facturaHasActiveProcessing ? 7000 : 20000;
+}
+
+async function cargarFacturas(page = 1, options = {}) {
+    const { background = false, forceRender = false } = options;
+    currentFacturasPage = page;
+
+    try {
+        const data = await apiFetch(`/api/facturas?page=${page}&search=${encodeURIComponent(searchGlobal)}`);
+        const lista = data.data || [];
+        const nextSnapshot = buildFacturasSnapshot(data);
+
+        updateFacturaRefreshFlag(lista);
+
+        if (background && !forceRender && nextSnapshot === facturaSnapshot) {
+            return;
+        }
+
+        facturaSnapshot = nextSnapshot;
+
+        const tbody = document.getElementById('facturaTableBody');
+        tbody.innerHTML = '';
+
+        if (!lista.length) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="${facturaTableColspan}" class="module-empty">No hay resultados</td>
+                </tr>`;
+            document.getElementById('paginacion').innerHTML = '';
+            return;
+        }
+
+        lista.forEach((f) => {
                 let estado = '<span class="badge badge-warning">Pendiente</span>';
 
                 if (f.estado_envio === 'aceptado') {
@@ -269,13 +316,36 @@ function cargarFacturas(page = 1) {
                         </td>
                     </tr>
                 `;
-            });
-
-            renderPaginacion(data);
-        })
-        .catch((err) => {
-            console.error('ERROR FACTURAS:', err);
         });
+
+        renderPaginacion(data);
+    } catch (err) {
+        if (!background) {
+            console.error('ERROR FACTURAS:', err);
+        }
+    }
+}
+
+function stopFacturaAutoRefresh() {
+    if (facturaAutoRefreshTimer) {
+        clearTimeout(facturaAutoRefreshTimer);
+        facturaAutoRefreshTimer = null;
+    }
+}
+
+function scheduleFacturaAutoRefresh() {
+    stopFacturaAutoRefresh();
+
+    facturaAutoRefreshTimer = setTimeout(async () => {
+        if (document.visibilityState === 'visible') {
+            await cargarFacturas(currentFacturasPage, { background: true });
+        }
+        scheduleFacturaAutoRefresh();
+    }, nextFacturaRefreshDelay());
+}
+
+function startFacturaAutoRefresh() {
+    scheduleFacturaAutoRefresh();
 }
 
 function renderPaginacion(data) {
@@ -429,7 +499,7 @@ $(document).ready(function () {
         if (typeof limpiarFormularioFactura === 'function') {
             limpiarFormularioFactura();
         }
-        cargarFacturas();
+        cargarFacturas(currentFacturasPage, { forceRender: true });
     });
 
     $('#modalPdfFactura').on('hidden.bs.modal', function () {
@@ -439,5 +509,13 @@ $(document).ready(function () {
         facturaPdfActual = null;
     });
 });
+
+document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') {
+        cargarFacturas(currentFacturasPage, { background: true });
+    }
+});
+
+window.addEventListener('beforeunload', stopFacturaAutoRefresh);
 </script>
 @endpush

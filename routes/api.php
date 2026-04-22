@@ -26,6 +26,7 @@ use App\Http\Controllers\Factura\NotaCreditoController;
 
 Route::post('register', [RegisterController::class, 'store'])->name('register');
 Route::post('login', [AuthController::class, 'login'])->name('login');
+Route::post('login/verify-2fa', [AuthController::class, 'verify2fa'])->name('login.verify2fa');
 
 Route::middleware(['auth:api'])->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);

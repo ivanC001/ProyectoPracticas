@@ -313,6 +313,13 @@
             <input type="password" name="password" placeholder="Contrasena" required />
           </div>
 
+          @if(!$bootstrapMode)
+            <div class="input-field" id="twoFactorField" style="display:none;">
+              <i class="fas fa-shield-alt"></i>
+              <input type="text" name="two_factor_code" inputmode="numeric" maxlength="6" placeholder="Codigo de 6 digitos" />
+            </div>
+          @endif
+
           @if($bootstrapMode)
             <div class="input-field">
               <i class="fas fa-check-circle"></i>
@@ -320,7 +327,7 @@
             </div>
           @endif
 
-          <button type="submit" class="btn btn-primary">
+          <button type="submit" class="btn btn-primary" id="loginSubmitBtn">
             {{ $bootstrapMode ? 'Crear administrador e ingresar' : 'Ingresar al sistema' }}
           </button>
         </form>
@@ -329,7 +336,7 @@
           <strong>{{ $bootstrapMode ? 'Primer paso recomendado' : 'Importante' }}</strong>
           {{ $bootstrapMode
               ? 'Despues de entrar, crea los demas usuarios desde Usuarios y roles para asignarles su acceso correcto.'
-              : 'Si necesitas una cuenta nueva o cambio de rol, debe hacerlo un administrador desde el sistema.' }}
+              : 'Si necesitas una cuenta nueva o cambio de rol, debe hacerlo un administrador desde el sistema. El doble factor se solicita en la activacion inicial y nuevamente solo si la cuenta se bloquea por 3 intentos fallidos.' }}
         </div>
       </div>
     </section>
@@ -338,6 +345,15 @@
   <script>
     const bootstrapMode = @json($bootstrapMode);
     const roleDefinitions = @json($roleDefinitions);
+    const loginForm = document.getElementById(bootstrapMode ? 'bootstrapForm' : 'loginForm');
+    const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+    const twoFactorField = document.getElementById('twoFactorField');
+    const twoFactorInput = loginForm?.querySelector('input[name="two_factor_code"]');
+    const emailInput = loginForm?.querySelector('input[name="email"]');
+    const passwordInput = loginForm?.querySelector('input[name="password"]');
+
+    let isTwoFactorStep = false;
+    let pendingTwoFactorToken = null;
 
     function getRedirectPath(user) {
       const definition = roleDefinitions[user?.rol] || {};
@@ -364,9 +380,94 @@
     }
 
     function saveSession(data) {
-      localStorage.setItem('token', data.access_token);
+      if (data.access_token) {
+        localStorage.setItem('token', data.access_token);
+      }
       localStorage.setItem('user', data.user?.email || data.email || '');
       localStorage.setItem('auth_user', JSON.stringify(data.user || {}));
+    }
+
+    function clearSession() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('auth_user');
+    }
+
+    let existingSessionCheckInProgress = false;
+
+    function setTwoFactorStep(enabled) {
+      if (bootstrapMode) {
+        return;
+      }
+
+      isTwoFactorStep = enabled;
+
+      if (!twoFactorField || !twoFactorInput || !loginSubmitBtn || !emailInput || !passwordInput) {
+        return;
+      }
+
+      twoFactorField.style.display = enabled ? '' : 'none';
+      twoFactorInput.required = enabled;
+      twoFactorInput.value = enabled ? twoFactorInput.value : '';
+
+      emailInput.readOnly = enabled;
+      passwordInput.readOnly = enabled;
+
+      loginSubmitBtn.textContent = enabled ? 'Validar codigo e ingresar' : 'Ingresar al sistema';
+
+      if (enabled) {
+        twoFactorInput.focus();
+      }
+    }
+
+    async function tryRedirectWithExistingSession() {
+      if (bootstrapMode) {
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        return;
+      }
+
+      existingSessionCheckInProgress = true;
+
+      try {
+        showLoader('Verificando sesion activa...');
+
+        const response = await fetch('/api/me', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (response.ok && data?.user) {
+          saveSession({
+            access_token: token,
+            user: data.user,
+            email: data.user?.email || '',
+          });
+
+          Swal.close();
+          window.location.replace(getRedirectPath(data.user));
+          return;
+        }
+
+        if (response.status === 401) {
+          clearSession();
+        }
+
+        Swal.close();
+      } catch (error) {
+        Swal.close();
+      } finally {
+        existingSessionCheckInProgress = false;
+      }
     }
 
     async function submitJson(url, payload, loadingTitle) {
@@ -390,17 +491,28 @@
             .flat()
             .join('\n');
 
-          throw new Error(messages || data.message || 'Error de validacion');
+          const validationError = new Error(messages || data.message || 'Error de validacion');
+          validationError.status = response.status;
+          validationError.payload = data;
+          throw validationError;
         }
 
-        throw new Error(data.error || data.message || 'No se pudo completar la accion');
+        const requestError = new Error(data.error || data.message || 'No se pudo completar la accion');
+        requestError.status = response.status;
+        requestError.payload = data;
+        throw requestError;
       }
 
       return data;
     }
 
-    document.getElementById(bootstrapMode ? 'bootstrapForm' : 'loginForm').addEventListener('submit', async function (event) {
+    loginForm.addEventListener('submit', async function (event) {
       event.preventDefault();
+
+      if (existingSessionCheckInProgress) {
+        return;
+      }
+
       const submitButton = this.querySelector('button[type="submit"]');
 
       if (submitButton?.dataset.submitting === '1') {
@@ -413,24 +525,63 @@
       }
 
       try {
-        const payload = Object.fromEntries(new FormData(this).entries());
-        const url = bootstrapMode ? '/api/register' : '/api/login';
-        const loadingTitle = bootstrapMode ? 'Creando administrador...' : 'Iniciando sesion...';
+        const rawPayload = Object.fromEntries(new FormData(this).entries());
+        let data = null;
 
-        const data = await submitJson(url, payload, loadingTitle);
+        if (bootstrapMode) {
+          data = await submitJson('/api/register', rawPayload, 'Creando administrador...');
+          saveSession(data);
+        } else if (!isTwoFactorStep) {
+          data = await submitJson('/api/login', {
+            email: rawPayload.email,
+            password: rawPayload.password,
+          }, 'Validando credenciales...');
 
-        saveSession(data);
+          if (data.requires_2fa) {
+            pendingTwoFactorToken = data.pending_token || null;
+            setTwoFactorStep(true);
+
+            Swal.fire({
+              icon: 'info',
+              title: 'Codigo enviado',
+              text: `Enviamos un codigo de verificacion a ${rawPayload.email}.`,
+            });
+
+            return;
+          }
+
+          if (!data.access_token) {
+            throw new Error('No se pudo iniciar sesion. Intenta nuevamente.');
+          }
+
+          saveSession(data);
+        } else {
+          data = await submitJson('/api/login/verify-2fa', {
+            email: rawPayload.email,
+            code: rawPayload.two_factor_code,
+            pending_token: pendingTwoFactorToken,
+          }, 'Validando codigo...');
+
+          saveSession(data);
+        }
 
         Swal.fire({
           icon: 'success',
           title: bootstrapMode ? 'Administrador creado' : 'Bienvenido',
-          text: bootstrapMode ? 'La configuracion inicial quedo lista.' : 'Acceso concedido correctamente.',
+          text: bootstrapMode
+            ? 'La configuracion inicial quedo lista.'
+            : (isTwoFactorStep ? 'Codigo validado correctamente.' : 'Acceso concedido correctamente.'),
           timer: 1400,
           showConfirmButton: false,
         }).then(() => {
           window.location.href = getRedirectPath(data.user);
         });
       } catch (error) {
+        if (!bootstrapMode && (error?.status === 423 || (error?.message || '').toLowerCase().includes('inicia sesion nuevamente'))) {
+          pendingTwoFactorToken = null;
+          setTwoFactorStep(false);
+        }
+
         Swal.fire({
           icon: 'error',
           title: 'No se pudo continuar',
@@ -443,6 +594,9 @@
         }
       }
     });
+
+    setTwoFactorStep(false);
+    tryRedirectWithExistingSession();
   </script>
 </body>
 </html>

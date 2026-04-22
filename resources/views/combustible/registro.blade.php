@@ -14,6 +14,12 @@
                     <input type="hidden" id="combustibleId" name="id"> <!-- Campo oculto para el ID del combustible -->
                     <input type="hidden" name="_method" id="method_field" value="POST"> <!-- Campo oculto para emular PUT -->
 
+                    <div class="alert alert-light border">
+                        <strong>Campos obligatorios:</strong> Ruta, Numero de factura, Grifo, Fecha y hora, Galones, Importe, Km inicial y Tipo de combustible.
+                        <br>
+                        <small class="text-muted">Km final es opcional.</small>
+                    </div>
+
                     <!-- Campo para la Ruta -->
                     <div class="form-group">
                         <label for="ruta">Ruta:</label>
@@ -62,13 +68,19 @@
                     <!-- Campo para el kilometraje final -->
                     <div class="form-group">
                         <label for="kilometraje_final">Kilometraje Final:</label>
-                        <input type="number" class="form-control" id="kilometraje_final" name="kilometraje_final" required>
+                        <input type="number" class="form-control" id="kilometraje_final" name="kilometraje_final">
                     </div>
 
                     <!-- Campo para el tipo de combustible -->
                     <div class="form-group">
                         <label for="tipo_combustible">Tipo de Combustible:</label>
-                        <input type="text" class="form-control" id="tipo_combustible" name="tipo_combustible" required>
+                        <select class="form-control" id="tipo_combustible" name="tipo_combustible" required>
+                            <option value="">Seleccione...</option>
+                            <option value="Diesel">Diesel</option>
+                            <option value="Gasolina">Gasolina</option>
+                            <option value="GLP">GLP</option>
+                            <option value="GNV">GNV</option>
+                        </select>
                     </div>
 
                     <div class="modal-footer">

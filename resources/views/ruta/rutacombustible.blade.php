@@ -103,43 +103,54 @@
     <div class="modal-content">
       <form id="combustibleForm">
         <div class="modal-header bg-success text-white">
-          <h5 class="modal-title" id="combustibleModalTitle">Registrar combustible</h5>
+          <h5 class="modal-title" id="combustibleModalTitle">Registrar consumo de combustible</h5>
           <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
         </div>
         <div class="modal-body">
           <input type="hidden" id="combustibleId">
+          <div class="alert alert-light border mb-3">
+            <strong>Campos obligatorios:</strong> Factura, Grifo, Fecha y hora, Galones, Importe, Km inicial y Tipo de combustible.
+            <br>
+            <small class="text-muted">El Km final es opcional y puede registrarse cuando termine el tramo.</small>
+          </div>
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label>Numero de factura</label>
-              <input type="text" id="num_factura" class="form-control">
+              <label for="num_factura">Numero de factura <span class="text-danger">*</span></label>
+              <input type="text" id="num_factura" class="form-control" maxlength="255" required autocomplete="off" placeholder="Ej: F001-123">
             </div>
             <div class="col-md-6 mb-3">
-              <label>Grifo</label>
-              <input type="text" id="grifo" class="form-control">
+              <label for="grifo">Grifo <span class="text-danger">*</span></label>
+              <input type="text" id="grifo" class="form-control" maxlength="255" required autocomplete="off" placeholder="Ej: Repsol, Primax, Petroperu">
             </div>
             <div class="col-md-6 mb-3">
-              <label>Fecha y hora</label>
-              <input type="datetime-local" id="fecha_hora" class="form-control">
+              <label for="fecha_hora">Fecha y hora <span class="text-danger">*</span></label>
+              <input type="datetime-local" id="fecha_hora" class="form-control" required>
             </div>
             <div class="col-md-6 mb-3">
-              <label>Galones</label>
-              <input type="number" step="0.01" id="galonesCombustible" class="form-control">
+              <label for="galonesCombustible">Galones <span class="text-danger">*</span></label>
+              <input type="number" step="0.01" min="0.01" id="galonesCombustible" class="form-control" required placeholder="0.00">
             </div>
             <div class="col-md-6 mb-3">
-              <label>Importe</label>
-              <input type="number" step="0.01" id="importe" class="form-control">
+              <label for="importe">Importe (S/) <span class="text-danger">*</span></label>
+              <input type="number" step="0.01" min="0.01" id="importe" class="form-control" required placeholder="0.00">
             </div>
             <div class="col-md-6 mb-3">
-              <label>Kilometraje inicial</label>
-              <input type="number" id="kilometraje_inicial" class="form-control">
+              <label for="kilometraje_inicial">Kilometraje inicial <span class="text-danger">*</span></label>
+              <input type="number" min="0" id="kilometraje_inicial" class="form-control" required placeholder="Ej: 145000">
             </div>
             <div class="col-md-6 mb-3">
-              <label>Kilometraje final</label>
-              <input type="number" id="kilometraje_final" class="form-control">
+              <label for="kilometraje_final">Kilometraje final</label>
+              <input type="number" min="0" id="kilometraje_final" class="form-control" placeholder="Opcional">
             </div>
             <div class="col-md-6 mb-3">
-              <label>Tipo de combustible</label>
-              <input type="text" id="tipo_combustible" class="form-control">
+              <label for="tipo_combustible">Tipo de combustible <span class="text-danger">*</span></label>
+              <select id="tipo_combustible" class="form-control" required>
+                  <option value="">Seleccione...</option>
+                  <option value="Diesel">Diesel</option>
+                  <option value="Gasolina">Gasolina</option>
+                  <option value="GLP">GLP</option>
+                  <option value="GNV">GNV</option>
+              </select>
             </div>
           </div>
         </div>
@@ -168,6 +179,34 @@ function getDateTimeInputValue(value) {
     }
 
     return String(value).slice(0, 16);
+}
+
+function cleanTextValue(selector) {
+    return String($(selector).val() || '').trim();
+}
+
+function cleanNullableNumber(selector) {
+    const raw = String($(selector).val() || '').trim();
+    return raw === '' ? null : raw;
+}
+
+function buildApiErrorHtml(error, fallbackMessage) {
+    const validationErrors = (error && typeof error === 'object' && error.errors) ? error.errors : null;
+
+    if (!validationErrors) {
+        return `<p class="mb-0">${error?.message || fallbackMessage}</p>`;
+    }
+
+    const firstItems = Object.values(validationErrors)
+        .flat()
+        .filter(Boolean)
+        .slice(0, 6);
+
+    if (!firstItems.length) {
+        return `<p class="mb-0">${fallbackMessage}</p>`;
+    }
+
+    return `<ul class="text-left mb-0">${firstItems.map(item => `<li>${item}</li>`).join('')}</ul>`;
 }
 
 async function fetchRuta() {
@@ -259,16 +298,21 @@ $('#combustibleForm').on('submit', async function (e) {
 
     const id = $('#combustibleId').val();
     const payload = {
-        ruta_id: rutaId,
-        num_factura: $('#num_factura').val(),
-        grifo: $('#grifo').val(),
-        fecha_hora: $('#fecha_hora').val(),
-        galonesCombustible: $('#galonesCombustible').val(),
-        importe: $('#importe').val(),
-        kilometraje_inicial: $('#kilometraje_inicial').val(),
-        kilometraje_final: $('#kilometraje_final').val(),
-        tipo_combustible: $('#tipo_combustible').val(),
+        num_factura: cleanTextValue('#num_factura'),
+        grifo: cleanTextValue('#grifo'),
+        fecha_hora: cleanTextValue('#fecha_hora'),
+        galonesCombustible: cleanTextValue('#galonesCombustible'),
+        importe: cleanTextValue('#importe'),
+        kilometraje_inicial: cleanTextValue('#kilometraje_inicial'),
+        kilometraje_final: cleanNullableNumber('#kilometraje_final'),
+        tipo_combustible: cleanTextValue('#tipo_combustible'),
     };
+
+    if (!payload.num_factura || !payload.grifo || !payload.fecha_hora || !payload.galonesCombustible || !payload.importe || !payload.kilometraje_inicial || !payload.tipo_combustible) {
+        Swal.fire('Validacion', 'Completa todos los campos obligatorios.', 'warning');
+        submitBtn.prop('disabled', false).text(id ? 'Actualizar' : 'Guardar');
+        return;
+    }
 
     try {
         await apiFetch(id ? `${apiUrl}/${id}` : apiUrl, {
@@ -280,9 +324,13 @@ $('#combustibleForm').on('submit', async function (e) {
         Swal.fire('OK', 'Registro guardado correctamente.', 'success');
         fetchCombustible();
     } catch (error) {
-        Swal.fire('Error', error.message || 'No se pudo guardar el combustible.', 'error');
+        Swal.fire({
+            title: 'Error',
+            icon: 'error',
+            html: buildApiErrorHtml(error, 'No se pudo guardar el combustible.'),
+        });
     } finally {
-        submitBtn.prop('disabled', false).text('Guardar');
+        submitBtn.prop('disabled', false).text(id ? 'Actualizar' : 'Guardar');
     }
 });
 
@@ -330,8 +378,9 @@ async function deleteCombustible(id) {
 $('#btn-nuevo').click(() => {
     $('#combustibleForm')[0].reset();
     $('#combustibleId').val('');
-    $('#combustibleModalTitle').text('Registrar combustible');
+    $('#combustibleModalTitle').text('Registrar consumo de combustible');
     $('#fecha_hora').val(new Date().toISOString().slice(0, 16));
+    $('#tipo_combustible').val('');
     $('#combustibleSubmitBtn').prop('disabled', false).text('Guardar');
     $('#combustibleModal').modal('show');
 });
