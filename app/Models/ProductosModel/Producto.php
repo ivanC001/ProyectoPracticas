@@ -21,6 +21,7 @@ class Producto extends Model
         'categoria',
         'unidad',
         'precio',
+        'moneda_precio',
         'stock',
         'activo'
 

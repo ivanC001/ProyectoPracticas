@@ -141,7 +141,7 @@ function fetchProductos(page = 1) {
                         <td class="text-left">${p.descripcion}</td>
                         <td>${p.categoria}</td>
                         <td>${p.unidad}</td>
-                        <td>S/ ${parseFloat(p.precio).toFixed(2)}</td>
+                        <td>${(p.moneda_precio === 'USD' ? 'US$' : 'S/')} ${parseFloat(p.precio).toFixed(2)}</td>
                         <td>${p.stock}</td>
                         <td>${estado}</td>
                     </tr>
@@ -193,11 +193,11 @@ function editarProducto(id) {
         .then(resp => {
             let p = resp.data;
 
-            $('#codigo').val(p.codigo);
             $('#descripcion').val(p.descripcion);
             $('#categoria').val(p.categoria);
             $('#unidad').val(p.unidad);
             $('#precio').val(p.precio);
+            $('#moneda_precio').val(p.moneda_precio || 'PEN');
             $('#stock').val(p.stock);
             $('#activo').val(p.activo);
 
@@ -205,6 +205,7 @@ function editarProducto(id) {
 
             $('#grupoActivo').show();
             $('#modalRegistroProductoLabel').text('Editar producto');
+            $('#btnGuardarProducto').text('Guardar cambios');
             $('#modalRegistroProducto').modal('show');
         });
 }

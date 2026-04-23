@@ -25,6 +25,7 @@ class StoreVentaRequest extends FormRequest
             'tipo_documento' => 'required|in:01,03',
             'fecha_emision' => 'required|date',
             'moneda' => 'required|in:PEN,USD',
+            'tipo_cambio' => 'nullable|numeric|min:0.0001',
             'forma_pago' => 'required|in:contado,credito',
             'observacion' => 'nullable|string|max:500',
 
@@ -51,6 +52,8 @@ class StoreVentaRequest extends FormRequest
             'items.*.unidad' => 'nullable|string|max:10',
             'items.*.cantidad' => 'required|numeric|min:0.01',
             'items.*.valor_unitario' => 'required|numeric|min:0',
+            'items.*.valor_unitario_origen' => 'nullable|numeric|min:0',
+            'items.*.moneda_precio' => 'nullable|in:PEN,USD',
             'items.*.descuento' => 'nullable|numeric|min:0',
             'items.*.tip_afe_igv' => [
                 'required',
@@ -83,6 +86,8 @@ class StoreVentaRequest extends FormRequest
 
             'moneda.required' => 'Debe seleccionar la moneda',
             'moneda.in' => 'La moneda no es valida',
+            'tipo_cambio.numeric' => 'El tipo de cambio debe ser numerico',
+            'tipo_cambio.min' => 'El tipo de cambio debe ser mayor a 0',
 
             'forma_pago.required' => 'Debe seleccionar la forma de pago',
             'forma_pago.in' => 'La forma de pago no es valida',
@@ -142,6 +147,9 @@ class StoreVentaRequest extends FormRequest
             'items.*.valor_unitario.required' => 'El valor unitario es obligatorio',
             'items.*.valor_unitario.numeric' => 'El valor unitario debe ser numerico',
             'items.*.valor_unitario.min' => 'El valor unitario no puede ser negativo',
+            'items.*.valor_unitario_origen.numeric' => 'El valor unitario origen debe ser numerico',
+            'items.*.valor_unitario_origen.min' => 'El valor unitario origen no puede ser negativo',
+            'items.*.moneda_precio.in' => 'La moneda del item debe ser PEN o USD',
 
             'items.*.descuento.numeric' => 'El descuento debe ser numerico',
             'items.*.descuento.min' => 'El descuento no puede ser negativo',
@@ -158,10 +166,36 @@ class StoreVentaRequest extends FormRequest
             $tipoDocCliente = (string) data_get($this->input('cliente', []), 'tipo_doc', '');
             $numDocCliente = trim((string) data_get($this->input('cliente', []), 'num_doc', ''));
             $soloDigitos = preg_replace('/\D+/', '', $numDocCliente) ?? '';
-            $moneda = (string) $this->input('moneda', 'PEN');
+            $moneda = strtoupper((string) $this->input('moneda', 'PEN'));
+            $tipoCambio = (float) $this->input('tipo_cambio', 0);
             $formaPago = (string) $this->input('forma_pago', 'contado');
 
             $items = $this->input('items', []);
+
+            if ($moneda === 'USD' && $tipoCambio <= 0) {
+                $validator->errors()->add(
+                    'tipo_cambio',
+                    'Cuando el comprobante esta en USD debes indicar un tipo de cambio mayor a 0.'
+                );
+            }
+
+            $requiereTipoCambio = collect($items)->contains(function ($item) use ($moneda) {
+                $monedaItem = strtoupper((string) data_get($item, 'moneda_precio', ''));
+
+                if (!in_array($monedaItem, ['PEN', 'USD'], true)) {
+                    return false;
+                }
+
+                return $monedaItem !== $moneda;
+            });
+
+            if ($requiereTipoCambio && $tipoCambio <= 0) {
+                $validator->errors()->add(
+                    'tipo_cambio',
+                    'Debes indicar un tipo de cambio mayor a 0 para items en moneda distinta al comprobante.'
+                );
+            }
+
             $totales = (new SunatIgvCatalogService())->calculateTotals($items);
             $totalOperacion = (float) ($totales['total'] ?? 0);
             $boletaSinDniPermitida = $moneda === 'PEN' && $totalOperacion <= 500;
@@ -177,9 +211,12 @@ class StoreVentaRequest extends FormRequest
                 $line = $igvCatalogService->calculateLine((array) $item);
                 return $carry + (float) ($line['total'] ?? 0);
             }, 0.0);
+            $totalServiciosPen = $moneda === 'USD'
+                ? ($totalServicios * max($tipoCambio, 0))
+                : $totalServicios;
 
             $montoMinimoDetraccionServicios = (float) config('sunat_detraccion.monto_minimo_servicios', 700);
-            $requiereDetraccionServicios = $hasServiceItems && $totalServicios > $montoMinimoDetraccionServicios;
+            $requiereDetraccionServicios = $hasServiceItems && $totalServiciosPen > $montoMinimoDetraccionServicios;
             $detraccionCatalog = config('sunat_detraccion.servicios', []);
             $detraccionData = (array) $this->input('detraccion', []);
             $detraccionAplica = $this->toBool(data_get($detraccionData, 'aplica', false));

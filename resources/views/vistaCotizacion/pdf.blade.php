@@ -343,20 +343,26 @@
                     <th style="width: 7%;">ITEM</th>
                     <th style="width: 7%;">cant.</th>
                     <th>descripcion</th>
-                    <th style="width: 11%;">precio por unidad (S/.)</th>
-                    <th style="width: 11%;">precio parcial (S/.)</th>
-                    <th style="width: 12%;">subtotal (S/.)</th>
+                    <th style="width: 8%;">mon.</th>
+                    <th style="width: 11%;">precio por unidad</th>
+                    <th style="width: 11%;">precio parcial</th>
+                    <th style="width: 12%;">subtotal</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($cotizacion->detalles as $index => $detalle)
+                    @php
+                        $monedaDetalle = strtoupper((string) ($detalle->moneda_precio ?? $monedaCotizacion ?? 'PEN'));
+                        $simboloDetalle = $monedaDetalle === 'USD' ? 'US$' : 'S/';
+                    @endphp
                     <tr class="main-row">
                         <td class="text-center">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</td>
                         <td class="text-center">{{ rtrim(rtrim(number_format($detalle->cantidad, 2, '.', ''), '0'), '.') }}</td>
                         <td>{{ mb_strtoupper($detalle->nombre_item, 'UTF-8') }}</td>
-                        <td class="text-right">{{ number_format((float) $detalle->precio, 2) }}</td>
-                        <td class="text-right">{{ number_format((float) $detalle->subtotal, 2) }}</td>
-                        <td class="text-right">{{ number_format((float) $detalle->subtotal, 2) }}</td>
+                        <td class="text-center">{{ $monedaDetalle }}</td>
+                        <td class="text-right">{{ $simboloDetalle }} {{ number_format((float) $detalle->precio, 2) }}</td>
+                        <td class="text-right">{{ $simboloDetalle }} {{ number_format((float) $detalle->subtotal, 2) }}</td>
+                        <td class="text-right">{{ $simboloDetalle }} {{ number_format((float) $detalle->subtotal, 2) }}</td>
                     </tr>
 
                     @if(is_array($detalle->detalle_servicio) && count($detalle->detalle_servicio))
@@ -364,6 +370,7 @@
                             <td></td>
                             <td></td>
                             <td class="detail-description detail-intro">Consistente:</td>
+                            <td></td>
                             <td></td>
                             <td></td>
                             <td></td>
@@ -377,6 +384,7 @@
                                 <td></td>
                                 <td></td>
                                 <td></td>
+                                <td></td>
                             </tr>
                         @endforeach
                     @endif
@@ -384,9 +392,9 @@
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="3" style="font-weight: 700;">{{ $totalLetras }}</td>
+                    <td colspan="4" style="font-weight: 700;">{{ $totalLetras }}</td>
                     <td colspan="2" class="text-center" style="font-weight: 700;">TOTAL</td>
-                    <td class="text-right" style="font-weight: 700; font-size: 16px;">{{ number_format((float) $montoTotal, 2) }}</td>
+                    <td class="text-right" style="font-weight: 700; font-size: 16px;">{{ $simboloMoneda }} {{ number_format((float) $montoTotal, 2) }}</td>
                 </tr>
             </tfoot>
         </table>
@@ -396,7 +404,7 @@
         </div>
         @if($incluyeIgv)
             <div style="margin-top: 2px; font-size: 11px; font-weight: 700;">
-                MONTO IGV (18%): S/ {{ number_format((float) $montoIgv, 2) }}
+                MONTO IGV (18%): {{ $simboloMoneda }} {{ number_format((float) $montoIgv, 2) }}
             </div>
         @endif
 

@@ -17,6 +17,7 @@ class CotizacionRequest extends FormRequest
         return [
             'asunto' => 'nullable|string|max:255',
             'fecha' => 'nullable|date',
+            'moneda' => 'nullable|in:PEN,USD',
             'descripcion_general' => 'nullable|string',
             'notas' => 'nullable|string',
             'medios_pago' => 'nullable|array',
@@ -29,6 +30,7 @@ class CotizacionRequest extends FormRequest
             'items.*.cantidad' => 'required|numeric|min:1',
             'items.*.producto_id' => 'required_if:items.*.tipo,producto|nullable|exists:productos,id',
             'items.*.servicio_id' => 'required_if:items.*.tipo,servicio|nullable|exists:servicios,id',
+            'items.*.moneda_precio' => 'nullable|in:PEN,USD',
             'items.*.detalle_servicio' => 'nullable|array',
             'items.*.detalle_servicio.*' => 'nullable|string|max:255',
         ];
@@ -39,6 +41,7 @@ class CotizacionRequest extends FormRequest
         return [
             'asunto.max' => 'El asunto no debe exceder 255 caracteres',
             'fecha.date' => 'La fecha no es valida',
+            'moneda.in' => 'La moneda debe ser PEN o USD',
             'descripcion_general.string' => 'La descripcion general debe ser texto',
             'notas.string' => 'Las notas deben ser texto',
             'medios_pago.array' => 'Los medios de pago deben enviarse como lista',
@@ -55,6 +58,7 @@ class CotizacionRequest extends FormRequest
             'items.*.cantidad.min' => 'Cantidad minima 1',
             'items.*.producto_id.required_if' => 'Seleccione producto',
             'items.*.servicio_id.required_if' => 'Seleccione servicio',
+            'items.*.moneda_precio.in' => 'La moneda del item debe ser PEN o USD',
             'items.*.detalle_servicio.array' => 'El detalle del item debe enviarse como lista',
             'items.*.detalle_servicio.*.max' => 'Cada linea del detalle debe tener maximo 255 caracteres',
         ];

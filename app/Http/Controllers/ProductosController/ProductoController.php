@@ -73,6 +73,7 @@ class ProductoController extends Controller
                 'categoria' => $request->categoria,
                 'unidad' => $request->unidad ?? 'NIU',
                 'precio' => $request->precio,
+                'moneda_precio' => $request->moneda_precio ?? 'PEN',
                 'stock' => $request->stock,
                 'activo' => 1
             ]);

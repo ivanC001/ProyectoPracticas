@@ -14,6 +14,7 @@ class Cotizacion extends Model
         'cliente_id',
         'asunto',
         'fecha',
+        'moneda',
         'descripcion_general',
         'notas',
         'medios_pago',
@@ -28,6 +29,7 @@ class Cotizacion extends Model
         'fecha' => 'date',
         'medios_pago' => 'array',
         'incluye_igv' => 'boolean',
+        'moneda' => 'string',
         'subtotal' => 'float',
         'igv' => 'float',
         'total' => 'float'

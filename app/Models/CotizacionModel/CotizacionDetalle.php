@@ -22,6 +22,7 @@ class CotizacionDetalle extends Model
         'detalle_servicio', // 🔥 NUEVO (JSON)
         'cantidad',
         'precio',
+        'moneda_precio',
         'subtotal'
     ];
 
@@ -29,6 +30,7 @@ class CotizacionDetalle extends Model
         'detalle_servicio' => 'array', // 🔥 CLAVE
         'cantidad' => 'float',
         'precio' => 'float',
+        'moneda_precio' => 'string',
         'subtotal' => 'float'
     ];
 

@@ -165,8 +165,13 @@ class VentaService
             true
         );
         $montoMinimo = (float) config('sunat_detraccion.monto_minimo_servicios', 700);
+        $moneda = strtoupper((string) ($data['moneda'] ?? 'PEN'));
+        $tipoCambio = (float) ($data['tipo_cambio'] ?? 0);
+        $totalServiciosPen = $moneda === 'USD'
+            ? ($totalServicios * ($tipoCambio > 0 ? $tipoCambio : 1))
+            : $totalServicios;
 
-        if (!$aplica || $totalServicios <= $montoMinimo) {
+        if (!$aplica || $totalServiciosPen <= $montoMinimo) {
             return [
                 'aplica' => false,
                 'codigo' => null,

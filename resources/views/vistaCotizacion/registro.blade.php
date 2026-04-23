@@ -241,6 +241,7 @@
                                 Escribe al menos 2 letras para buscar.
                             </div>
                         </div>
+                        <small class="text-muted d-block mb-3">La cotizacion mantiene una sola moneda por documento (PEN o USD).</small>
 
                         <div class="table-responsive">
                             <table class="table table-bordered text-center">
@@ -249,6 +250,7 @@
                                         <th style="width: 12%;">Tipo</th>
                                         <th>Detalle</th>
                                         <th style="width: 14%;">Cantidad</th>
+                                        <th style="width: 10%;">Moneda</th>
                                         <th style="width: 14%;">Precio</th>
                                         <th style="width: 14%;">Subtotal</th>
                                         <th style="width: 8%;"></th>
@@ -257,7 +259,7 @@
 
                                 <tbody id="itemsTable">
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted">
+                                        <td colspan="7" class="text-center text-muted">
                                             Aun no agregaste items
                                         </td>
                                     </tr>
@@ -416,6 +418,7 @@
 
                         <hr>
 
+                        <p class="mb-1">Moneda: <strong id="monedaResumen">PEN</strong></p>
                         <p class="mb-1">Subtotal: <strong id="subtotal">S/ 0.00</strong></p>
                         <p class="mb-1"><span id="igvLabel">IGV (18%):</span> <strong id="igv">S/ 0.00</strong></p>
                         <h4 class="mt-2">Total: <span id="total">S/ 0.00</span></h4>
@@ -518,6 +521,14 @@
                     <div class="col-md-4 mb-3">
                         <label>Precio *</label>
                         <input type="number" class="form-control" id="quick_producto_precio" min="0" step="0.01">
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label>Moneda *</label>
+                        <select class="form-control" id="quick_producto_moneda_precio">
+                            <option value="PEN">Soles (PEN)</option>
+                            <option value="USD">Dolares (USD)</option>
+                        </select>
                     </div>
 
                     <div class="col-md-4 mb-3">
@@ -661,8 +672,24 @@ function resolveIncluyeIgvFromNotes(notes = []) {
     return decision;
 }
 
-function formatCurrency(value) {
-    return `S/ ${Number(value || 0).toFixed(2)}`;
+function normalizeCurrency(code) {
+    return String(code || 'PEN').toUpperCase() === 'USD' ? 'USD' : 'PEN';
+}
+
+function currencySymbol(code) {
+    return normalizeCurrency(code) === 'USD' ? 'US$' : 'S/';
+}
+
+function formatCurrency(value, code = 'PEN') {
+    return `${currencySymbol(code)} ${Number(value || 0).toFixed(2)}`;
+}
+
+function getQuoteCurrency() {
+    if (!items.length) {
+        return 'PEN';
+    }
+
+    return normalizeCurrency(items[0].moneda_precio || 'PEN');
 }
 
 function escapeHtml(value) {
@@ -953,6 +980,7 @@ async function guardarProductoRapido() {
                 categoria: $('#quick_producto_categoria').val().trim(),
                 unidad: $('#quick_producto_unidad').val().trim() || 'NIU',
                 precio: $('#quick_producto_precio').val(),
+                moneda_precio: $('#quick_producto_moneda_precio').val(),
                 stock: $('#quick_producto_stock').val()
             })
         });
@@ -1042,6 +1070,7 @@ function renderResultados() {
         const previewPasos = item.tipo === 'servicio' && Array.isArray(item.pasos) && item.pasos.length
             ? `<small class="text-muted d-block mt-1">Incluye ${item.pasos.length} paso(s) definidos</small>`
             : '';
+        const monedaItem = normalizeCurrency(item.moneda_precio || 'PEN');
 
         html += `
             <button type="button" class="list-group-item list-group-item-action"
@@ -1053,7 +1082,8 @@ function renderResultados() {
                         ${previewPasos}
                     </div>
                     <div class="text-right">
-                        <span class="badge badge-primary">${formatCurrency(item.precio)}</span>
+                        <span class="badge badge-primary">${formatCurrency(item.precio, monedaItem)}</span>
+                        <small class="text-muted d-block">${monedaItem}</small>
                     </div>
                 </div>
             </button>
@@ -1074,9 +1104,18 @@ function addItem(tipo, id) {
         return;
     }
 
+    const monedaSource = normalizeCurrency(source.moneda_precio || 'PEN');
+    const monedaCotizacion = getQuoteCurrency();
+
+    if (items.length && monedaCotizacion !== monedaSource) {
+        Swal.fire('Error', `No puedes mezclar monedas en una misma cotizacion. Moneda actual: ${monedaCotizacion}.`, 'error');
+        return;
+    }
+
     const existing = items.find(item =>
         item.tipo === tipo &&
-        Number(item.producto_id || item.servicio_id) === Number(id)
+        Number(item.producto_id || item.servicio_id) === Number(id) &&
+        normalizeCurrency(item.moneda_precio || 'PEN') === monedaSource
     );
 
     if (existing) {
@@ -1091,6 +1130,7 @@ function addItem(tipo, id) {
         servicio_id: tipo === 'servicio' ? source.id : null,
         nombre: source.descripcion || source.nombre || '',
         precio: Number(source.precio || 0),
+        moneda_precio: monedaSource,
         cantidad: 1,
         detalle_servicio: tipo === 'servicio'
             ? (Array.isArray(source.pasos) ? source.pasos.map(step => step.descripcion).filter(Boolean) : [])
@@ -1144,7 +1184,7 @@ function renderItems() {
     if (!items.length) {
         $('#itemsTable').html(`
             <tr>
-                <td colspan="6" class="text-center text-muted">
+                <td colspan="7" class="text-center text-muted">
                     Aun no agregaste items
                 </td>
             </tr>
@@ -1183,8 +1223,9 @@ function renderItems() {
                         value="${item.cantidad}"
                         onchange="updateCantidad(${index}, this.value)">
                 </td>
-                <td>${formatCurrency(item.precio)}</td>
-                <td>${formatCurrency(item.precio * item.cantidad)}</td>
+                <td><span class="badge badge-light">${normalizeCurrency(item.moneda_precio || 'PEN')}</span></td>
+                <td>${formatCurrency(item.precio, item.moneda_precio)}</td>
+                <td>${formatCurrency(item.precio * item.cantidad, item.moneda_precio)}</td>
                 <td>
                     <button class="btn btn-danger btn-sm" onclick="removeItem(${index})">
                         <i class="fas fa-times"></i>
@@ -1200,15 +1241,17 @@ function renderItems() {
 }
 
 function calc() {
+    const moneda = getQuoteCurrency();
     const subtotal = items.reduce((sum, item) => sum + (Number(item.precio) * Number(item.cantidad)), 0);
     const incluyeIgv = incluyeIgvSeleccionado();
     const igv = incluyeIgv ? (subtotal * 0.18) : 0;
     const total = subtotal + igv;
 
     $('#igvLabel').text(incluyeIgv ? 'IGV (18%):' : 'IGV (0%):');
-    $('#subtotal').text(formatCurrency(subtotal));
-    $('#igv').text(formatCurrency(igv));
-    $('#total').text(formatCurrency(total));
+    $('#monedaResumen').text(moneda);
+    $('#subtotal').text(formatCurrency(subtotal, moneda));
+    $('#igv').text(formatCurrency(igv, moneda));
+    $('#total').text(formatCurrency(total, moneda));
 }
 
 function getSelectedMediosPago() {
@@ -1236,6 +1279,7 @@ function buildPayload() {
         cliente_id: $('#cliente_id').val(),
         asunto: $('#asunto').val().trim(),
         fecha: $('#fecha').val() || null,
+        moneda: getQuoteCurrency(),
         descripcion_general: $('#descripcion_general').val().trim(),
         notas: $('#notas').val().trim(),
         medios_pago: getSelectedMediosPago(),
@@ -1246,6 +1290,7 @@ function buildPayload() {
             cantidad: Number(item.cantidad),
             producto_id: item.tipo === 'producto' ? item.producto_id : null,
             servicio_id: item.tipo === 'servicio' ? item.servicio_id : null,
+            moneda_precio: normalizeCurrency(item.moneda_precio || 'PEN'),
             detalle_servicio: Array.isArray(item.detalle_servicio) ? item.detalle_servicio : []
         }))
     };
@@ -1321,6 +1366,7 @@ function hydrateCotizacion(cotizacion) {
         servicio_id: detalle.servicio_id,
         nombre: detalle.nombre_item || '',
         precio: Number(detalle.precio || 0),
+        moneda_precio: normalizeCurrency(detalle.moneda_precio || cotizacion.moneda || 'PEN'),
         cantidad: Number(detalle.cantidad || 1),
         detalle_servicio: Array.isArray(detalle.detalle_servicio) ? detalle.detalle_servicio : []
     }));
@@ -1364,7 +1410,8 @@ async function buscarItems() {
 
         resultadoBusqueda = (resp.data || []).map(item => ({
             ...item,
-            tipo
+            tipo,
+            moneda_precio: normalizeCurrency(item.moneda_precio || 'PEN')
         }));
 
         renderResultados();
@@ -1433,6 +1480,7 @@ $('#modalProductoRapido').on('hidden.bs.modal', function () {
     $('#quick_producto_categoria').val('');
     $('#quick_producto_unidad').val('NIU');
     $('#quick_producto_precio').val('');
+    $('#quick_producto_moneda_precio').val('PEN');
     $('#quick_producto_stock').val('0');
 });
 $('#modalServicioRapido').on('hidden.bs.modal', function () {

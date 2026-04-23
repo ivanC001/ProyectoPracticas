@@ -89,8 +89,16 @@ $('#buscador').on('input', function () {
     }, 300);
 });
 
-function formatCurrency(value) {
-    return `S/ ${Number(value || 0).toFixed(2)}`;
+function normalizeCurrency(code) {
+    return String(code || 'PEN').toUpperCase() === 'USD' ? 'USD' : 'PEN';
+}
+
+function currencySymbol(code) {
+    return normalizeCurrency(code) === 'USD' ? 'US$' : 'S/';
+}
+
+function formatCurrency(value, code = 'PEN') {
+    return `${currencySymbol(code)} ${Number(value || 0).toFixed(2)}`;
 }
 
 function formatDate(value) {
@@ -188,7 +196,7 @@ function fetchCotizaciones(page = 1) {
                                 ${cotizacion.detalles_count ?? 0}
                             </span>
                         </td>
-                        <td><strong>${formatCurrency(cotizacion.total)}</strong></td>
+                        <td><strong>${formatCurrency(cotizacion.total, cotizacion.moneda)}</strong></td>
                         <td>${renderEstado(cotizacion.estado)}</td>
                     </tr>
                 `;

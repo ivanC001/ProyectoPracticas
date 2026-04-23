@@ -30,7 +30,7 @@
 <div id="reglasOperacionHint" class="rules-box mb-2"></div>
 
 <div class="row">
-    <div class="col-md-3">
+    <div class="col-md-2">
         <label for="tipo_documento">Tipo comprobante</label>
         <select class="form-control" id="tipo_documento"><option value="01">Factura</option><option value="03">Boleta</option></select>
         <small id="tipoComprobanteHelper" class="form-text text-muted"></small>
@@ -45,10 +45,15 @@
         <select class="form-control" id="moneda"><option value="PEN">Soles</option><option value="USD">Dolares</option></select>
     </div>
     <div class="col-md-2">
+        <label for="tipo_cambio">Tipo cambio</label>
+        <input type="number" class="form-control" id="tipo_cambio" min="0.0001" step="0.0001" value="3.8000">
+        <small class="form-text text-muted">Editable. Se usa para convertir precios entre PEN y USD.</small>
+    </div>
+    <div class="col-md-2">
         <label for="forma_pago">Forma pago</label>
         <select class="form-control" id="forma_pago"><option value="contado">Contado</option><option value="credito">Credito</option></select>
     </div>
-    <div class="col-md-2">
+    <div class="col-md-1">
         <label for="observacion">Observacion</label>
         <input type="text" class="form-control" id="observacion" placeholder="Opcional">
     </div>
@@ -79,10 +84,15 @@
 <h6 class="section-title">Items</h6>
 <div class="row">
     <div class="col-md-2"><label for="tipoItemSelector">Tipo item</label><select class="form-control" id="tipoItemSelector"><option value="producto">Producto</option><option value="servicio">Servicio</option></select></div>
-    <div class="col-md-3"><label for="catalogoItems">Item</label><select class="form-control" id="catalogoItems"></select></div>
+    <div class="col-md-2"><label for="catalogoItems">Item</label><select class="form-control" id="catalogoItems"></select></div>
     <div class="col-md-1"><label for="cantidadItem">Cant.</label><input type="number" class="form-control" id="cantidadItem" value="1" min="0.01" step="0.01"></div>
     <div class="col-md-1"><label for="descuentoItem">Desc.</label><input type="number" class="form-control" id="descuentoItem" value="0" min="0" step="0.01"></div>
     <div class="col-md-2"><label for="precioUnitario">V. unitario</label><input type="number" class="form-control" id="precioUnitario" step="0.01" min="0"></div>
+    <div class="col-md-1">
+        <label for="monedaPrecioItem">Mon.</label>
+        <select class="form-control" id="monedaPrecioItem"><option value="PEN">PEN</option><option value="USD">USD</option></select>
+        <small class="form-text text-muted">Moneda del precio.</small>
+    </div>
     <div class="col-md-2">
         <label for="tipoAfectacionIgv">Afect. IGV</label>
         <select class="form-control" id="tipoAfectacionIgv">

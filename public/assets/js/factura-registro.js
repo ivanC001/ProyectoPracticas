@@ -23,6 +23,42 @@
   function el(id) { return document.getElementById(id); }
   function money() { return el('moneda').value === 'USD' ? 'US$' : 'S/'; }
   function tipMeta(code) { return IGV_CATALOG[String(code)] || IGV_CATALOG['10']; }
+  function normalizeCurrency(code) {
+    return String(code || 'PEN').toUpperCase() === 'USD' ? 'USD' : 'PEN';
+  }
+  function round(value, decimals = 6) {
+    const n = Number(value || 0);
+    if (!Number.isFinite(n)) return 0;
+    const p = 10 ** decimals;
+    return Math.round(n * p) / p;
+  }
+  function exchangeRate() {
+    const input = Number(el('tipo_cambio')?.value || 0);
+    return Number.isFinite(input) && input > 0 ? input : 1;
+  }
+  function convertAmount(value, fromCurrency, toCurrency, rate = exchangeRate()) {
+    const from = normalizeCurrency(fromCurrency);
+    const to = normalizeCurrency(toCurrency);
+    const amount = Number(value || 0);
+    if (!Number.isFinite(amount) || amount <= 0) return 0;
+    if (from === to) return round(amount);
+    if (from === 'USD' && to === 'PEN') return round(amount * rate);
+    if (from === 'PEN' && to === 'USD') return round(amount / rate);
+    return round(amount);
+  }
+  function itemBaseCurrency(item) {
+    return normalizeCurrency(item?.moneda_precio || item?.moneda_item || el('moneda').value);
+  }
+  function itemBaseUnitPrice(item) {
+    if (item && item.valor_unitario_origen !== undefined && item.valor_unitario_origen !== null) {
+      return Math.max(Number(item.valor_unitario_origen || 0), 0);
+    }
+    return Math.max(Number(item?.valor_unitario || 0), 0);
+  }
+  function itemUnitPriceInDocCurrency(item) {
+    const docCurrency = normalizeCurrency(el('moneda').value);
+    return convertAmount(itemBaseUnitPrice(item), itemBaseCurrency(item), docCurrency);
+  }
 
   function toLocalInput(date) {
     const offset = date.getTimezoneOffset();
@@ -53,7 +89,7 @@
 
   function line(item) {
     const qty = Math.max(Number(item.cantidad || 0), 0);
-    const vu = Math.max(Number(item.valor_unitario || 0), 0);
+    const vu = Math.max(itemUnitPriceInDocCurrency(item), 0);
     const ds = Math.max(Number(item.descuento || 0), 0);
     const base = Math.max((qty * vu) - ds, 0);
     const meta = tipMeta(item.tip_afe_igv);
@@ -97,8 +133,17 @@
     }, 0);
   }
 
+  function totalServiciosEnPen() {
+    const docCurrency = normalizeCurrency(el('moneda').value);
+    return convertAmount(totalServicios(), docCurrency, 'PEN');
+  }
+
+  function montoMinimoDetraccionEnMonedaDocumento() {
+    return convertAmount(DETRACCION_MINIMO_SERVICIOS, 'PEN', normalizeCurrency(el('moneda').value));
+  }
+
   function requiereDetraccionServicios() {
-    return totalServicios() > DETRACCION_MINIMO_SERVICIOS;
+    return totalServiciosEnPen() > DETRACCION_MINIMO_SERVICIOS;
   }
 
   function renderReglasOperacion() {
@@ -124,12 +169,13 @@
       return;
     }
 
+    const umbral = montoMinimoDetraccionEnMonedaDocumento();
     if (requiereDetraccionServicios()) {
-      box.innerHTML = `<strong>Regla factura con servicios:</strong> servicios ${money()} ${totalServ.toFixed(2)} > ${money()} ${DETRACCION_MINIMO_SERVICIOS.toFixed(2)}. Detraccion obligatoria.`;
+      box.innerHTML = `<strong>Regla factura con servicios:</strong> servicios ${money()} ${totalServ.toFixed(2)} > ${money()} ${umbral.toFixed(2)}. Detraccion obligatoria.`;
       return;
     }
 
-    box.innerHTML = `<strong>Regla factura con servicios:</strong> servicios ${money()} ${totalServ.toFixed(2)} <= ${money()} ${DETRACCION_MINIMO_SERVICIOS.toFixed(2)}. Detraccion no obligatoria.`;
+    box.innerHTML = `<strong>Regla factura con servicios:</strong> servicios ${money()} ${totalServ.toFixed(2)} <= ${money()} ${umbral.toFixed(2)}. Detraccion no obligatoria.`;
   }
 
   function validarReglaBoletaDocumento() {
@@ -217,7 +263,7 @@
       sw.disabled = true;
       if (hint) {
         hint.className = 'alert alert-warning py-2 mb-2';
-        hint.innerHTML = `Servicio mayor a ${money()} ${DETRACCION_MINIMO_SERVICIOS.toFixed(2)}. Detraccion obligatoria.`;
+        hint.innerHTML = `Servicio mayor a ${money()} ${montoMinimoDetraccionEnMonedaDocumento().toFixed(2)}. Detraccion obligatoria.`;
       }
     } else {
       sw.checked = false;
@@ -225,7 +271,7 @@
       detraccionManual = false;
       if (hint) {
         hint.className = 'alert alert-secondary py-2 mb-2';
-        hint.innerHTML = `Servicio menor o igual a ${money()} ${DETRACCION_MINIMO_SERVICIOS.toFixed(2)}. Detraccion no aplica.`;
+        hint.innerHTML = `Servicio menor o igual a ${money()} ${montoMinimoDetraccionEnMonedaDocumento().toFixed(2)}. Detraccion no aplica.`;
       }
     }
 
@@ -294,12 +340,18 @@
     itemsSeleccionados.forEach((item, idx) => {
       const l = line(item);
       const meta = tipMeta(item.tip_afe_igv);
+      const unitInDoc = itemUnitPriceInDocCurrency(item);
+      const baseCurrency = itemBaseCurrency(item);
+      const baseSymbol = baseCurrency === 'USD' ? 'US$' : 'S/';
+      const conversionInfo = baseCurrency !== normalizeCurrency(el('moneda').value)
+        ? `<br><small class="text-muted">${baseSymbol} ${itemBaseUnitPrice(item).toFixed(2)} x TC ${exchangeRate().toFixed(4)}</small>`
+        : '';
       body.innerHTML += `<tr>
         <td>${item.tipo_item === 'servicio' ? 'Servicio' : 'Producto'}</td>
         <td>${item.descripcion}</td>
         <td>${badge(meta.group)} <span class="small text-muted">${item.tip_afe_igv}</span></td>
         <td>${item.cantidad}</td>
-        <td>${sym} ${Number(item.valor_unitario).toFixed(2)}</td>
+        <td>${sym} ${unitInDoc.toFixed(2)}${conversionInfo}</td>
         <td>${sym} ${Number(item.descuento).toFixed(2)}</td>
         <td>${sym} ${l.subtotal.toFixed(2)}</td>
         <td>${l.aplicaIgv ? `${sym} ${l.igv.toFixed(2)}` : '-'}</td>
@@ -334,15 +386,20 @@
     const sel = el('catalogoItems');
     sel.innerHTML = "<option value=''>Seleccione</option>";
     list.forEach(item => {
+      const itemCurrency = normalizeCurrency(item.moneda_precio || 'PEN');
+      const symbol = itemCurrency === 'USD' ? 'US$' : 'S/';
       const o = document.createElement('option');
       o.value = `${item.tipo_item}|${item.item_id}`;
-      o.text = item.tipo_item === 'producto' ? `${item.descripcion} (Stock: ${item.stock})` : `${item.descripcion} (Servicio)`;
+      o.text = item.tipo_item === 'producto'
+        ? `${item.descripcion} (${symbol} ${Number(item.precio || 0).toFixed(2)} | Stock: ${item.stock})`
+        : `${item.descripcion} (${symbol} ${Number(item.precio || 0).toFixed(2)})`;
       o.dataset.tipo = item.tipo_item;
       o.dataset.id = item.item_id;
       o.dataset.codigo = item.codigo;
       o.dataset.descripcion = item.descripcion;
       o.dataset.unidad = item.unidad;
       o.dataset.precio = item.precio;
+      o.dataset.monedaPrecio = itemCurrency;
       o.dataset.stock = item.stock ?? '';
       if (item.tipo_item === 'producto' && item.stock <= 0) o.disabled = true;
       sel.appendChild(o);
@@ -352,7 +409,30 @@
 
   function setItemSeleccionado() {
     const o = el('catalogoItems').options[el('catalogoItems').selectedIndex];
-    el('precioUnitario').value = o && o.value ? Number(o.dataset.precio || 0).toFixed(2) : '';
+    if (!o || !o.value) {
+      el('precioUnitario').value = '';
+      return;
+    }
+
+    const currency = normalizeCurrency(o.dataset.monedaPrecio || 'PEN');
+    el('monedaPrecioItem').value = currency;
+    el('monedaPrecioItem').dataset.previous = currency;
+    el('precioUnitario').value = Number(o.dataset.precio || 0).toFixed(2);
+  }
+
+  function handleMonedaPrecioItemChange() {
+    const selector = el('monedaPrecioItem');
+    const previousCurrency = normalizeCurrency(selector.dataset.previous || selector.value);
+    const currentCurrency = normalizeCurrency(selector.value);
+    const priceInput = el('precioUnitario');
+    const currentValue = Number(priceInput.value || 0);
+
+    if (priceInput.value !== '' && Number.isFinite(currentValue) && currentValue > 0 && previousCurrency !== currentCurrency) {
+      const converted = convertAmount(currentValue, previousCurrency, currentCurrency);
+      priceInput.value = converted.toFixed(2);
+    }
+
+    selector.dataset.previous = currentCurrency;
   }
 
   window.agregarItem = function agregarItem() {
@@ -364,11 +444,18 @@
     const precio = Number(el('precioUnitario').value || 0);
     const descuento = Number(el('descuentoItem').value || 0);
     const stock = Number(o.dataset.stock || 0);
+    const monedaPrecio = normalizeCurrency(el('monedaPrecioItem').value);
     if (cantidad <= 0) return Swal.fire('Error', 'Cantidad invalida', 'error');
     if (tipo === 'producto' && cantidad > stock) return Swal.fire('Error', 'Stock insuficiente', 'error');
 
     const tipAfe = el('tipoAfectacionIgv').value || '10';
-    const existing = itemsSeleccionados.find(i => i.tipo_item === tipo && i.item_id === itemId && i.tip_afe_igv === tipAfe);
+    const existing = itemsSeleccionados.find(i =>
+      i.tipo_item === tipo
+      && i.item_id === itemId
+      && i.tip_afe_igv === tipAfe
+      && normalizeCurrency(i.moneda_precio) === monedaPrecio
+      && Math.abs(itemBaseUnitPrice(i) - precio) < 0.0001
+    );
     if (existing) {
       existing.cantidad += cantidad;
       existing.descuento += descuento;
@@ -380,7 +467,8 @@
         descripcion: o.dataset.descripcion,
         unidad: o.dataset.unidad || (tipo === 'servicio' ? 'ZZ' : 'NIU'),
         cantidad,
-        valor_unitario: precio,
+        valor_unitario_origen: round(precio),
+        moneda_precio: monedaPrecio,
         descuento,
         tip_afe_igv: tipAfe,
       });
@@ -434,6 +522,9 @@
     el('cantidadItem').value = 1;
     el('descuentoItem').value = 0;
     el('precioUnitario').value = '';
+    el('monedaPrecioItem').value = 'PEN';
+    el('monedaPrecioItem').dataset.previous = 'PEN';
+    el('tipo_cambio').value = '3.8000';
     el('cliente_num_doc').value = '';
     el('cliente_razon_social').value = '';
     el('cliente_direccion').value = '';
@@ -465,6 +556,7 @@
     el('tipo_documento').value = payload.tipo_documento || '01';
     el('fecha_emision').value = fromServerDateTime(payload.fecha_emision);
     el('moneda').value = payload.moneda || 'PEN';
+    el('tipo_cambio').value = Number(payload.tipo_cambio || el('tipo_cambio').value || 3.8).toFixed(4);
     el('forma_pago').value = payload.forma_pago || 'contado';
     el('observacion').value = payload.observacion || '';
 
@@ -494,7 +586,8 @@
       descripcion: item.descripcion || '',
       unidad: item.unidad || (item.tipo_item === 'servicio' ? 'ZZ' : 'NIU'),
       cantidad: Number(item.cantidad || 0),
-      valor_unitario: Number(item.valor_unitario || 0),
+      valor_unitario_origen: Number(item.valor_unitario_origen ?? item.valor_unitario ?? 0),
+      moneda_precio: normalizeCurrency(item.moneda_precio || payload.moneda || 'PEN'),
       descuento: Number(item.descuento || 0),
       tip_afe_igv: String(item.tip_afe_igv || '10'),
     })).filter((item) => item.cantidad > 0);
@@ -511,6 +604,7 @@
     if (!itemsSeleccionados.length) return Swal.fire('Error', 'Agrega al menos un item', 'error');
     if (!el('fecha_emision').value) return Swal.fire('Error', 'Fecha de emision requerida', 'error');
     if (!validarReglaBoletaDocumento()) return Swal.fire('Error', 'Revisa el documento del cliente', 'error');
+    if (Number(el('tipo_cambio').value || 0) <= 0) return Swal.fire('Error', 'Ingresa un tipo de cambio valido', 'error');
 
     const tipoComp = el('tipo_documento').value;
     const usaDet = tipoComp === '01'
@@ -522,14 +616,29 @@
 
     const r = resumen();
     const detMonto = Number(el('detraccion_monto').value || 0);
+    const payloadItems = itemsSeleccionados.map((item) => ({
+      tipo_item: item.tipo_item,
+      item_id: item.item_id,
+      codigo: item.codigo,
+      descripcion: item.descripcion,
+      unidad: item.unidad,
+      cantidad: Number(item.cantidad || 0),
+      valor_unitario: itemUnitPriceInDocCurrency(item),
+      valor_unitario_origen: itemBaseUnitPrice(item),
+      moneda_precio: itemBaseCurrency(item),
+      descuento: Number(item.descuento || 0),
+      tip_afe_igv: item.tip_afe_igv,
+    }));
+
     const payload = {
       tipo_documento: tipoComp,
       fecha_emision: el('fecha_emision').value.replace('T', ' ') + ':00',
       moneda: el('moneda').value,
+      tipo_cambio: Number(el('tipo_cambio').value || 0),
       forma_pago: el('forma_pago').value,
       observacion: el('observacion').value.trim(),
       cliente: readCliente(),
-      items: itemsSeleccionados,
+      items: payloadItems,
       credito: el('forma_pago').value === 'credito' ? {
         cuotas: Number(el('credito_cuotas').value || 1),
         fecha_vencimiento: el('credito_fecha_vencimiento').value,
@@ -563,11 +672,13 @@
       ]);
       productosDisponibles = (prod.data || []).map(p => ({
         tipo_item: 'producto', item_id: Number(p.id), codigo: p.codigo, descripcion: p.descripcion,
-        unidad: p.unidad || 'NIU', precio: Number(p.precio || 0), stock: Number(p.stock || 0), activo: Number(p.activo || 0) === 1
+        unidad: p.unidad || 'NIU', precio: Number(p.precio || 0), moneda_precio: normalizeCurrency(p.moneda_precio || 'PEN'),
+        stock: Number(p.stock || 0), activo: Number(p.activo || 0) === 1
       })).filter(p => p.activo);
       serviciosDisponibles = (serv.data || []).map(s => ({
         tipo_item: 'servicio', item_id: Number(s.id), codigo: `SERV-${s.id}`, descripcion: s.nombre || s.descripcion || `Servicio ${s.id}`,
-        unidad: 'ZZ', precio: Number(s.precio || 0), stock: null, activo: !!s.activo
+        unidad: 'ZZ', precio: Number(s.precio || 0), moneda_precio: normalizeCurrency(s.moneda_precio || 'PEN'),
+        stock: null, activo: !!s.activo
       })).filter(s => s.activo);
       renderCatalogo();
     } catch (e) {
@@ -606,8 +717,10 @@
     el('forma_pago').addEventListener('change', aplicarReglasFormaPago);
     el('tipoAfectacionIgv').addEventListener('change', renderAfectacionInfo);
     el('moneda').addEventListener('change', () => { updateTabla(); recalcDetraccion(); });
+    el('tipo_cambio').addEventListener('input', () => { updateTabla(); recalcDetraccion(); });
     el('tipoItemSelector').addEventListener('change', renderCatalogo);
     el('catalogoItems').addEventListener('change', setItemSeleccionado);
+    el('monedaPrecioItem').addEventListener('change', handleMonedaPrecioItemChange);
     el('detraccion_codigo').addEventListener('change', () => {
       detraccionManual = false;
       syncDetraccionPct();

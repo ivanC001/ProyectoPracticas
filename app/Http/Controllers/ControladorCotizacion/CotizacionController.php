@@ -23,6 +23,7 @@ class CotizacionController extends Controller
                 'id',
                 'cliente_id',
                 'fecha',
+                'moneda',
                 'total',
                 'estado',
                 'asunto'
@@ -203,6 +204,9 @@ class CotizacionController extends Controller
         $incluyeIgv = $incluyeIgvPorNotas ?? (bool) ($cotizacion->incluye_igv ?? ((float) $cotizacion->igv > 0));
         $montoIgv = $incluyeIgv ? (float) $cotizacion->igv : 0;
         $montoTotal = $incluyeIgv ? (float) $cotizacion->total : (float) $cotizacion->subtotal;
+        $monedaCotizacion = $this->normalizeMoneda($cotizacion->moneda ?? $cotizacion->detalles->first()?->moneda_precio ?? 'PEN');
+        $simboloMoneda = $this->simboloMoneda($monedaCotizacion);
+        $monedaTexto = $this->monedaTexto($monedaCotizacion);
 
         $html = view('vistaCotizacion.pdf', [
             'cotizacion' => $cotizacion,
@@ -212,7 +216,9 @@ class CotizacionController extends Controller
             'incluyeIgv' => $incluyeIgv,
             'montoIgv' => $montoIgv,
             'montoTotal' => $montoTotal,
-            'totalLetras' => $formatter->toInvoice($montoTotal, 2, 'SOLES'),
+            'totalLetras' => $formatter->toInvoice($montoTotal, 2, $monedaTexto),
+            'monedaCotizacion' => $monedaCotizacion,
+            'simboloMoneda' => $simboloMoneda,
             'tipoDocumentoCliente' => $this->resolveTipoDocumentoCliente($cotizacion->cliente?->tipo_doc),
             'notas' => $notas,
             'mediosPago' => $mediosPago,
@@ -255,6 +261,7 @@ class CotizacionController extends Controller
             'cliente_id' => $data['cliente_id'],
             'asunto' => $data['asunto'] ?? $cotizacion?->asunto ?? 'Cotizacion',
             'fecha' => $data['fecha'] ?? ($cotizacion?->fecha?->toDateString() ?? now()->toDateString()),
+            'moneda' => $this->normalizeMoneda($data['moneda'] ?? $cotizacion?->moneda ?? 'PEN'),
             'descripcion_general' => $data['descripcion_general'] ?? null,
             'notas' => $data['notas'] ?? null,
             'medios_pago' => $data['medios_pago'] ?? $cotizacion?->medios_pago ?? array_keys(config('empresa.medios_pago', [])),
@@ -271,10 +278,20 @@ class CotizacionController extends Controller
         $cotizacion->detalles()->delete();
 
         $subtotal = 0;
+        $monedaCotizacion = null;
 
         foreach ($items as $index => $item) {
             $detalle = $this->resolveDetalleData($item, $index);
             $sub = round($item['cantidad'] * $detalle['precio'], 2);
+            $monedaDetalle = $this->normalizeMoneda($detalle['moneda_precio'] ?? 'PEN');
+
+            if ($monedaCotizacion === null) {
+                $monedaCotizacion = $monedaDetalle;
+            } elseif ($monedaCotizacion !== $monedaDetalle) {
+                throw ValidationException::withMessages([
+                    "items.$index.moneda_precio" => ['Todos los items de la cotizacion deben usar la misma moneda.'],
+                ]);
+            }
 
             CotizacionDetalle::create([
                 'cotizacion_id' => $cotizacion->id,
@@ -287,6 +304,7 @@ class CotizacionController extends Controller
                 'detalle_servicio' => $detalle['detalle_servicio'],
                 'cantidad' => $item['cantidad'],
                 'precio' => $detalle['precio'],
+                'moneda_precio' => $monedaDetalle,
                 'subtotal' => $sub,
             ]);
 
@@ -298,6 +316,7 @@ class CotizacionController extends Controller
         $total = round($subtotal + $igv, 2);
 
         $cotizacion->update([
+            'moneda' => $monedaCotizacion ?? $this->normalizeMoneda($cotizacion->moneda ?? 'PEN'),
             'subtotal' => $subtotal,
             'igv' => $igv,
             'total' => $total,
@@ -401,6 +420,7 @@ class CotizacionController extends Controller
                 'unidad' => $producto->unidad ?? null,
                 'detalle_servicio' => $detalleManual ?: null,
                 'precio' => $producto->precio,
+                'moneda_precio' => $this->normalizeMoneda($producto->moneda_precio ?? 'PEN'),
             ];
         }
 
@@ -420,7 +440,25 @@ class CotizacionController extends Controller
             'unidad' => 'servicio',
             'detalle_servicio' => $detalleManual ?: $servicio->pasos->pluck('descripcion')->filter()->values()->all(),
             'precio' => $servicio->precio,
+            'moneda_precio' => $this->normalizeMoneda(data_get($item, 'moneda_precio', 'PEN')),
         ];
+    }
+
+    private function normalizeMoneda(?string $moneda): string
+    {
+        return strtoupper((string) $moneda) === 'USD' ? 'USD' : 'PEN';
+    }
+
+    private function simboloMoneda(string $moneda): string
+    {
+        return $this->normalizeMoneda($moneda) === 'USD' ? 'US$' : 'S/';
+    }
+
+    private function monedaTexto(string $moneda): string
+    {
+        return $this->normalizeMoneda($moneda) === 'USD'
+            ? 'DOLARES AMERICANOS'
+            : 'SOLES';
     }
 
     private function resolveTipoDocumentoCliente(?string $tipoDoc): string
