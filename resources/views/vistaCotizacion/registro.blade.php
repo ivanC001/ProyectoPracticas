@@ -241,7 +241,7 @@
                                 Escribe al menos 2 letras para buscar.
                             </div>
                         </div>
-                        <small class="text-muted d-block mb-3">La cotizacion mantiene una sola moneda por documento (PEN o USD).</small>
+                        <small class="text-muted d-block mb-3">La cotizacion se emite en una sola moneda (PEN o USD). Si agregas un item en otra moneda, el sistema pedira tipo de cambio para convertirlo.</small>
 
                         <div class="table-responsive">
                             <table class="table table-bordered text-center">
@@ -310,6 +310,21 @@
                             <label for="fecha">Fecha</label>
                             <input type="date" id="fecha" class="form-control">
                             <div class="invalid-feedback d-block" id="error_fecha"></div>
+                        </div>
+
+                        <div class="d-none">
+                            <select id="moneda" class="form-control">
+                                <option value="PEN">Soles (PEN)</option>
+                                <option value="USD">Dolares (USD)</option>
+                            </select>
+                            <div class="invalid-feedback d-block" id="error_moneda"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tipo_cambio">Tipo de cambio (opcional)</label>
+                            <input type="text" id="tipo_cambio" class="form-control" inputmode="decimal" placeholder="Ejemplo: 3.8000 o 3,8000">
+                            <small class="text-muted">Solo se usa si necesitas convertir entre PEN y USD.</small>
+                            <div class="invalid-feedback d-block" id="error_tipo_cambio"></div>
                         </div>
 
                         <div class="form-group">
@@ -564,14 +579,22 @@
 
             <div class="modal-body">
                 <div class="row">
-                    <div class="col-md-8 mb-3">
+                    <div class="col-md-6 mb-3">
                         <label>Nombre *</label>
                         <input type="text" class="form-control" id="quick_servicio_nombre">
                     </div>
 
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label>Precio *</label>
                         <input type="number" class="form-control" id="quick_servicio_precio" min="0" step="0.01">
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <label>Moneda *</label>
+                        <select class="form-control" id="quick_servicio_moneda_precio">
+                            <option value="PEN">Soles (PEN)</option>
+                            <option value="USD">Dolares (USD)</option>
+                        </select>
                     </div>
 
                     <div class="col-md-12 mb-3">
@@ -619,6 +642,8 @@ let debounceCliente;
 let clientesRecientes = [];
 let clienteOptions = [];
 let selectedCliente = null;
+let selectedCurrency = 'PEN';
+let lastExchangeRate = 3.80;
 const mediosPagoDisponibles = @json(config('empresa.medios_pago', []));
 
 const params = new URLSearchParams(window.location.search);
@@ -685,11 +710,106 @@ function formatCurrency(value, code = 'PEN') {
 }
 
 function getQuoteCurrency() {
-    if (!items.length) {
-        return 'PEN';
+    return normalizeCurrency($('#moneda').val() || selectedCurrency || 'PEN');
+}
+
+function setQuoteCurrency(code) {
+    selectedCurrency = normalizeCurrency(code);
+    $('#moneda').val(selectedCurrency);
+}
+
+function getExchangeRate() {
+    const rate = parseDecimalInput($('#tipo_cambio').val());
+    if (Number.isFinite(rate) && rate > 0) {
+        lastExchangeRate = rate;
+        return rate;
     }
 
-    return normalizeCurrency(items[0].moneda_precio || 'PEN');
+    return null;
+}
+
+function parseDecimalInput(value) {
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? value : NaN;
+    }
+
+    const normalized = String(value ?? '')
+        .trim()
+        .replace(/\s+/g, '')
+        .replace(',', '.');
+
+    if (!normalized) {
+        return NaN;
+    }
+
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : NaN;
+}
+
+function convertAmount(value, fromCurrency, toCurrency, exchangeRate) {
+    const from = normalizeCurrency(fromCurrency);
+    const to = normalizeCurrency(toCurrency);
+    const amount = Number(value || 0);
+    const rate = parseDecimalInput(exchangeRate);
+
+    if (!Number.isFinite(amount)) {
+        return NaN;
+    }
+
+    if (from === to) {
+        return amount;
+    }
+
+    if (!Number.isFinite(rate) || rate <= 0) {
+        return NaN;
+    }
+
+    if (from === 'USD' && to === 'PEN') {
+        return amount * rate;
+    }
+
+    if (from === 'PEN' && to === 'USD') {
+        return amount / rate;
+    }
+
+    return amount;
+}
+
+async function pedirTipoCambio(fromCurrency, toCurrency, contexto = 'conversion') {
+    const defaults = Number(getExchangeRate() || lastExchangeRate || 3.8).toFixed(4);
+
+    const result = await Swal.fire({
+        title: 'Tipo de cambio requerido',
+        html: `Convertir de <strong>${fromCurrency}</strong> a <strong>${toCurrency}</strong> para ${contexto}.`,
+        input: 'text',
+        inputValue: defaults,
+        inputPlaceholder: 'Ejemplo: 3.8000 o 3,8000',
+        showCancelButton: true,
+        confirmButtonText: 'Aplicar',
+        cancelButtonText: 'Cancelar',
+        inputValidator: (value) => {
+            const rate = parseDecimalInput(value);
+            if (!Number.isFinite(rate) || rate <= 0) {
+                return 'Ingresa un tipo de cambio valido mayor a 0.';
+            }
+
+            return null;
+        }
+    });
+
+    if (!result.isConfirmed) {
+        return null;
+    }
+
+    const rate = parseDecimalInput(result.value);
+    if (!Number.isFinite(rate) || rate <= 0) {
+        return null;
+    }
+
+    lastExchangeRate = rate;
+    $('#tipo_cambio').val(rate.toFixed(4));
+    $('#error_tipo_cambio').text('');
+    return rate;
 }
 
 function escapeHtml(value) {
@@ -1003,6 +1123,7 @@ async function guardarServicioRapido() {
             body: JSON.stringify({
                 nombre: $('#quick_servicio_nombre').val().trim(),
                 precio: $('#quick_servicio_precio').val(),
+                moneda_precio: $('#quick_servicio_moneda_precio').val(),
                 descripcion: $('#quick_servicio_descripcion').val().trim(),
                 tipo_servicio: $('#quick_servicio_tipo').val().trim(),
                 nivel_servicio: $('#quick_servicio_nivel').val() || null
@@ -1094,7 +1215,7 @@ function renderResultados() {
     $('#resultados').html(html);
 }
 
-function addItem(tipo, id) {
+async function addItem(tipo, id) {
     const source = resultadoBusqueda.find(item =>
         item.tipo === tipo && Number(item.id) === Number(id)
     );
@@ -1105,17 +1226,14 @@ function addItem(tipo, id) {
     }
 
     const monedaSource = normalizeCurrency(source.moneda_precio || 'PEN');
-    const monedaCotizacion = getQuoteCurrency();
-
-    if (items.length && monedaCotizacion !== monedaSource) {
-        Swal.fire('Error', `No puedes mezclar monedas en una misma cotizacion. Moneda actual: ${monedaCotizacion}.`, 'error');
-        return;
-    }
+    const precioFinal = Number(source.precio || 0);
+    const monedaFinal = monedaSource;
 
     const existing = items.find(item =>
         item.tipo === tipo &&
         Number(item.producto_id || item.servicio_id) === Number(id) &&
-        normalizeCurrency(item.moneda_precio || 'PEN') === monedaSource
+        normalizeCurrency(item.moneda_precio || 'PEN') === monedaFinal &&
+        Math.abs(Number(item.precio || 0) - Number(precioFinal || 0)) < 0.0001
     );
 
     if (existing) {
@@ -1129,8 +1247,8 @@ function addItem(tipo, id) {
         producto_id: tipo === 'producto' ? source.id : null,
         servicio_id: tipo === 'servicio' ? source.id : null,
         nombre: source.descripcion || source.nombre || '',
-        precio: Number(source.precio || 0),
-        moneda_precio: monedaSource,
+        precio: Number(precioFinal || 0),
+        moneda_precio: monedaFinal,
         cantidad: 1,
         detalle_servicio: tipo === 'servicio'
             ? (Array.isArray(source.pasos) ? source.pasos.map(step => step.descripcion).filter(Boolean) : [])
@@ -1141,9 +1259,40 @@ function addItem(tipo, id) {
 }
 
 function updateCantidad(index, value) {
-    const cantidad = Number(value);
+    const cantidad = parseDecimalInput(value);
 
     items[index].cantidad = !cantidad || cantidad < 1 ? 1 : cantidad;
+    renderItems();
+}
+
+async function updateMonedaItem(index, nuevaMonedaRaw) {
+    const item = items[index];
+    if (!item) {
+        return;
+    }
+
+    const monedaActual = normalizeCurrency(item.moneda_precio || 'PEN');
+    const monedaNueva = normalizeCurrency(nuevaMonedaRaw);
+
+    if (monedaActual === monedaNueva) {
+        return;
+    }
+
+    const rate = await pedirTipoCambio(monedaActual, monedaNueva, 'cambiar moneda de item');
+    if (rate === null) {
+        renderItems();
+        return;
+    }
+
+    const precioConvertido = convertAmount(item.precio, monedaActual, monedaNueva, rate);
+    if (!Number.isFinite(precioConvertido)) {
+        Swal.fire('Error', 'No se pudo convertir el precio del item.', 'error');
+        renderItems();
+        return;
+    }
+
+    items[index].precio = Number(precioConvertido.toFixed(2));
+    items[index].moneda_precio = monedaNueva;
     renderItems();
 }
 
@@ -1223,7 +1372,12 @@ function renderItems() {
                         value="${item.cantidad}"
                         onchange="updateCantidad(${index}, this.value)">
                 </td>
-                <td><span class="badge badge-light">${normalizeCurrency(item.moneda_precio || 'PEN')}</span></td>
+                <td>
+                    <select class="form-control form-control-sm" onchange="updateMonedaItem(${index}, this.value)">
+                        <option value="PEN" ${normalizeCurrency(item.moneda_precio || 'PEN') === 'PEN' ? 'selected' : ''}>PEN</option>
+                        <option value="USD" ${normalizeCurrency(item.moneda_precio || 'PEN') === 'USD' ? 'selected' : ''}>USD</option>
+                    </select>
+                </td>
                 <td>${formatCurrency(item.precio, item.moneda_precio)}</td>
                 <td>${formatCurrency(item.precio * item.cantidad, item.moneda_precio)}</td>
                 <td>
@@ -1242,16 +1396,46 @@ function renderItems() {
 
 function calc() {
     const moneda = getQuoteCurrency();
-    const subtotal = items.reduce((sum, item) => sum + (Number(item.precio) * Number(item.cantidad)), 0);
+    const rate = getExchangeRate();
+    let conversionError = false;
+    const subtotal = items.reduce((sum, item) => {
+        const subItem = Number(item.precio || 0) * Number(item.cantidad || 0);
+        const convertido = convertAmount(subItem, item.moneda_precio, moneda, rate);
+
+        if (!Number.isFinite(convertido)) {
+            conversionError = true;
+            return sum;
+        }
+
+        return sum + convertido;
+    }, 0);
     const incluyeIgv = incluyeIgvSeleccionado();
     const igv = incluyeIgv ? (subtotal * 0.18) : 0;
     const total = subtotal + igv;
 
+    if (conversionError) {
+        $('#error_tipo_cambio').text('Ingresa tipo de cambio para convertir entre PEN y USD en el resumen.');
+        $('#subtotal').text('-');
+        $('#igv').text('-');
+        $('#total').text('-');
+        $('#monedaResumen').text(moneda);
+        return;
+    }
+
+    if (!$('#tipo_cambio').hasClass('is-invalid')) {
+        $('#error_tipo_cambio').text('');
+    }
+
     $('#igvLabel').text(incluyeIgv ? 'IGV (18%):' : 'IGV (0%):');
     $('#monedaResumen').text(moneda);
-    $('#subtotal').text(formatCurrency(subtotal, moneda));
-    $('#igv').text(formatCurrency(igv, moneda));
-    $('#total').text(formatCurrency(total, moneda));
+    $('#subtotal').text(formatCurrency(Number(subtotal.toFixed(2)), moneda));
+    $('#igv').text(formatCurrency(Number(igv.toFixed(2)), moneda));
+    $('#total').text(formatCurrency(Number(total.toFixed(2)), moneda));
+}
+
+function requiresCurrencyConversion() {
+    const monedaCotizacion = getQuoteCurrency();
+    return items.some(item => normalizeCurrency(item.moneda_precio || 'PEN') !== monedaCotizacion);
 }
 
 function getSelectedMediosPago() {
@@ -1280,6 +1464,7 @@ function buildPayload() {
         asunto: $('#asunto').val().trim(),
         fecha: $('#fecha').val() || null,
         moneda: getQuoteCurrency(),
+        tipo_cambio: getExchangeRate(),
         descripcion_general: $('#descripcion_general').val().trim(),
         notas: $('#notas').val().trim(),
         medios_pago: getSelectedMediosPago(),
@@ -1288,6 +1473,7 @@ function buildPayload() {
         items: items.map(item => ({
             tipo: item.tipo,
             cantidad: Number(item.cantidad),
+            precio: Number(item.precio || 0),
             producto_id: item.tipo === 'producto' ? item.producto_id : null,
             servicio_id: item.tipo === 'servicio' ? item.servicio_id : null,
             moneda_precio: normalizeCurrency(item.moneda_precio || 'PEN'),
@@ -1312,6 +1498,12 @@ async function guardarCotizacion() {
 
     if (!items.length) {
         Swal.fire('Error', 'Debes agregar al menos un item', 'error');
+        return;
+    }
+
+    if (requiresCurrencyConversion() && !getExchangeRate()) {
+        $('#error_tipo_cambio').text('Ingresa tipo de cambio para convertir entre PEN y USD.');
+        Swal.fire('Error', 'Ingresa tipo de cambio para completar la cotizacion con monedas mixtas.', 'error');
         return;
     }
 
@@ -1350,6 +1542,7 @@ function hydrateCotizacion(cotizacion) {
 
     $('#asunto').val(cotizacion.asunto || '').data('auto-generated', false);
     $('#fecha').val((cotizacion.fecha || '').slice(0, 10));
+    $('#tipo_cambio').val(Number(cotizacion.tipo_cambio || lastExchangeRate || 3.8).toFixed(4));
     $('#descripcion_general').val(cotizacion.descripcion_general || '');
     $('#notas').val(cotizacion.notas || '');
     const notas = (cotizacion.notas || '').split(/\r?\n/).map(line => line.trim());
@@ -1357,6 +1550,7 @@ function hydrateCotizacion(cotizacion) {
         ? cotizacion.incluye_igv
         : (notas.includes(presetKeys.igv_no) ? false : Number(cotizacion.igv || 0) > 0);
     $('#incluye_igv').val(incluyeIgv ? '1' : '0');
+    setQuoteCurrency(cotizacion.moneda || 'PEN');
     setSelectedMediosPago(Array.isArray(cotizacion.medios_pago) ? cotizacion.medios_pago : null);
     $('#estado').val(cotizacion.estado || 'borrador');
 
@@ -1379,6 +1573,8 @@ async function loadCotizacion() {
     if (!editingCotizacionId) {
         $('#fecha').val(new Date().toISOString().slice(0, 10));
         $('#incluye_igv').val('1');
+        setQuoteCurrency('PEN');
+        $('#tipo_cambio').val(Number(lastExchangeRate || 3.8).toFixed(4));
         renderItems();
         syncPresetControlsFromNotes();
         return;
@@ -1426,6 +1622,7 @@ async function buscarItems() {
 
 async function init() {
     try {
+        setQuoteCurrency($('#moneda').val() || 'PEN');
         setSelectedMediosPago(null);
         await cargarClientesRecientes();
         await loadCotizacion();
@@ -1437,6 +1634,14 @@ async function init() {
 $('#tipo').on('change', function () {
     resultadoBusqueda = [];
     buscarItems();
+});
+$('#moneda').on('change', function () {
+    setQuoteCurrency($(this).val());
+    calc();
+});
+$('#tipo_cambio').on('input', function () {
+    $(this).removeClass('is-invalid');
+    calc();
 });
 $('#buscar').on('input', function () {
     clearTimeout(debounceItems);
@@ -1486,6 +1691,7 @@ $('#modalProductoRapido').on('hidden.bs.modal', function () {
 $('#modalServicioRapido').on('hidden.bs.modal', function () {
     $('#quick_servicio_nombre').val('');
     $('#quick_servicio_precio').val('');
+    $('#quick_servicio_moneda_precio').val('PEN');
     $('#quick_servicio_descripcion').val('');
     $('#quick_servicio_tipo').val('');
     $('#quick_servicio_nivel').val('');

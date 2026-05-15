@@ -262,6 +262,7 @@ class CotizacionController extends Controller
             'asunto' => $data['asunto'] ?? $cotizacion?->asunto ?? 'Cotizacion',
             'fecha' => $data['fecha'] ?? ($cotizacion?->fecha?->toDateString() ?? now()->toDateString()),
             'moneda' => $this->normalizeMoneda($data['moneda'] ?? $cotizacion?->moneda ?? 'PEN'),
+            'tipo_cambio' => $this->normalizeTipoCambio($data['tipo_cambio'] ?? $cotizacion?->tipo_cambio ?? 3.8),
             'descripcion_general' => $data['descripcion_general'] ?? null,
             'notas' => $data['notas'] ?? null,
             'medios_pago' => $data['medios_pago'] ?? $cotizacion?->medios_pago ?? array_keys(config('empresa.medios_pago', [])),
@@ -278,20 +279,20 @@ class CotizacionController extends Controller
         $cotizacion->detalles()->delete();
 
         $subtotal = 0;
-        $monedaCotizacion = null;
+        $monedaCotizacion = $this->normalizeMoneda($cotizacion->moneda ?? 'PEN');
+        $tipoCambio = $this->normalizeTipoCambio($cotizacion->tipo_cambio ?? 3.8);
 
         foreach ($items as $index => $item) {
             $detalle = $this->resolveDetalleData($item, $index);
             $sub = round($item['cantidad'] * $detalle['precio'], 2);
             $monedaDetalle = $this->normalizeMoneda($detalle['moneda_precio'] ?? 'PEN');
-
-            if ($monedaCotizacion === null) {
-                $monedaCotizacion = $monedaDetalle;
-            } elseif ($monedaCotizacion !== $monedaDetalle) {
-                throw ValidationException::withMessages([
-                    "items.$index.moneda_precio" => ['Todos los items de la cotizacion deben usar la misma moneda.'],
-                ]);
-            }
+            $subConvertido = $this->convertAmount(
+                $sub,
+                $monedaDetalle,
+                $monedaCotizacion,
+                $tipoCambio,
+                'tipo_cambio'
+            );
 
             CotizacionDetalle::create([
                 'cotizacion_id' => $cotizacion->id,
@@ -308,15 +309,16 @@ class CotizacionController extends Controller
                 'subtotal' => $sub,
             ]);
 
-            $subtotal += $sub;
+            $subtotal += $subConvertido;
         }
 
+        $subtotal = round($subtotal, 2);
         $incluyeIgv = (bool) ($cotizacion->incluye_igv ?? true);
         $igv = $incluyeIgv ? round($subtotal * 0.18, 2) : 0;
         $total = round($subtotal + $igv, 2);
 
         $cotizacion->update([
-            'moneda' => $monedaCotizacion ?? $this->normalizeMoneda($cotizacion->moneda ?? 'PEN'),
+            'moneda' => $monedaCotizacion,
             'subtotal' => $subtotal,
             'igv' => $igv,
             'total' => $total,
@@ -419,8 +421,8 @@ class CotizacionController extends Controller
                 'nombre_item' => $producto->descripcion,
                 'unidad' => $producto->unidad ?? null,
                 'detalle_servicio' => $detalleManual ?: null,
-                'precio' => $producto->precio,
-                'moneda_precio' => $this->normalizeMoneda($producto->moneda_precio ?? 'PEN'),
+                'precio' => $this->resolvePrecioItem($item, (float) $producto->precio),
+                'moneda_precio' => $this->normalizeMoneda(data_get($item, 'moneda_precio', $producto->moneda_precio ?? 'PEN')),
             ];
         }
 
@@ -439,9 +441,55 @@ class CotizacionController extends Controller
             'nombre_item' => $servicio->nombre,
             'unidad' => 'servicio',
             'detalle_servicio' => $detalleManual ?: $servicio->pasos->pluck('descripcion')->filter()->values()->all(),
-            'precio' => $servicio->precio,
-            'moneda_precio' => $this->normalizeMoneda(data_get($item, 'moneda_precio', 'PEN')),
+            'precio' => $this->resolvePrecioItem($item, (float) $servicio->precio),
+            'moneda_precio' => $this->normalizeMoneda(data_get($item, 'moneda_precio', $servicio->moneda_precio ?? 'PEN')),
         ];
+    }
+
+    private function normalizeTipoCambio($rate): float
+    {
+        $value = (float) $rate;
+        return $value > 0 ? round($value, 4) : 0;
+    }
+
+    private function convertAmount(
+        float $amount,
+        string $fromCurrency,
+        string $toCurrency,
+        float $exchangeRate,
+        string $errorKey = 'tipo_cambio'
+    ): float {
+        $from = $this->normalizeMoneda($fromCurrency);
+        $to = $this->normalizeMoneda($toCurrency);
+
+        if ($from === $to) {
+            return round($amount, 2);
+        }
+
+        if ($exchangeRate <= 0) {
+            throw ValidationException::withMessages([
+                $errorKey => ['Debes ingresar un tipo de cambio mayor a 0 para convertir entre PEN y USD.'],
+            ]);
+        }
+
+        if ($from === 'USD' && $to === 'PEN') {
+            return round($amount * $exchangeRate, 2);
+        }
+
+        if ($from === 'PEN' && $to === 'USD') {
+            return round($amount / $exchangeRate, 2);
+        }
+
+        return round($amount, 2);
+    }
+
+    private function resolvePrecioItem(array $item, float $defaultPrice): float
+    {
+        if (array_key_exists('precio', $item) && $item['precio'] !== null && $item['precio'] !== '') {
+            return round(max(0, (float) $item['precio']), 2);
+        }
+
+        return round(max(0, $defaultPrice), 2);
     }
 
     private function normalizeMoneda(?string $moneda): string

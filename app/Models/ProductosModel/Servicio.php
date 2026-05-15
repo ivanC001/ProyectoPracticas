@@ -13,6 +13,7 @@ class Servicio extends Model
         'nombre',
         'descripcion',
         'precio',
+        'moneda_precio',
         'costo',
         'duracion_estimada',
         'activo'

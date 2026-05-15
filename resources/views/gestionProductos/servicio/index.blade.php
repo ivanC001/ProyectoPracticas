@@ -106,6 +106,8 @@ function fetchServicios(page = 1){
         }
 
         resp.data.forEach(s => {
+            const moneda = (String(s.moneda_precio || 'PEN').toUpperCase() === 'USD') ? 'USD' : 'PEN';
+            const simbolo = moneda === 'USD' ? 'US$' : 'S/';
             tbody.append(`
                 <tr>
                     <td>
@@ -121,7 +123,7 @@ function fetchServicios(page = 1){
                     </td>
                     <td>${s.id}</td>
                     <td class="text-left">${s.nombre}</td>
-                    <td>S/ ${parseFloat(s.precio).toFixed(2)}</td>
+                    <td>${simbolo} ${parseFloat(s.precio).toFixed(2)} <small class="text-muted d-block">${moneda}</small></td>
                     <td>${s.duracion_estimada ?? '-'} min</td>
                     <td>${s.tipo_servicio ?? '-'}</td>
                     <td>${s.nivel_servicio ?? '-'}</td>
@@ -182,6 +184,7 @@ function editar(id){
         $('#nombre').val(s.nombre);
         $('#descripcion').val(s.descripcion);
         $('#precio').val(s.precio);
+        $('#moneda_precio').val((String(s.moneda_precio || 'PEN').toUpperCase() === 'USD') ? 'USD' : 'PEN');
         $('#costo').val(s.costo);
         $('#duracion_estimada').val(s.duracion_estimada);
         $('#requiere_personal').val(s.requiere_personal ? 1 : 0);

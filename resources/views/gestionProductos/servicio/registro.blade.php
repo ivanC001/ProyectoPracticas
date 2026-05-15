@@ -22,17 +22,25 @@
                             <textarea class="form-control" id="descripcion"></textarea>
                         </div>
 
-                        <div class="col-md-4 mt-2">
+                        <div class="col-md-3 mt-2">
                             <label>Precio <span class="text-danger">*</span></label>
                             <input type="number" step="0.01" class="form-control" id="precio">
                         </div>
 
-                        <div class="col-md-4 mt-2">
+                        <div class="col-md-3 mt-2">
+                            <label>Moneda <span class="text-danger">*</span></label>
+                            <select class="form-control" id="moneda_precio">
+                                <option value="PEN">Soles (PEN)</option>
+                                <option value="USD">Dolares (USD)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3 mt-2">
                             <label>Costo <small class="text-muted">(Opcional)</small></label>
                             <input type="number" step="0.01" class="form-control" id="costo">
                         </div>
 
-                        <div class="col-md-4 mt-2">
+                        <div class="col-md-3 mt-2">
                             <label>Duracion (min) <small class="text-muted">(Opcional)</small></label>
                             <input type="number" class="form-control" id="duracion_estimada">
                         </div>
@@ -167,6 +175,7 @@ function mostrarErrores(errors){
 $('#modalServicio').on('show.bs.modal', function () {
     if(!window.servicioEditando){
         $('#formServicio')[0].reset();
+        $('#moneda_precio').val('PEN');
         $('#tituloModal').html('<i class="fas fa-plus"></i> Registrar Servicio');
     }
 
@@ -184,6 +193,7 @@ $('#btnGuardar').click(function(){
         nombre: $('#nombre').val(),
         descripcion: $('#descripcion').val(),
         precio: $('#precio').val(),
+        moneda_precio: $('#moneda_precio').val(),
         costo: $('#costo').val(),
         duracion_estimada: $('#duracion_estimada').val(),
         requiere_personal: $('#requiere_personal').val(),

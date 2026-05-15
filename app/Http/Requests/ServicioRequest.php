@@ -17,6 +17,7 @@ class ServicioRequest extends FormRequest
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'precio' => 'required|numeric|min:0',
+            'moneda_precio' => 'nullable|in:PEN,USD',
             'costo' => 'nullable|numeric|min:0',
             'duracion_estimada' => 'nullable|integer|min:0',
             'requiere_personal' => 'nullable|boolean',
@@ -43,6 +44,7 @@ class ServicioRequest extends FormRequest
             'nombre.required' => 'El nombre es obligatorio',
             'precio.required' => 'El precio es obligatorio',
             'precio.numeric' => 'El precio debe ser numerico',
+            'moneda_precio.in' => 'La moneda del precio debe ser PEN o USD',
         ];
     }
 }
