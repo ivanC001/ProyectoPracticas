@@ -324,6 +324,13 @@
                             <label for="tipo_cambio">Tipo de cambio (opcional)</label>
                             <input type="text" id="tipo_cambio" class="form-control" inputmode="decimal" placeholder="Ejemplo: 3.8000 o 3,8000">
                             <small class="text-muted">Solo se usa si necesitas convertir entre PEN y USD.</small>
+                            <div class="d-flex align-items-center justify-content-between mt-2">
+                                <small class="text-muted mb-0">Moneda de cotizacion:</small>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Moneda de cotizacion">
+                                    <button type="button" class="btn btn-outline-secondary" id="btnMonedaPen">PEN</button>
+                                    <button type="button" class="btn btn-outline-secondary" id="btnMonedaUsd">USD</button>
+                                </div>
+                            </div>
                             <div class="invalid-feedback d-block" id="error_tipo_cambio"></div>
                         </div>
 
@@ -716,6 +723,17 @@ function getQuoteCurrency() {
 function setQuoteCurrency(code) {
     selectedCurrency = normalizeCurrency(code);
     $('#moneda').val(selectedCurrency);
+    refreshQuoteCurrencyButtons();
+}
+
+function refreshQuoteCurrencyButtons() {
+    const isPen = getQuoteCurrency() === 'PEN';
+    $('#btnMonedaPen')
+        .toggleClass('btn-primary', isPen)
+        .toggleClass('btn-outline-secondary', !isPen);
+    $('#btnMonedaUsd')
+        .toggleClass('btn-primary', !isPen)
+        .toggleClass('btn-outline-secondary', isPen);
 }
 
 function getExchangeRate() {
@@ -1229,6 +1247,10 @@ async function addItem(tipo, id) {
     const precioFinal = Number(source.precio || 0);
     const monedaFinal = monedaSource;
 
+    if (!items.length) {
+        setQuoteCurrency(monedaSource);
+    }
+
     const existing = items.find(item =>
         item.tipo === tipo &&
         Number(item.producto_id || item.servicio_id) === Number(id) &&
@@ -1637,6 +1659,14 @@ $('#tipo').on('change', function () {
 });
 $('#moneda').on('change', function () {
     setQuoteCurrency($(this).val());
+    calc();
+});
+$('#btnMonedaPen').on('click', function () {
+    setQuoteCurrency('PEN');
+    calc();
+});
+$('#btnMonedaUsd').on('click', function () {
+    setQuoteCurrency('USD');
     calc();
 });
 $('#tipo_cambio').on('input', function () {

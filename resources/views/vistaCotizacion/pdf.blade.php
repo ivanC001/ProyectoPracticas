@@ -151,6 +151,27 @@
             text-align: right;
         }
 
+        .money {
+            display: inline-block;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.2px;
+        }
+
+        .money .currency {
+            font-weight: 700;
+            margin-right: 4px;
+        }
+
+        .money .amount {
+            font-weight: 700;
+        }
+
+        .money-total {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
         .main-row {
             font-weight: 700;
         }
@@ -344,9 +365,9 @@
                     <th style="width: 7%;">cant.</th>
                     <th>descripcion</th>
                     <th style="width: 8%;">mon.</th>
-                    <th style="width: 11%;">precio por unidad</th>
-                    <th style="width: 11%;">precio parcial</th>
-                    <th style="width: 12%;">subtotal</th>
+                    <th style="width: 13%;">precio por unidad</th>
+                    <th style="width: 13%;">precio parcial</th>
+                    <th style="width: 14%;">subtotal</th>
                 </tr>
             </thead>
             <tbody>
@@ -360,9 +381,15 @@
                         <td class="text-center">{{ rtrim(rtrim(number_format($detalle->cantidad, 2, '.', ''), '0'), '.') }}</td>
                         <td>{{ mb_strtoupper($detalle->nombre_item, 'UTF-8') }}</td>
                         <td class="text-center">{{ $monedaDetalle }}</td>
-                        <td class="text-right">{{ $simboloDetalle }} {{ number_format((float) $detalle->precio, 2) }}</td>
-                        <td class="text-right">{{ $simboloDetalle }} {{ number_format((float) $detalle->subtotal, 2) }}</td>
-                        <td class="text-right">{{ $simboloDetalle }} {{ number_format((float) $detalle->subtotal, 2) }}</td>
+                        <td class="text-right">
+                            <span class="money"><span class="currency">{{ $simboloDetalle }}</span><span class="amount">{{ number_format((float) $detalle->precio, 2) }}</span></span>
+                        </td>
+                        <td class="text-right">
+                            <span class="money"><span class="currency">{{ $simboloDetalle }}</span><span class="amount">{{ number_format((float) $detalle->subtotal, 2) }}</span></span>
+                        </td>
+                        <td class="text-right">
+                            <span class="money"><span class="currency">{{ $simboloDetalle }}</span><span class="amount">{{ number_format((float) $detalle->subtotal, 2) }}</span></span>
+                        </td>
                     </tr>
 
                     @if(is_array($detalle->detalle_servicio) && count($detalle->detalle_servicio))
@@ -394,7 +421,9 @@
                 <tr>
                     <td colspan="4" style="font-weight: 700;">{{ $totalLetras }}</td>
                     <td colspan="2" class="text-center" style="font-weight: 700;">TOTAL</td>
-                    <td class="text-right" style="font-weight: 700; font-size: 16px;">{{ $simboloMoneda }} {{ number_format((float) $montoTotal, 2) }}</td>
+                    <td class="text-right">
+                        <span class="money money-total"><span class="currency">{{ $simboloMoneda }}</span><span class="amount">{{ number_format((float) $montoTotal, 2) }}</span></span>
+                    </td>
                 </tr>
             </tfoot>
         </table>
@@ -404,7 +433,8 @@
         </div>
         @if($incluyeIgv)
             <div style="margin-top: 2px; font-size: 11px; font-weight: 700;">
-                MONTO IGV (18%): {{ $simboloMoneda }} {{ number_format((float) $montoIgv, 2) }}
+                MONTO IGV (18%):
+                <span class="money"><span class="currency">{{ $simboloMoneda }}</span><span class="amount">{{ number_format((float) $montoIgv, 2) }}</span></span>
             </div>
         @endif
 
