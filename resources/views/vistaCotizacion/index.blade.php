@@ -106,13 +106,26 @@ function formatDate(value) {
         return '-';
     }
 
-    const date = new Date(`${value}T00:00:00`);
+    const raw = String(value).trim();
+    let date = new Date(raw);
 
     if (Number.isNaN(date.getTime())) {
-        return value;
+        const parts = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (parts) {
+            const [, year, month, day] = parts;
+            date = new Date(Number(year), Number(month) - 1, Number(day));
+        }
     }
 
-    return date.toLocaleDateString('es-PE');
+    if (Number.isNaN(date.getTime())) {
+        return raw;
+    }
+
+    return new Intl.DateTimeFormat('es-PE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    }).format(date);
 }
 
 function renderEstado(estado) {
